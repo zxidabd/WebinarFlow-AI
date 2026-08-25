@@ -95,7 +95,9 @@ else:
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 
+@app.get("/", tags=["system"])
 @app.get("/health", tags=["system"])
+@app.get("/api/v1/health", tags=["system"])
 async def health() -> dict[str, str]:
     """Lightweight liveness probe — does not touch the DB."""
     return {"status": "ok", "app": settings.APP_NAME, "version": __version__}
