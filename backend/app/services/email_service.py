@@ -20,10 +20,37 @@ def _domain() -> str:
 
 
 async def send_email(to: str, subject: str, body: str) -> None:
-    if not settings.SMTP_HOST:
+    if not settings.SMTP_HOST and not settings.SMTP_PASSWORD.startswith("re_"):
         log.info("[dev-email] to=%s subject=%s\n%s", to, subject, body)
         return
 
+    # 1. If Resend API key is used, send via Resend HTTPS REST API (Port 443 - never blocked by cloud firewalls)
+    if settings.SMTP_PASSWORD.startswith("re_") or "resend" in str(settings.SMTP_HOST).lower():
+        import httpx
+        try:
+            from_addr = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>" if settings.SMTP_FROM_EMAIL else f"{settings.SMTP_FROM_NAME} <onboarding@resend.dev>"
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                res = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={
+                        "Authorization": f"Bearer {settings.SMTP_PASSWORD}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "from": from_addr,
+                        "to": [to],
+                        "subject": subject,
+                        "html": body,
+                    },
+                )
+                if res.status_code in (200, 201):
+                    log.info("[resend-sent] to=%s status=%s", to, res.status_code)
+                    return
+                log.warning("[resend-api-notice] to=%s status=%s response=%s", to, res.status_code, res.text)
+        except Exception as exc:
+            log.warning("[resend-api-failed] to=%s error=%s", to, exc)
+
+    # 2. Standard SMTP (e.g. Gmail SMTP) with short 5s timeout
     import aiosmtplib  # lazy: keeps the app bootable without aiosmtplib installed
     from email.mime.text import MIMEText
 
@@ -40,10 +67,9 @@ async def send_email(to: str, subject: str, body: str) -> None:
             password=settings.SMTP_PASSWORD or None,
             start_tls=settings.SMTP_PORT == 587,
             use_tls=settings.SMTP_PORT == 465,
+            timeout=5.0,
         )
     except Exception as exc:  # noqa: BLE001 — never break signup on an email outage.
-        # A delivery failure (e.g. an unverified Resend domain, a 550 rejection,
-        # a provider outage) must not surface as a 500 on registration/reset.
         print(f"\n[SMTP Delivery Notice] Could not send email to {to} via {settings.SMTP_HOST}: {exc}", flush=True)
         log.warning(
             "[email-failed] to=%s subject=%s error=%s",
