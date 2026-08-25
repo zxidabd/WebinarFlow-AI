@@ -12,7 +12,7 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0001-initial-auth-tenancy"
+revision = "0001_initial_auth_tenancy"
 down_revision = None
 branch_labels = None
 depends_on = None

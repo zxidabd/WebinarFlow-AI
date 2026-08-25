@@ -20,8 +20,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "0003-phase2b-landing-pages"
-down_revision = "0002-phase2-webinars"
+revision = "0003_phase2b_landing_pages"
+down_revision = "0002_phase2_webinars"
 branch_labels = None
 depends_on = None
 

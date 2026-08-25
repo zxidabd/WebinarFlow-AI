@@ -15,8 +15,8 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0002-phase2-webinars"
-down_revision = "0001-initial-auth-tenancy"
+revision = "0002_phase2_webinars"
+down_revision = "0001_initial_auth_tenancy"
 branch_labels = None
 depends_on = None
 
