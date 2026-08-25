@@ -28,7 +28,8 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 # Drive Alembic from the same DATABASE_URL the app uses (respecting SQLite fallback and asyncpg normalization).
-config.set_main_option("sqlalchemy.url", _resolve_url())
+# ConfigParser treats '%' as interpolation syntax, so escape it as '%%'.
+config.set_main_option("sqlalchemy.url", _resolve_url().replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:
