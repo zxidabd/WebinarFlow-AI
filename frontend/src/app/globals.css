@@ -65,14 +65,17 @@
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
   }
-  body, input, button, select, textarea, label {
+  body {
     @apply bg-background text-foreground;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", var(--font-sans), system-ui, sans-serif;
     font-feature-settings: 'rlig' 1, 'calt' 1, 'cv02' 1, 'cv05' 1;
-    background-color: #f8fafc;
-    color: #0f172a;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  label {
+    background-color: transparent !important;
+    background: transparent !important;
   }
 
   /* Apple-inspired active feedback: instant tactile response on press */
@@ -81,23 +84,6 @@
   [role='button']:active {
     transform: scale(0.98);
     transition: transform 80ms cubic-bezier(0, 0, 0.2, 1);
-  }
-
-  /* Prevent browser autofill or focus states from turning input containers dark/black */
-  input,
-  input:focus,
-  input:active,
-  input:hover,
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover, 
-  input:-webkit-autofill:focus, 
-  input:-webkit-autofill:active {
-    background-color: #ffffff !important;
-    background: #ffffff !important;
-    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-    -webkit-text-fill-color: #000000 !important;
-    color: #000000 !important;
-    caret-color: #000000 !important;
   }
 }
 

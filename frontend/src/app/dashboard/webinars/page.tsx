@@ -247,24 +247,24 @@ export default function WebinarsPage() {
       {/* Create/Edit Modal */}
       <Modal open={modalMode !== null} onClose={closeModal} title={modalMode === 'create' ? 'Create Webinar' : 'Edit Webinar'}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-1">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" placeholder="e.g. AI Webinar Series" {...form.register('title')} />
+          <div className="space-y-1.5">
+            <Label htmlFor="title" className="text-neutral-200 font-medium">Title</Label>
+            <Input id="title" placeholder="e.g. AI Webinar Series" className="bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500" {...form.register('title')} />
             {form.formState.errors.title && <p className="text-xs text-rose-500">{form.formState.errors.title.message}</p>}
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="desc">Description (optional)</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="desc" className="text-neutral-200 font-medium">Description (optional)</Label>
             <textarea
               id="desc" rows={3}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500"
               placeholder="Brief description…"
               {...form.register('description')}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="status">Status</Label>
-              <select id="status" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" {...form.register('status')}>
+            <div className="space-y-1.5">
+              <Label htmlFor="status" className="text-neutral-200 font-medium">Status</Label>
+              <select id="status" className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500" {...form.register('status')}>
                 <option value="draft">Draft</option>
                 <option value="scheduled">Scheduled</option>
                 <option value="live">Live</option>
@@ -272,13 +272,13 @@ export default function WebinarsPage() {
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="capacity">Capacity (optional)</Label>
-              <Input id="capacity" type="number" placeholder="Unlimited" {...form.register('capacity')} />
+            <div className="space-y-1.5">
+              <Label htmlFor="capacity" className="text-neutral-200 font-medium">Capacity (optional)</Label>
+              <Input id="capacity" type="number" placeholder="Unlimited" className="bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500" {...form.register('capacity')} />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...form.register('is_published')} className="rounded border-border" />
+          <label className="flex items-center gap-2 text-sm text-neutral-300 cursor-pointer select-none">
+            <input type="checkbox" {...form.register('is_published')} className="rounded border-neutral-700 bg-neutral-900 text-primary focus:ring-0" />
             Publish immediately
           </label>
 
@@ -322,14 +322,15 @@ export default function WebinarsPage() {
             {form.watch('is_paid') && (
               <div className="space-y-3 pt-2">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="price_amount">Ticket Price</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="price_amount" className="text-neutral-200 font-medium">Ticket Price</Label>
                     <Input
                       id="price_amount"
                       type="number"
                       step="0.01"
                       min="0.01"
                       placeholder="e.g. 19.99 or 999"
+                      className="bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500"
                       {...form.register('price_amount')}
                     />
                     <p className="text-[11px] text-muted-foreground">Enter ticket amount (e.g. 19.99)</p>
@@ -337,11 +338,11 @@ export default function WebinarsPage() {
                       <p className="text-xs text-rose-500">{form.formState.errors.price_amount.message}</p>
                     )}
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="currency">Currency</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="currency" className="text-neutral-200 font-medium">Currency</Label>
                     <select
                       id="currency"
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                      className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500"
                       {...form.register('currency')}
                     >
                       <option value="usd">USD ($)</option>
