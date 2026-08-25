@@ -1,0 +1,74 @@
+# deps
+node_modules/
+frontend/node_modules/
+.pnp/
+.pnp.js
+
+# next
+frontend/.next/
+frontend/out/
+frontend/build/
+.next/
+out/
+
+# python
+__pycache__/
+*/__pycache__/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.venv/
+backend/venv/
+.venv/
+venv/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# local databases
+*.db
+*.sqlite
+*.sqlite3
+.local.db
+backend/.local.db
+
+# env files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+*.env
+backend/.env
+frontend/.env.local
+!env.example
+!backend/env.example
+
+# IDE & OS & Scratch
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.playwright-mcp/
+.pi/
+cookies.txt
+files.txt
+project-structure.txt
+*.backup
+
+# logs
+*.log
+npm-debug.log*
+
+# test coverage & scratch
+coverage/
+.coverage
+htmlcov/
+backend/scratch/
+scratch/
+
+# builds
+dist/
+build/

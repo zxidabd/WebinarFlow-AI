@@ -1,0 +1,7 @@
+Generic single-database configuration with an async driver.
+
+Create a revision:
+    alembic revision --autogenerate -m "describe change"
+
+Apply:
+    alembic upgrade head

@@ -1,0 +1,335 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode - Clean Professional Theme */
+    --background: 0 0% 98%;           /* Off-white */
+    --foreground: 0 0% 9%;            /* Near black */
+    --card: 0 0% 100%;                /* White */
+    --card-foreground: 0 0% 9%;       /* Near black */
+    --popover: 0 0% 100%;             /* White */
+    --popover-foreground: 0 0% 9%;    /* Near black */
+    --primary: 0 0% 9%;               /* Black */
+    --primary-foreground: 0 0% 98%;   /* White */
+    --secondary: 0 0% 96%;            /* Light gray */
+    --secondary-foreground: 0 0% 9%;  /* Near black */
+    --muted: 0 0% 96%;                /* Light gray */
+    --muted-foreground: 0 0% 45%;     /* Medium gray */
+    --accent: 0 0% 96%;               /* Light gray accent */
+    --accent-foreground: 0 0% 9%;     /* Near black */
+    --destructive: 0 62% 50%;         /* Red for errors */
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;               /* Subtle border */
+    --input: 0 0% 96%;                /* Light input */
+    --ring: 0 0% 60%;                 /* Focus ring */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Metallic Black & Silver Theme - Dark Mode */
+    --background: 0 0% 3.5%;           /* Deep metallic black */
+    --foreground: 0 0% 92%;            /* Bright silver */
+    --card: 0 0% 6%;                   /* Dark graphite */
+    --card-foreground: 0 0% 92%;       /* Bright silver */
+    --popover: 0 0% 6%;                /* Dark graphite */
+    --popover-foreground: 0 0% 92%;    /* Bright silver */
+    --primary: 0 0% 75%;               /* Metallic silver */
+    --primary-foreground: 0 0% 5%;     /* Near black for contrast */
+    --secondary: 0 0% 12%;             /* Gunmetal */
+    --secondary-foreground: 0 0% 85%;  /* Light silver */
+    --muted: 0 0% 10%;                 /* Dark gunmetal */
+    --muted-foreground: 0 0% 55%;      /* Muted silver */
+    --accent: 0 0% 12%;                /* Gunmetal accent */
+    --accent-foreground: 0 0% 92%;     /* Bright silver */
+    --destructive: 0 62% 50%;          /* Subdued red for errors */
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;                /* Subtle metallic border */
+    --input: 0 0% 10%;                 /* Dark metallic input */
+    --ring: 0 0% 60%;                  /* Silver ring for focus */
+    
+    /* Metallic accent colors */
+    --metallic-highlight: 0 0% 85%;
+    --metallic-shadow: 0 0% 8%;
+    --metallic-glow: 0 0% 70%;
+  }
+}
+
+@layer base {
+  *, ::before, ::after {
+    @apply border-border;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", var(--font-sans), system-ui, sans-serif;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body, input, button, select, textarea, label {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", var(--font-sans), system-ui, sans-serif;
+    font-feature-settings: 'rlig' 1, 'calt' 1, 'cv02' 1, 'cv05' 1;
+    background-color: #f8fafc;
+    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Apple-inspired active feedback: instant tactile response on press */
+  button:active,
+  a:active,
+  [role='button']:active {
+    transform: scale(0.98);
+    transition: transform 80ms cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  /* Prevent browser autofill or focus states from turning input containers dark/black */
+  input,
+  input:focus,
+  input:active,
+  input:hover,
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    -webkit-text-fill-color: #000000 !important;
+    color: #000000 !important;
+    caret-color: #000000 !important;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      135deg,
+      #D6D6D6 0%,
+      #B8B8B8 50%,
+      #888888 100%
+    );
+  }
+
+  .text-gradient-vibrant {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      135deg,
+      #E0E0E0 0%,
+      #B8B8B8 50%,
+      #808080 100%
+    );
+  }
+
+  .text-gradient-emerald-violet {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #D6D6D6 0%, #999999 100%);
+  }
+
+  /* Metallic glass effect */
+  .glass {
+    background: linear-gradient(
+      135deg,
+      rgba(40, 40, 45, 0.6) 0%,
+      rgba(25, 25, 30, 0.8) 100%
+    );
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(120, 120, 130, 0.15);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .glass-strong {
+    background: linear-gradient(
+      135deg,
+      rgba(50, 50, 55, 0.7) 0%,
+      rgba(30, 30, 35, 0.9) 100%
+    );
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(140, 140, 150, 0.2);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Subtle metallic glow effects */
+  .glow-silver {
+    box-shadow:
+      0 0 40px -10px rgba(180, 180, 190, 0.25),
+      0 0 80px -20px rgba(200, 200, 210, 0.15);
+  }
+  .glow-metallic {
+    box-shadow:
+      0 0 30px -5px rgba(150, 150, 160, 0.3),
+      0 0 60px -15px rgba(170, 170, 180, 0.2);
+  }
+
+  /* Metallic scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(0 0% 3%);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, hsl(0 0% 25%), hsl(0 0% 15%));
+    border-radius: 99px;
+    border: 2px solid hsl(0 0% 3%);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, hsl(0 0% 35%), hsl(0 0% 20%));
+  }
+
+  /* Subtle metallic patterns */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgba(120, 120, 130, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(120, 120, 130, 0.03) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+
+  .bg-dots {
+    background-image: radial-gradient(rgba(140, 140, 150, 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Brushed metal texture overlay */
+  .bg-brushed-metal {
+    background-image: 
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 2px,
+        rgba(80, 80, 90, 0.02) 2px,
+        rgba(80, 80, 90, 0.02) 4px
+      );
+  }
+
+  /* Metallic button gradient */
+  .btn-metallic {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 22%) 0%,
+      hsl(0 0% 18%) 50%,
+      hsl(0 0% 25%) 100%
+    );
+    border: 1px solid hsl(0 0% 30%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .btn-metallic:hover {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 28%) 0%,
+      hsl(0 0% 22%) 50%,
+      hsl(0 0% 32%) 100%
+    );
+    border-color: hsl(0 0% 38%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 4px 16px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Metallic card surface */
+  .card-metallic {
+    background: linear-gradient(
+      145deg,
+      hsl(0 0% 8%) 0%,
+      hsl(0 0% 5%) 100%
+    );
+    border: 1px solid hsl(0 0% 16%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .card-metallic:hover {
+    border-color: hsl(0 0% 22%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 8px 30px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/*
+ * Dashboard theme - Premium Metallic Dark
+ * Scoped to .dashboard-light (keeping class name for compatibility)
+ * Metallic black & silver aesthetic for the authenticated area
+ */
+@layer base {
+  .dashboard-light {
+    --background: 0 0% 4%;             /* Deep metallic black */
+    --foreground: 0 0% 90%;            /* Bright silver */
+    --card: 0 0% 7%;                   /* Dark graphite */
+    --card-foreground: 0 0% 90%;       /* Bright silver */
+    --popover: 0 0% 7%;                /* Dark graphite */
+    --popover-foreground: 0 0% 90%;    /* Bright silver */
+    --primary: 0 0% 72%;               /* Metallic silver */
+    --primary-foreground: 0 0% 5%;     /* Near black */
+    --secondary: 0 0% 12%;             /* Gunmetal */
+    --secondary-foreground: 0 0% 85%;  /* Light silver */
+    --muted: 0 0% 10%;                 /* Dark gunmetal */
+    --muted-foreground: 0 0% 50%;      /* Muted silver */
+    --accent: 0 0% 14%;                /* Gunmetal accent */
+    --accent-foreground: 0 0% 90%;     /* Bright silver */
+    --destructive: 0 62% 45%;          /* Subdued red */
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 16%;                /* Metallic border */
+    --input: 0 0% 9%;                  /* Dark metallic input */
+    --ring: 0 0% 55%;                  /* Silver focus ring */
+    --radius: 0.75rem;
+
+    background: linear-gradient(
+      180deg,
+      hsl(0 0% 3%) 0%,
+      hsl(0 0% 4%) 50%,
+      hsl(0 0% 2%) 100%
+    );
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  /* Dashboard scrollbar — metallic style */
+  .dashboard-light ::-webkit-scrollbar,
+  .dashboard-light *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .dashboard-light ::-webkit-scrollbar-track,
+  .dashboard-light *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .dashboard-light ::-webkit-scrollbar-thumb,
+  .dashboard-light *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, hsl(0 0% 22%), hsl(0 0% 14%));
+    border-radius: 99px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .dashboard-light ::-webkit-scrollbar-thumb:hover,
+  .dashboard-light *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, hsl(0 0% 32%), hsl(0 0% 18%));
+    background-clip: content-box;
+  }
+
+  /* Hero section gradient - metallic dark */
+  .hero-funnel-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 12%) 0%,
+      hsl(0 0% 8%) 50%,
+      hsl(0 0% 15%) 100%
+    );
+    border: 1px solid hsl(0 0% 20%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 8px 40px rgba(0, 0, 0, 0.5);
+  }
+}
