@@ -55,41 +55,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — use origins from environment variable, fallback to default dev origins if not set.
-# In development, we want to allow the frontend dev server on common ports.
-if settings.ENVIRONMENT == "development":
-    env_origins = settings.cors_origins_list
-    CORS_ORIGINS = env_origins if env_origins else [
+# CORS configuration — support configured origins, local dev, and all Vercel deployments.
+origins = [str(o).rstrip("/") for o in settings.cors_origins_list if str(o) != "*"]
+if not origins:
+    origins = [
+        "https://webinar-flow-ai-frontend.vercel.app",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "http://localhost:3002",
-        "http://127.0.0.1:3002",
-        "http://localhost:3003",
-        "http://127.0.0.1:3003",
-        "http://localhost:3004",
-        "http://127.0.0.1:3004",
-        "http://localhost:3005",
-        "http://127.0.0.1:3005",
     ]
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=CORS_ORIGINS,
-        allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-else:
-    CORS_ORIGINS = settings.cors_origins_list or ["*"]
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app|http://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount versioned API.
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
