@@ -11,5 +11,9 @@
     "backend": "cd backend && .venv/Scripts/python -m uvicorn app.main:app --reload --port 8000",
     "backend:install": "cd backend && pip install -r requirements.txt"
   },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=20" },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
+  }
 }
