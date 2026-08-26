@@ -30,23 +30,22 @@ interface Props {
 }
 
 export default function LandingPageRenderer({ content, webinarId, onRegister, preview, isPaid, priceCents, currency, paymentGateway }: Props) {
-  const templateId = typeof content?.template === 'string' ? content.template : 'modern-saas';
-  const template = getTemplate(templateId) || getTemplate('modern-saas');
-  const sections = content?.sections || {};
-
-  if (!template) {
-    return (
-      <div className="flex items-center justify-center p-12 text-gray-400">
-        <p>No template selected. Choose a template in the editor.</p>
-      </div>
-    );
-  }
+  const rawTemplate = content?.template;
+  const templateId = typeof rawTemplate === 'string' && rawTemplate ? rawTemplate : 'modern-saas';
+  const template = getTemplate(templateId) || getTemplate('modern-saas')!;
+  const rawSections = content?.sections || content;
+  const sections: Record<string, any> = (typeof rawSections === 'object' && rawSections !== null && !Array.isArray(rawSections))
+    ? rawSections
+    : {};
 
   const allDefaults = extractTemplateDefaults(template);
 
   const getMergedSectionData = (sectionId: string) => {
     const defaults = allDefaults[sectionId] || {};
-    const userOverrides = sections[sectionId] || {};
+    const rawUserOverrides = sections[sectionId];
+    const userOverrides = (typeof rawUserOverrides === 'object' && rawUserOverrides !== null && !Array.isArray(rawUserOverrides))
+      ? rawUserOverrides
+      : {};
     const cleanedOverrides: Record<string, any> = {};
     for (const [k, v] of Object.entries(userOverrides)) {
       if (v !== undefined && v !== null && v !== '') {

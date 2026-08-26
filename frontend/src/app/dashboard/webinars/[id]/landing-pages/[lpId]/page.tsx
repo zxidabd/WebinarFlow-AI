@@ -187,7 +187,7 @@ export default function LandingPageDetailPage() {
       )}
 
       {/* Preview */}
-      {hasTemplate && content?.template && (
+      {hasTemplate && (
         <>
           <div className="rounded-xl bg-gray-100 overflow-hidden border border-gray-200">
             <div className="bg-white px-4 py-2 text-xs text-gray-400 border-b border-gray-100 flex items-center gap-2">
@@ -195,7 +195,7 @@ export default function LandingPageDetailPage() {
               Preview
             </div>
             <LandingPageRenderer
-              content={content}
+              content={content?.template ? content : { template: lp.template_id || 'modern-saas', sections: content?.sections || content || {} }}
               webinarId={params.id}
               preview
               isPaid={webinar?.is_paid}
