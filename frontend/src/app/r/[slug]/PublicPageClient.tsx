@@ -62,6 +62,12 @@ export default function PublicPageClient({ content, webinarId, slug, isPaid, pri
             name: 'Webinar Registration',
             description: `Registration for ${content?.headline || 'Webinar'}`,
             order_id: regData.razorpay.order_id,
+            method: {
+              upi: true,
+              card: true,
+              netbanking: true,
+              wallet: true,
+            },
             prefill: {
               name: fullName || '',
               email: email || '',
