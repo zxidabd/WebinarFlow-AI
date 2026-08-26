@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import PublicPageClient from './PublicPageClient';
 
 /**
  * Public landing page route — renders a published landing page by slug.
@@ -42,6 +43,3 @@ export default async function PublicLandingPage({ params }: { params: Promise<{ 
     </div>
   );
 }
-
-// Client component loaded via dynamic import
-import PublicPageClient from './PublicPageClient';

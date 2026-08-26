@@ -22,8 +22,10 @@ function formatPriceHelper(cents?: number, cur?: string) {
 }
 
 export function getBgStyle(data: any, fallbackClass: string = 'bg-white') {
-  const bg = data.bg_color || data.background_color || data.background_gradient;
-  if (!bg) return { className: fallbackClass, style: {} };
+  if (!data || typeof data !== 'object') return { className: fallbackClass, style: {} };
+  const rawBg = data.bg_color || data.background_color || data.background_gradient;
+  if (!rawBg || typeof rawBg !== 'string') return { className: fallbackClass, style: {} };
+  const bg = rawBg.trim();
   const isHexOrRgb = bg.startsWith('#') || bg.startsWith('rgb');
   if (isHexOrRgb) {
     return { className: '', style: { backgroundColor: bg } };
@@ -446,14 +448,21 @@ export function RegisterSection({
 
 export function FooterSection({ data }: { data: any }) {
   const bg = getBgStyle(data, 'bg-white');
+  const rawLinks = data?.links;
+  const linksList: string[] = Array.isArray(rawLinks)
+    ? rawLinks
+    : typeof rawLinks === 'string'
+    ? rawLinks.split(',').map((s: string) => s.trim()).filter(Boolean)
+    : [];
+
   return (
     <footer className={`border-t border-gray-100 px-6 py-8 text-center text-sm text-gray-400 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
-        <p>{data.text}</p>
-        {data.links && (
+        <p>{data?.text || '© 2026 WebinarFlow AI. All rights reserved.'}</p>
+        {linksList.length > 0 && (
           <div className="mt-2 flex justify-center gap-4">
-            {data.links.split(',').map((link: string, i: number) => (
-              <a key={i} href="#" className="hover:text-gray-600 transition-colors">{link.trim()}</a>
+            {linksList.map((link: string, i: number) => (
+              <a key={i} href="#" className="hover:text-gray-600 transition-colors">{link}</a>
             ))}
           </div>
         )}
@@ -465,7 +474,7 @@ export function FooterSection({ data }: { data: any }) {
 // ── Instructor Section ─────────────────────────────────────────────────────────
 
 export function InstructorSection({ data }: { data: any }) {
-  if (!data.name) return null;
+  if (!data?.name) return null;
   const bg = getBgStyle(data, 'bg-white');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
@@ -488,19 +497,24 @@ export function InstructorSection({ data }: { data: any }) {
 // ── Outcomes Section ──────────────────────────────────────────────────────────
 
 export function OutcomesSection({ data }: { data: any }) {
-  if (!data.outcomes?.length) return null;
+  if (!data?.outcomes?.length) return null;
   const bg = getBgStyle(data, 'bg-gray-50');
+  const outcomes = Array.isArray(data.outcomes) ? data.outcomes : [];
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-4xl">
-        <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
+        <h2 className="text-center text-3xl font-bold text-gray-900">{data.title || 'What You Will Learn'}</h2>
         <ul className="mt-8 grid gap-4 md:grid-cols-2">
-          {data.outcomes.map((o: any, i: number) => (
-            <li key={i} className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm">
-              <span className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-xs text-purple-700">✓</span>
-              <span className="text-sm text-gray-700">{o.text}</span>
-            </li>
-          ))}
+          {outcomes.map((o: any, i: number) => {
+            const text = typeof o === 'string' ? o : o?.text || '';
+            if (!text) return null;
+            return (
+              <li key={i} className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm">
+                <span className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-xs text-purple-700">✓</span>
+                <span className="text-sm text-gray-700">{text}</span>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </section>
@@ -602,10 +616,15 @@ export function CaseStudySection({ data }: { data: any }) {
 // ── Navbar Section ────────────────────────────────────────────────────────
 
 export function NavbarSection({ data, isPaid, priceCents, currency }: { data: any; isPaid?: boolean; priceCents?: number; currency?: string }) {
-  const items = data.links || ['About', 'FAQ', 'Register'];
-  const lg = data.logo_text || 'WebinarFlow';
+  const rawLinks = data?.links || ['About', 'FAQ', 'Register'];
+  const items: string[] = Array.isArray(rawLinks)
+    ? rawLinks
+    : typeof rawLinks === 'string'
+    ? rawLinks.split(',').map((s: string) => s.trim()).filter(Boolean)
+    : ['About', 'FAQ', 'Register'];
+  const lg = data?.logo_text || 'WebinarFlow';
   const priceDisplay = isPaid && priceCents && priceCents > 0 ? formatPriceHelper(priceCents, currency) : null;
-  const ctaText = priceDisplay ? `Buy Ticket (${priceDisplay})` : (data.cta_text || 'Register');
+  const ctaText = priceDisplay ? `Buy Ticket (${priceDisplay})` : (data?.cta_text || 'Register');
   const bg = getBgStyle(data, 'bg-white/95');
 
   return (
@@ -621,7 +640,7 @@ export function NavbarSection({ data, isPaid, priceCents, currency }: { data: an
               {priceDisplay}
             </span>
           )}
-          <a href={data.cta_link || '#register'} className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition-colors">{ctaText}</a>
+          <a href={data?.cta_link || '#register'} className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition-colors">{ctaText}</a>
         </div>
       </div>
     </nav>
