@@ -11,6 +11,7 @@ import { Plus, Pencil, Copy, Trash2, Eye, Search, Loader2, AlertCircle, X, Dolla
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import type { Webinar, WebinarStatus } from '@/types/webinar';
@@ -162,26 +163,26 @@ export default function WebinarsPage() {
       {/* Search + status filter */}
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-          <Input className="pl-10 bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-400 focus-visible:ring-neutral-600 focus-visible:border-neutral-500 shadow-sm" placeholder="Search webinars…" value={search} onChange={e => setSearch(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-10 shadow-sm" placeholder="Search webinars…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select
-          className="rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neutral-600 shadow-sm"
+          className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value as WebinarStatus | '')}
         >
-          <option value="" className="bg-neutral-900 text-white">All statuses</option>
-          <option value="draft" className="bg-neutral-900 text-white">Draft</option>
-          <option value="scheduled" className="bg-neutral-900 text-white">Scheduled</option>
-          <option value="live" className="bg-neutral-900 text-white">Live</option>
-          <option value="completed" className="bg-neutral-900 text-white">Completed</option>
-          <option value="cancelled" className="bg-neutral-900 text-white">Cancelled</option>
+          <option value="">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="live">Live</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </div>
 
       {/* Error */}
       {isError && (
-        <div className="flex items-start gap-3 rounded-lg border border-rose-800/60 bg-rose-950/40 p-4 text-sm text-rose-300">
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>Failed to load webinars. {error instanceof Error ? error.message : ''}</p>
         </div>
@@ -189,16 +190,16 @@ export default function WebinarsPage() {
 
       {/* Loading */}
       {isLoading && (
-        <div className="flex items-center justify-center py-16 text-neutral-400">
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading webinars…
         </div>
       )}
 
       {/* Empty state */}
       {!isLoading && !isError && items.length === 0 && (
-        <Card className="bg-neutral-900 border-neutral-800 text-white">
+        <Card>
           <CardContent className="flex flex-col items-center py-16">
-            <p className="text-neutral-400 mb-4">No webinars yet.</p>
+            <p className="text-muted-foreground mb-4">No webinars yet.</p>
             <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Create your first webinar</Button>
           </CardContent>
         </Card>
@@ -208,36 +209,36 @@ export default function WebinarsPage() {
       {!isLoading && items.length > 0 && (
         <div className="space-y-3">
           {items.map((w) => (
-            <Card key={w.id} className="bg-gradient-to-b from-neutral-900 via-neutral-900/95 to-neutral-950 border border-neutral-800 text-white hover:border-neutral-700 shadow-md hover:shadow-lg transition-all">
+            <Card key={w.id} className="hover:border-foreground/20 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-start gap-4 p-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h3 className="font-semibold text-white truncate text-base">{w.title}</h3>
+                    <h3 className="font-semibold text-foreground truncate text-base">{w.title}</h3>
                     <Badge variant="outline" className={STATUS_STYLES[w.status]}>{w.status}</Badge>
                     {w.is_paid ? (
-                      <Badge variant="outline" className="bg-amber-950/60 text-amber-300 border-amber-700/60">
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/30">
                         <DollarSign className="mr-0.5 h-3 w-3" />
                         {((w.price_cents || 0) / 100).toFixed(2)} {(w.currency || 'usd').toUpperCase()}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-emerald-950/60 text-emerald-300 border-emerald-700/60">Free</Badge>
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/30">Free</Badge>
                     )}
-                    {w.is_published && <Badge variant="default" className="bg-neutral-800 text-neutral-200 border border-neutral-700">Published</Badge>}
+                    {w.is_published && <Badge variant="default">Published</Badge>}
                   </div>
-                  {w.description && <p className="mt-1 line-clamp-1 text-sm text-neutral-300">{w.description}</p>}
-                  <div className="mt-2 flex gap-4 text-xs text-neutral-400">
+                  {w.description && <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{w.description}</p>}
+                  <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
                     <span>{w.starts_at ? new Date(w.starts_at).toLocaleDateString() : 'No date'}</span>
                     <span>{w.registration_count} registration{w.registration_count !== 1 ? 's' : ''}</span>
                     {w.capacity && <span>Cap: {w.capacity}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => window.open(`/r/${w.slug}`, '_blank')} title="View Live Landing Page"><Globe className="h-4 w-4 text-indigo-400" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => router.push(`/dashboard/webinars/${w.id}`)} title="View Details"><Eye className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs px-2 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => router.push(`/dashboard/webinars/${w.id}/landing-pages`)} title="Manage Landing Pages">LP</Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => openEdit(w)} title="Edit"><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => duplicateMut.mutate(w.id)} title="Duplicate"><Copy className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40" onClick={() => { if (confirm('Delete this webinar?')) deleteMut.mutate(w.id); }} title="Delete"><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => window.open(`/r/${w.slug}`, '_blank')} title="View Live Landing Page"><Globe className="h-4 w-4 text-indigo-500" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => router.push(`/dashboard/webinars/${w.id}`)} title="View Details"><Eye className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs px-2 text-muted-foreground hover:text-foreground" onClick={() => router.push(`/dashboard/webinars/${w.id}/landing-pages`)} title="Manage Landing Pages">LP</Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(w)} title="Edit"><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => duplicateMut.mutate(w.id)} title="Duplicate"><Copy className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => { if (confirm('Delete this webinar?')) deleteMut.mutate(w.id); }} title="Delete"><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </div>
             </Card>
@@ -249,23 +250,22 @@ export default function WebinarsPage() {
       <Modal open={modalMode !== null} onClose={closeModal} title={modalMode === 'create' ? 'Create Webinar' : 'Edit Webinar'}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-neutral-200 font-medium">Title</Label>
-            <Input id="title" placeholder="e.g. AI Webinar Series" className="bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500" {...form.register('title')} />
-            {form.formState.errors.title && <p className="text-xs text-rose-500">{form.formState.errors.title.message}</p>}
+            <Label htmlFor="title" className="text-foreground font-medium">Title</Label>
+            <Input id="title" placeholder="e.g. AI Webinar Series" {...form.register('title')} />
+            {form.formState.errors.title && <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="desc" className="text-neutral-200 font-medium">Description (optional)</Label>
-            <textarea
+            <Label htmlFor="desc" className="text-foreground font-medium">Description (optional)</Label>
+            <Textarea
               id="desc" rows={3}
-              className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500"
               placeholder="Brief description…"
               {...form.register('description')}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="status" className="text-neutral-200 font-medium">Status</Label>
-              <select id="status" className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500" {...form.register('status')}>
+              <Label htmlFor="status" className="text-foreground font-medium">Status</Label>
+              <select id="status" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" {...form.register('status')}>
                 <option value="draft">Draft</option>
                 <option value="scheduled">Scheduled</option>
                 <option value="live">Live</option>
@@ -274,12 +274,12 @@ export default function WebinarsPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="capacity" className="text-neutral-200 font-medium">Capacity (optional)</Label>
-              <Input id="capacity" type="number" placeholder="Unlimited" className="bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500" {...form.register('capacity')} />
+              <Label htmlFor="capacity" className="text-foreground font-medium">Capacity (optional)</Label>
+              <Input id="capacity" type="number" placeholder="Unlimited" {...form.register('capacity')} />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-neutral-300 cursor-pointer select-none">
-            <input type="checkbox" {...form.register('is_published')} className="rounded border-neutral-700 bg-neutral-900 text-primary focus:ring-0" />
+          <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
+            <input type="checkbox" {...form.register('is_published')} className="rounded border-input bg-background text-primary focus:ring-0" />
             Publish immediately
           </label>
 
@@ -295,11 +295,11 @@ export default function WebinarsPage() {
                 }}
                 className={`flex items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all ${
                   !form.watch('is_paid')
-                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-semibold shadow-sm'
+                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold shadow-sm'
                     : 'border-border bg-background text-muted-foreground hover:bg-accent'
                 }`}
               >
-                <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
                 Free Webinar
               </button>
               <button
@@ -310,11 +310,11 @@ export default function WebinarsPage() {
                 }}
                 className={`flex items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all ${
                   form.watch('is_paid')
-                    ? 'border-amber-500 bg-amber-500/10 text-amber-400 font-semibold shadow-sm'
+                    ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold shadow-sm'
                     : 'border-border bg-background text-muted-foreground hover:bg-accent'
                 }`}
               >
-                <DollarSign className="h-4 w-4 text-amber-400" />
+                <DollarSign className="h-4 w-4 text-amber-500" />
                 Paid Webinar
               </button>
             </div>
@@ -324,26 +324,25 @@ export default function WebinarsPage() {
               <div className="space-y-3 pt-2">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="price_amount" className="text-neutral-200 font-medium">Ticket Price</Label>
+                    <Label htmlFor="price_amount" className="text-foreground font-medium">Ticket Price</Label>
                     <Input
                       id="price_amount"
                       type="number"
                       step="0.01"
                       min="0.01"
                       placeholder="e.g. 19.99 or 999"
-                      className="bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500"
                       {...form.register('price_amount')}
                     />
                     <p className="text-[11px] text-muted-foreground">Enter ticket amount (e.g. 19.99)</p>
                     {form.formState.errors.price_amount && (
-                      <p className="text-xs text-rose-500">{form.formState.errors.price_amount.message}</p>
+                      <p className="text-xs text-destructive">{form.formState.errors.price_amount.message}</p>
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="currency" className="text-neutral-200 font-medium">Currency</Label>
+                    <Label htmlFor="currency" className="text-foreground font-medium">Currency</Label>
                     <select
                       id="currency"
-                      className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500"
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       {...form.register('currency')}
                     >
                       <option value="usd">USD ($)</option>
@@ -362,7 +361,7 @@ export default function WebinarsPage() {
                       onClick={() => form.setValue('payment_gateway', 'stripe')}
                       className={`flex items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-all ${
                         form.watch('payment_gateway') !== 'razorpay'
-                          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400 font-semibold shadow-sm'
+                          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm'
                           : 'border-border bg-background text-muted-foreground hover:bg-accent'
                       }`}
                     >
@@ -373,7 +372,7 @@ export default function WebinarsPage() {
                       onClick={() => form.setValue('payment_gateway', 'razorpay')}
                       className={`flex items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-all ${
                         form.watch('payment_gateway') === 'razorpay'
-                          ? 'border-blue-500 bg-blue-500/10 text-blue-400 font-semibold shadow-sm'
+                          ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold shadow-sm'
                           : 'border-border bg-background text-muted-foreground hover:bg-accent'
                       }`}
                     >
