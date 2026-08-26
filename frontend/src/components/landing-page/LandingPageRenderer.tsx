@@ -29,8 +29,8 @@ interface Props {
 }
 
 export default function LandingPageRenderer({ content, webinarId, onRegister, preview, isPaid, priceCents, currency, paymentGateway }: Props) {
-  const templateId = typeof content?.template === 'string' ? content.template : null;
-  const template = templateId ? getTemplate(templateId) : null;
+  const templateId = typeof content?.template === 'string' ? content.template : 'modern-saas';
+  const template = getTemplate(templateId) || getTemplate('modern-saas');
   const sections = content?.sections || {};
 
   if (!template) {
@@ -41,29 +41,35 @@ export default function LandingPageRenderer({ content, webinarId, onRegister, pr
     );
   }
 
-  const sectionData: Record<string, { component: React.FC<{ data: any }>; data: any }> = {
-    navbar: { component: (p: { data: any }) => <NavbarSection {...p} isPaid={isPaid} priceCents={priceCents} currency={currency} />, data: sections.navbar || {} },
-    hero: { component: (p: { data: any }) => <HeroSection {...p} isPaid={isPaid} priceCents={priceCents} currency={currency} />, data: sections.hero || {} },
-    hero_v2: { component: (p: { data: any }) => <HeroV2Section {...p} isPaid={isPaid} priceCents={priceCents} currency={currency} />, data: sections.hero_v2 || {} },
-    speakers: { component: SpeakersSection, data: sections.speakers || {} },
-    speakers_v2: { component: SpeakersV2Section, data: sections.speakers_v2 || {} },
-    stats: { component: StatsSection, data: sections.stats || {} },
-    logos: { component: LogosSection, data: sections.logos || {} },
-    benefits: { component: BenefitsSection, data: sections.benefits || {} },
-    agenda: { component: AgendaSection, data: sections.agenda || {} },
-    testimonials: { component: TestimonialsSection, data: sections.testimonials || {} },
-    faq: { component: FAQSection, data: sections.faq || {} },
-    countdown: { component: CountdownSection, data: sections.countdown || {} },
-    instructor: { component: InstructorSection, data: sections.instructor || {} },
-    outcomes: { component: OutcomesSection, data: sections.outcomes || {} },
-    curriculum: { component: CurriculumSection, data: sections.curriculum || {} },
-    certificate: { component: CertificateSection, data: sections.certificate || {} },
-    schedule: { component: ScheduleSection, data: sections.schedule || {} },
-    case_studies: { component: CaseStudySection, data: sections.case_studies || {} },
-    contact: { component: ContactSection, data: sections.contact || {} },
-    register: { component: (p: { data: any }) => <RegisterSection {...p} webinarId={webinarId} onRegister={onRegister} isPaid={isPaid} priceCents={priceCents} currency={currency} paymentGateway={paymentGateway} />, data: sections.register || {} },
-    sticky_register: { component: (p: { data: any }) => <StickyRegisterSection {...p} webinarId={webinarId} onRegister={onRegister} isPaid={isPaid} priceCents={priceCents} currency={currency} paymentGateway={paymentGateway} />, data: sections.sticky_register || {} },
-    footer: { component: FooterSection, data: sections.footer || {} },
+  const getMergedSectionData = (sectionId: string) => {
+    const defaults = template.defaults?.[sectionId] || {};
+    const userOverrides = sections[sectionId] || {};
+    return { ...defaults, ...userOverrides };
+  };
+
+  const sectionComponents: Record<string, React.FC<{ data: any }>> = {
+    navbar: (p: { data: any }) => <NavbarSection {...p} isPaid={isPaid} priceCents={priceCents} currency={currency} />,
+    hero: (p: { data: any }) => <HeroSection {...p} isPaid={isPaid} priceCents={priceCents} currency={currency} />,
+    hero_v2: (p: { data: any }) => <HeroV2Section {...p} isPaid={isPaid} priceCents={priceCents} currency={currency} />,
+    speakers: SpeakersSection,
+    speakers_v2: SpeakersV2Section,
+    stats: StatsSection,
+    logos: LogosSection,
+    benefits: BenefitsSection,
+    agenda: AgendaSection,
+    testimonials: TestimonialsSection,
+    faq: FAQSection,
+    countdown: CountdownSection,
+    instructor: InstructorSection,
+    outcomes: OutcomesSection,
+    curriculum: CurriculumSection,
+    certificate: CertificateSection,
+    schedule: ScheduleSection,
+    case_studies: CaseStudySection,
+    contact: ContactSection,
+    register: (p: { data: any }) => <RegisterSection {...p} webinarId={webinarId} onRegister={onRegister} isPaid={isPaid} priceCents={priceCents} currency={currency} paymentGateway={paymentGateway} />,
+    sticky_register: (p: { data: any }) => <StickyRegisterSection {...p} webinarId={webinarId} onRegister={onRegister} isPaid={isPaid} priceCents={priceCents} currency={currency} paymentGateway={paymentGateway} />,
+    footer: FooterSection,
   };
 
   const wrapperStyle = preview
@@ -73,9 +79,9 @@ export default function LandingPageRenderer({ content, webinarId, onRegister, pr
   return (
     <div className={wrapperStyle}>
       {template.sections.map((section) => {
-        const sd = sectionData[section.id];
-        if (!sd) return null;
-        const { component: Component, data } = sd;
+        const Component = sectionComponents[section.id];
+        if (!Component) return null;
+        const data = getMergedSectionData(section.id);
         return <Component key={section.id} data={data} />;
       })}
     </div>

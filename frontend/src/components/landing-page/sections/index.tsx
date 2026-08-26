@@ -22,18 +22,31 @@ function formatPriceHelper(cents?: number, cur?: string) {
 }
 
 export function HeroSection({ data, isPaid, priceCents, currency }: { data: any; isPaid?: boolean; priceCents?: number; currency?: string }) {
-  const bg = data.background_gradient || data.bg_color || data.background_color || 'from-indigo-600 via-purple-600 to-blue-500';
-  const priceDisplay = isPaid && priceCents && priceCents > 0 ? formatPriceHelper(priceCents, currency) : null;
-  const ctaLabel = isPaid && priceCents && priceCents > 0 ? `Buy Ticket — ${priceDisplay}` : (data.cta_text || 'Register Now');
+  const rawBg = data.background_gradient || data.bg_color || data.background_color || 'from-indigo-600 via-purple-600 to-blue-500';
+  const isHexOrRgb = rawBg.startsWith('#') || rawBg.startsWith('rgb');
+  const bgClass = isHexOrRgb ? '' : (rawBg.startsWith('from-') ? `bg-gradient-to-r ${rawBg}` : rawBg);
+  const bgStyle = isHexOrRgb ? { backgroundColor: rawBg } : {};
+
+  const priceDisplay = isPaid && priceCents && priceCents > 0
+    ? formatPriceHelper(priceCents, currency)
+    : (data.price || null);
+
+  const ctaLabel = isPaid && priceCents && priceCents > 0
+    ? `Buy Ticket — ${priceDisplay}`
+    : (data.cta_text || 'Register Now');
+
+  const heroImg = data.course_image || data.hero_image;
+  const headline = data.headline || data.course_headline || data.title || 'Webinar Masterclass';
+  const subtitle = data.subtitle || data.description || '';
 
   return (
-    <section className={`relative overflow-hidden bg-gradient-to-r ${bg} px-6 py-20 md:py-32 text-white`}>
+    <section className={`relative overflow-hidden ${bgClass} px-6 py-20 md:py-32 text-white`} style={bgStyle}>
       <div className="mx-auto max-w-6xl">
         <div className="grid items-center gap-12 md:grid-cols-2">
           <div className="space-y-6">
             {data.logo_url && <img src={data.logo_url} alt="" className="h-8 brightness-0 invert" />}
-            <h1 className="text-4xl font-bold leading-tight md:text-5xl lg:text-6xl">{data.headline}</h1>
-            <p className="text-lg text-white/80 md:text-xl">{data.subtitle}</p>
+            <h1 className="text-4xl font-bold leading-tight md:text-5xl lg:text-6xl">{headline}</h1>
+            {subtitle && <p className="text-lg text-white/80 md:text-xl">{subtitle}</p>}
             <div className="flex flex-wrap items-center gap-4">
               <a href={data.cta_link || '#register'} className="inline-flex items-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-gray-900 shadow-lg hover:shadow-xl transition-all">{ctaLabel}</a>
               {priceDisplay ? (
@@ -47,9 +60,9 @@ export function HeroSection({ data, isPaid, priceCents, currency }: { data: any;
               )}
             </div>
           </div>
-          {data.hero_image && (
+          {heroImg && (
             <div className="relative">
-              <img src={data.hero_image} alt="Hero" className="rounded-2xl shadow-2xl" />
+              <img src={heroImg} alt="Hero" className="rounded-2xl shadow-2xl max-h-96 w-full object-cover" />
             </div>
           )}
         </div>

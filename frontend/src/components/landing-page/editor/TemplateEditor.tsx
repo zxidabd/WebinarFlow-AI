@@ -117,14 +117,14 @@ function FieldEditor({ field, value, onChange }: { field: any; value: any; onCha
 
 function SectionEditor({ section, data, onChange }: { section: TemplateSection; data: any; onChange: (v: any) => void }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <h3 className="mb-4 font-semibold text-gray-900">{section.icon} {section.name}</h3>
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <h3 className="mb-4 font-semibold text-gray-900 text-base">{section.name}</h3>
       <div className="space-y-4">
         {section.fields.map((field) => {
           const key = field.key;
           return (
             <div key={key}>
-              <label className="mb-1 block text-sm font-medium text-gray-700">{field.label}</label>
+              <label className="mb-1 block text-xs font-semibold text-gray-700">{field.label}</label>
               <FieldEditor
                 field={field}
                 value={data?.[key]}
@@ -140,16 +140,25 @@ function SectionEditor({ section, data, onChange }: { section: TemplateSection; 
 
 export default function TemplateEditor({ initialState, onSave, onCancel, webinarId, isPaid, priceCents, currency, paymentGateway }: Props) {
   const [templateId, setTemplateId] = useState(initialState?.template || 'modern-saas');
-  const [sections, setSections] = useState<Record<string, any>>(initialState?.sections || {});
-  const [tab, setTab] = useState<string | null>(null);
+  const template = getTemplate(templateId) || getTemplate('modern-saas')!;
 
-  const template = getTemplate(templateId);
+  const [sections, setSections] = useState<Record<string, any>>(() => {
+    const initial = initialState?.sections || {};
+    const tpl = getTemplate(initialState?.template || 'modern-saas') || getTemplate('modern-saas')!;
+    const merged: Record<string, any> = {};
+    for (const s of tpl.sections) {
+      merged[s.id] = { ...(tpl.defaults?.[s.id] || {}), ...(initial[s.id] || {}) };
+    }
+    return merged;
+  });
+
+  const [tab, setTab] = useState<string | null>(null);
 
   const handleTemplateChange = (newId: string) => {
     const tpl = getTemplate(newId);
     if (!tpl) return;
     setTemplateId(newId);
-    setSections(tpl.defaults);
+    setSections(tpl.defaults || {});
     setTab(tpl.sections[0]?.id || null);
   };
 
@@ -163,7 +172,17 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
 
   const activeTab = tab || template.sections[0]?.id;
   const activeSection = template.sections.find(s => s.id === activeTab);
-  const activeData = activeTab ? sections[activeTab] || {} : {};
+  const activeData = activeTab
+    ? { ...(template.defaults?.[activeTab] || {}), ...(sections[activeTab] || {}) }
+    : {};
+
+  const handleSectionChange = (newSectionData: any) => {
+    if (!activeTab) return;
+    setSections(prev => ({
+      ...prev,
+      [activeTab]: newSectionData,
+    }));
+  };
 
   return (
     <div className="flex h-full gap-6">
@@ -173,7 +192,7 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">Template</label>
           <select
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
             value={templateId}
             onChange={e => handleTemplateChange(e.target.value)}
           >
@@ -184,15 +203,15 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
         </div>
 
         {/* Section tabs */}
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5 p-1.5 bg-gray-100 rounded-xl">
           {template.sections.map(s => (
             <button
               key={s.id}
               onClick={() => setTab(s.id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 activeTab === s.id
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-gray-500 hover:bg-gray-100'
+                  ? 'bg-white text-indigo-600 font-semibold shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
               }`}
             >
               {s.name}
@@ -205,7 +224,7 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
           <SectionEditor
             section={activeSection}
             data={activeData}
-            onChange={(v: any) => setSections({ ...sections, [activeTab!]: v })}
+            onChange={handleSectionChange}
           />
         )}
 
@@ -213,13 +232,13 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
         <div className="flex gap-2 pt-4">
           <button
             onClick={() => onSave({ template: templateId, sections })}
-            className="rounded-xl bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition-colors"
+            className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-colors"
           >
             Save Changes
           </button>
           <button
             onClick={onCancel}
-            className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>

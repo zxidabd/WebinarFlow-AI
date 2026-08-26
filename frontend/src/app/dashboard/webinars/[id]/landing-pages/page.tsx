@@ -82,16 +82,15 @@ export default function LandingPagesPage() {
         delete contentPayload.slug;
       }
 
-      if (template_id) {
-        contentPayload.template_id = template_id;
-        try {
-          const { getTemplate } = await import('@/components/landing-page/templates/registry');
-          const tpl = getTemplate(template_id);
-          if (tpl) {
-            contentPayload.content = { template: template_id, sections: tpl.defaults };
-          }
-        } catch {}
-      }
+      const selectedTemplateId = template_id || 'modern-saas';
+      contentPayload.template_id = selectedTemplateId;
+      try {
+        const { getTemplate } = await import('@/components/landing-page/templates/registry');
+        const tpl = getTemplate(selectedTemplateId);
+        if (tpl) {
+          contentPayload.content = { template: selectedTemplateId, sections: tpl.defaults };
+        }
+      } catch {}
       if (editing) {
         return api.updateLandingPage(editing.id, contentPayload);
       } else {

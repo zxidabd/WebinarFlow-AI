@@ -91,7 +91,10 @@ export default function LandingPageDetailPage() {
         </div>
         <div className="flex-1 p-6" style={{ height: 'calc(100vh - 120px)' }}>
           <TemplateEditor
-            initialState={hasTemplate && typeof content?.template === 'string' ? { template: content.template, sections: (content.sections as Record<string, any>) || {} } : undefined}
+            initialState={{
+              template: (typeof content?.template === 'string' ? content.template : lp.template_id) || 'modern-saas',
+              sections: (content?.sections as Record<string, any>) || (typeof content === 'object' && !content?.template ? content : {}),
+            }}
             onSave={handleSaveEditor}
             onCancel={() => setEditing(false)}
             webinarId={params.id}
