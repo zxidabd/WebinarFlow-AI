@@ -44,6 +44,7 @@ export const corporate: TemplateDefinition = {
             { key: 'bio', label: 'Bio', type: 'textarea' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -65,6 +66,7 @@ export const corporate: TemplateDefinition = {
             { key: 'speaker', label: 'Speaker', type: 'text' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#f8fafc' },
       ],
     },
     {
@@ -84,6 +86,7 @@ export const corporate: TemplateDefinition = {
             { key: 'description', label: 'Description', type: 'textarea' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -103,6 +106,7 @@ export const corporate: TemplateDefinition = {
             { key: 'industry', label: 'Industry', type: 'text' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#f8fafc' },
       ],
     },
     {
@@ -121,6 +125,7 @@ export const corporate: TemplateDefinition = {
             { key: 'answer', label: 'Answer', type: 'textarea' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -132,6 +137,7 @@ export const corporate: TemplateDefinition = {
         { key: 'cta_text', label: 'Button Text', type: 'text', default: 'Register for Free' },
         { key: 'collect_company', label: 'Collect Company Name', type: 'select', options: [{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }], default: 'true' },
         { key: 'success_message', label: 'Success Message', type: 'textarea', default: 'Thank you. You will receive a confirmation email shortly.' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#f8fafc' },
       ],
     },
     {
@@ -142,6 +148,7 @@ export const corporate: TemplateDefinition = {
         { key: 'title', label: 'Section Title', type: 'text', default: 'Have Questions?' },
         { key: 'email', label: 'Contact Email', type: 'text', default: 'events@company.com', placeholder: 'events@yourcompany.com' },
         { key: 'phone', label: 'Contact Phone', type: 'text', default: '+1 (555) 123-4567' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#1e293b' },
       ],
     },
     {
@@ -151,18 +158,9 @@ export const corporate: TemplateDefinition = {
       fields: [
         { key: 'text', label: 'Footer Text', type: 'text', default: '© 2026 Your Company. All rights reserved.' },
         { key: 'links', label: 'Links (comma-separated)', type: 'text', default: 'Privacy Policy, Terms of Service, Contact' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#0f172a' },
       ],
     },
   ],
-  defaults: {
-    hero: { headline: '', subtitle: '', cta_text: 'Register Now', cta_link: '#register', background_color: '#1e293b', hero_image: '', logo_url: '' },
-    speakers: { title: 'Meet the Speakers', speakers: [] },
-    schedule: { title: 'Event Schedule', date: '', items: [] },
-    benefits: { title: 'What You\'ll Learn', benefits: [] },
-    case_studies: { title: 'Client Success Stories', studies: [] },
-    faq: { title: 'Frequently Asked Questions', items: [] },
-    register: { title: 'Reserve Your Seat', cta_text: 'Register for Free', collect_company: 'true', success_message: '' },
-    contact: { title: 'Have Questions?', email: '', phone: '' },
-    footer: { text: '© 2026 Your Company', links: '' },
-  },
+  defaults: {},
 };

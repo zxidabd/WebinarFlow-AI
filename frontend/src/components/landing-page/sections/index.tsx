@@ -21,11 +21,21 @@ function formatPriceHelper(cents?: number, cur?: string) {
   return `${symbols[cur || 'usd'] || (cur || 'usd').toUpperCase() + ' '}${amount}`;
 }
 
+export function getBgStyle(data: any, fallbackClass: string = 'bg-white') {
+  const bg = data.bg_color || data.background_color || data.background_gradient;
+  if (!bg) return { className: fallbackClass, style: {} };
+  const isHexOrRgb = bg.startsWith('#') || bg.startsWith('rgb');
+  if (isHexOrRgb) {
+    return { className: '', style: { backgroundColor: bg } };
+  }
+  if (bg.startsWith('from-') || bg.includes('gradient')) {
+    return { className: `bg-gradient-to-r ${bg}`, style: {} };
+  }
+  return { className: bg, style: {} };
+}
+
 export function HeroSection({ data, isPaid, priceCents, currency }: { data: any; isPaid?: boolean; priceCents?: number; currency?: string }) {
-  const rawBg = data.background_gradient || data.bg_color || data.background_color || 'from-indigo-600 via-purple-600 to-blue-500';
-  const isHexOrRgb = rawBg.startsWith('#') || rawBg.startsWith('rgb');
-  const bgClass = isHexOrRgb ? '' : (rawBg.startsWith('from-') ? `bg-gradient-to-r ${rawBg}` : rawBg);
-  const bgStyle = isHexOrRgb ? { backgroundColor: rawBg } : {};
+  const bg = getBgStyle(data, 'bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-500');
 
   const priceDisplay = isPaid && priceCents && priceCents > 0
     ? formatPriceHelper(priceCents, currency)
@@ -40,7 +50,7 @@ export function HeroSection({ data, isPaid, priceCents, currency }: { data: any;
   const subtitle = data.subtitle || data.description || '';
 
   return (
-    <section className={`relative overflow-hidden ${bgClass} px-6 py-20 md:py-32 text-white`} style={bgStyle}>
+    <section className={`relative overflow-hidden ${bg.className} px-6 py-20 md:py-32 text-white`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <div className="grid items-center gap-12 md:grid-cols-2">
           <div className="space-y-6">
@@ -75,13 +85,14 @@ export function HeroSection({ data, isPaid, priceCents, currency }: { data: any;
 
 export function SpeakersSection({ data }: { data: any }) {
   if (!data.speakers?.length) return null;
+  const bg = getBgStyle(data, 'bg-white');
   return (
-    <section className="px-6 py-16 bg-white">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl text-center">
         <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
         <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {data.speakers.map((s: any, i: number) => (
-            <div key={i} className="rounded-2xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+            <div key={i} className="rounded-2xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition-shadow bg-white">
               <img src={s.avatar || '/placeholder-avatar.svg'} alt={s.name} className="mx-auto h-20 w-20 rounded-full object-cover" />
               <h3 className="mt-4 text-lg font-semibold text-gray-900">{s.name}</h3>
               <p className="text-sm text-gray-500">{s.title}</p>
@@ -99,8 +110,9 @@ export function SpeakersSection({ data }: { data: any }) {
 
 export function StatsSection({ data }: { data: any }) {
   if (!data.stats?.length) return null;
+  const bg = getBgStyle(data, 'bg-gray-50');
   return (
-    <section className="bg-gray-50 px-6 py-12">
+    <section className={`px-6 py-12 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {data.stats.map((s: any, i: number) => (
@@ -119,8 +131,9 @@ export function StatsSection({ data }: { data: any }) {
 
 export function LogosSection({ data }: { data: any }) {
   if (!data.logos?.length && !data.title) return null;
+  const bg = getBgStyle(data, 'bg-white');
   return (
-    <section className="px-6 py-12 bg-white">
+    <section className={`px-6 py-12 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl text-center">
         {data.title && <p className="mb-6 text-sm font-medium uppercase tracking-wider text-gray-400">{data.title}</p>}
         <div className="flex flex-wrap items-center justify-center gap-8 opacity-50">
@@ -137,8 +150,9 @@ export function LogosSection({ data }: { data: any }) {
 
 export function BenefitsSection({ data }: { data: any }) {
   if (!data.benefits?.length) return null;
+  const bg = getBgStyle(data, 'bg-white');
   return (
-    <section className="px-6 py-16 bg-white">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
@@ -146,7 +160,7 @@ export function BenefitsSection({ data }: { data: any }) {
         </div>
         <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {data.benefits.map((b: any, i: number) => (
-            <div key={i} className="rounded-xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+            <div key={i} className="rounded-xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition-shadow bg-white">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 text-xl">{b.icon?.charAt(0) || '○'}</div>
               <h3 className="mt-4 font-semibold text-gray-900">{b.title}</h3>
               <p className="mt-2 text-sm text-gray-500">{b.description}</p>
@@ -162,8 +176,9 @@ export function BenefitsSection({ data }: { data: any }) {
 
 export function AgendaSection({ data }: { data: any }) {
   if (!data.items?.length) return null;
+  const bg = getBgStyle(data, 'bg-gray-50');
   return (
-    <section className="bg-gray-50 px-6 py-16">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-3xl">
         <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
         <div className="mt-8 space-y-4">
@@ -187,13 +202,14 @@ export function AgendaSection({ data }: { data: any }) {
 
 export function TestimonialsSection({ data }: { data: any }) {
   if (!data.testimonials?.length) return null;
+  const bg = getBgStyle(data, 'bg-white');
   return (
-    <section className="px-6 py-16 bg-white">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {data.testimonials.map((t: any, i: number) => (
-            <div key={i} className="rounded-xl border border-gray-100 p-6 shadow-sm">
+            <div key={i} className="rounded-xl border border-gray-100 p-6 shadow-sm bg-white">
               <div className="flex text-yellow-400 text-sm">{t.rating && '★'.repeat(Number(t.rating))}</div>
               <p className="mt-3 text-sm italic text-gray-600">{'“'}{t.quote}{'”'}</p>
               <div className="mt-4 flex items-center gap-3">
@@ -216,8 +232,9 @@ export function TestimonialsSection({ data }: { data: any }) {
 export function FAQSection({ data }: { data: any }) {
   const [open, setOpen] = useState<number | null>(null);
   if (!data.items?.length) return null;
+  const bg = getBgStyle(data, 'bg-gray-50');
   return (
-    <section className="bg-gray-50 px-6 py-16">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-3xl">
         <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
         <div className="mt-8 space-y-3">
@@ -248,9 +265,10 @@ export function CountdownSection({ data }: { data: any }) {
   }, [data.enabled, data.end_date]);
 
   if (data.enabled !== 'true') return null;
+  const bg = getBgStyle(data, 'bg-indigo-600');
 
   return (
-    <section className="px-6 py-12 bg-indigo-600 text-white text-center">
+    <section className={`px-6 py-12 text-white text-center ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-3xl">
         <p className="text-lg font-medium">{data.message}</p>
         <div className="mt-4 flex justify-center gap-4 text-center">
@@ -314,11 +332,9 @@ export function RegisterSection({
       if (onRegister) {
         const res: any = await onRegister(email, name || undefined);
         if (res?.checkout_url) {
-          // Redirect to Stripe checkout
           window.location.href = res.checkout_url;
           return;
         }
-        // If this is a paid webinar, only show success if verified
         if (isPaid && !res?.verified) {
           throw new Error('Payment was not completed. Registration is pending payment.');
         }
@@ -334,9 +350,11 @@ export function RegisterSection({
     }
   };
 
+  const bg = getBgStyle(data, 'bg-gradient-to-b from-gray-50 to-white');
+
   if (submitted) {
     return (
-      <section id="register" className="px-6 py-16 bg-white">
+      <section id="register" className={`px-6 py-16 ${bg.className}`} style={bg.style}>
         <div className="mx-auto max-w-md text-center">
           <div className="rounded-2xl bg-green-50 p-8 text-green-800 border border-green-200 shadow-sm">
             <p className="text-3xl">✓</p>
@@ -355,7 +373,7 @@ export function RegisterSection({
   const priceFormatted = isPaid && priceCents && priceCents > 0 ? formatPrice(priceCents, currency || 'usd') : null;
 
   return (
-    <section id="register" className="px-6 py-16 bg-gradient-to-b from-gray-50 to-white">
+    <section id="register" className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-md">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
           <div className="flex items-center justify-between">
@@ -427,8 +445,9 @@ export function RegisterSection({
 // ── Footer Section ─────────────────────────────────────────────────────────────
 
 export function FooterSection({ data }: { data: any }) {
+  const bg = getBgStyle(data, 'bg-white');
   return (
-    <footer className="border-t border-gray-100 bg-white px-6 py-8 text-center text-sm text-gray-400">
+    <footer className={`border-t border-gray-100 px-6 py-8 text-center text-sm text-gray-400 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <p>{data.text}</p>
         {data.links && (
@@ -447,8 +466,9 @@ export function FooterSection({ data }: { data: any }) {
 
 export function InstructorSection({ data }: { data: any }) {
   if (!data.name) return null;
+  const bg = getBgStyle(data, 'bg-white');
   return (
-    <section className="px-6 py-16 bg-white">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-4xl">
         <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
         <div className="mt-10 flex flex-col items-center gap-6 md:flex-row">
@@ -469,8 +489,9 @@ export function InstructorSection({ data }: { data: any }) {
 
 export function OutcomesSection({ data }: { data: any }) {
   if (!data.outcomes?.length) return null;
+  const bg = getBgStyle(data, 'bg-gray-50');
   return (
-    <section className="bg-gray-50 px-6 py-16">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-4xl">
         <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
         <ul className="mt-8 grid gap-4 md:grid-cols-2">
@@ -490,14 +511,15 @@ export function OutcomesSection({ data }: { data: any }) {
 
 export function CurriculumSection({ data }: { data: any }) {
   if (!data.modules?.length) return null;
+  const bg = getBgStyle(data, 'bg-white');
   return (
-    <section className="px-6 py-16 bg-white">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-4xl">
         <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
         {data.subtitle && <p className="mt-2 text-gray-500">{data.subtitle}</p>}
         <div className="mt-8 space-y-3">
           {data.modules.map((m: any, i: number) => (
-            <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow bg-white">
               <div>
                 <h4 className="font-semibold text-gray-900">{m.title}</h4>
                 <p className="text-sm text-gray-500">{m.lessons} · {m.duration}</p>
@@ -515,8 +537,9 @@ export function CurriculumSection({ data }: { data: any }) {
 
 export function CertificateSection({ data }: { data: any }) {
   if (!data.title) return null;
+  const bg = getBgStyle(data, 'bg-gray-50');
   return (
-    <section className="bg-gray-50 px-6 py-16 text-center">
+    <section className={`px-6 py-16 text-center ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-3xl">
         <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
         <p className="mt-2 text-gray-500">{data.description}</p>
@@ -530,8 +553,9 @@ export function CertificateSection({ data }: { data: any }) {
 
 export function ScheduleSection({ data }: { data: any }) {
   if (!data.items?.length) return null;
+  const bg = getBgStyle(data, 'bg-gray-50');
   return (
-    <section className="bg-gray-50 px-6 py-16">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-4xl">
         <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
         {data.date && <p className="mt-1 text-gray-500">{data.date}</p>}
@@ -555,13 +579,14 @@ export function ScheduleSection({ data }: { data: any }) {
 
 export function CaseStudySection({ data }: { data: any }) {
   if (!data.studies?.length) return null;
+  const bg = getBgStyle(data, 'bg-white');
   return (
-    <section className="px-6 py-16 bg-white">
+    <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {data.studies.map((s: any, i: number) => (
-            <div key={i} className="rounded-xl border border-gray-100 p-6 shadow-sm">
+            <div key={i} className="rounded-xl border border-gray-100 p-6 shadow-sm bg-white">
               <div className="text-2xl font-bold text-blue-600">{s.metric}</div>
               <p className="mt-2 text-sm italic text-gray-600">{'“'}{s.quote}{'”'}</p>
               <p className="mt-3 text-sm font-semibold text-gray-900">{s.company}</p>
@@ -581,9 +606,10 @@ export function NavbarSection({ data, isPaid, priceCents, currency }: { data: an
   const lg = data.logo_text || 'WebinarFlow';
   const priceDisplay = isPaid && priceCents && priceCents > 0 ? formatPriceHelper(priceCents, currency) : null;
   const ctaText = priceDisplay ? `Buy Ticket (${priceDisplay})` : (data.cta_text || 'Register');
+  const bg = getBgStyle(data, 'bg-white/95');
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
+    <nav className={`sticky top-0 z-50 border-b border-gray-100 backdrop-blur-sm ${bg.className}`} style={bg.style}>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <a href="#" className="text-xl font-bold text-gray-900">{lg}</a>
         <div className="hidden md:flex items-center gap-6">
@@ -606,11 +632,12 @@ export function NavbarSection({ data, isPaid, priceCents, currency }: { data: an
 
 export function HeroV2Section({ data, isPaid, priceCents, currency }: { data: any; isPaid?: boolean; priceCents?: number; currency?: string }) {
   const hasMedia = data.background_image || data.background_video;
-  const priceDisplay = isPaid && priceCents && priceCents > 0 ? formatPriceHelper(priceCents, currency) : null;
-  const ctaText = priceDisplay ? `Buy Ticket — ${priceDisplay}` : (data.cta_text || 'Register Now');
+  const priceDisplay = isPaid && priceCents && priceCents > 0 ? formatPriceHelper(priceCents, currency) : (data.price || null);
+  const ctaText = isPaid && priceCents && priceCents > 0 ? `Buy Ticket — ${priceDisplay}` : (data.cta_text || 'Register Now');
+  const bg = getBgStyle(data, 'bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-500');
 
   return (
-    <section id="hero" className="relative overflow-hidden px-6 py-24 md:py-36 text-white">
+    <section id="hero" className="relative overflow-hidden px-6 py-24 md:py-36 text-white" style={bg.style}>
       {data.background_image && !data.background_video && (
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${data.background_image})` }} />
       )}
@@ -619,8 +646,8 @@ export function HeroV2Section({ data, isPaid, priceCents, currency }: { data: an
           <source src={data.background_video} type="video/mp4" />
         </video>
       )}
-      {!hasMedia && <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-500" />}
-      <div className="absolute inset-0 bg-black/50" />
+      {!hasMedia && <div className={`absolute inset-0 ${bg.className}`} style={bg.style} />}
+      <div className="absolute inset-0 bg-black/40" />
       <div className="relative mx-auto max-w-4xl text-center">
         {priceDisplay ? (
           <span className="inline-block rounded-full bg-amber-400/20 border border-amber-300/40 px-4 py-1.5 text-sm font-semibold text-amber-200 mb-4">
@@ -648,13 +675,14 @@ export function HeroV2Section({ data, isPaid, priceCents, currency }: { data: an
 
 export function SpeakersV2Section({ data }: { data: any }) {
   if (!data.speakers?.length) return null;
+  const bg = getBgStyle(data, 'bg-white');
   return (
-    <section id="speaker" className="px-6 py-16 bg-white">
+    <section id="speaker" className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <h2 className="text-center text-3xl font-bold text-gray-900">{data.title || 'Meet the Speaker'}</h2>
         <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {data.speakers.map((s: any, i: number) => (
-            <div key={i} className="rounded-2xl border border-gray-100 p-8 text-center shadow-sm hover:shadow-md transition-shadow">
+            <div key={i} className="rounded-2xl border border-gray-100 p-8 text-center shadow-sm hover:shadow-md transition-shadow bg-white">
               <img src={s.avatar || '/placeholder-avatar.svg'} alt={s.name} className="mx-auto h-24 w-24 rounded-full object-cover ring-4 ring-gray-50" />
               <h3 className="mt-4 text-xl font-bold text-gray-900">{s.name}</h3>
               <p className="text-sm text-indigo-600">{s.title_role || s.title}</p>
@@ -778,8 +806,9 @@ export function StickyRegisterSection({
 
 export function ContactSection({ data }: { data: any }) {
   if (!data.email && !data.phone) return null;
+  const bg = getBgStyle(data, 'bg-gray-900');
   return (
-    <section className="bg-gray-900 px-6 py-12 text-white text-center">
+    <section className={`px-6 py-12 text-white text-center ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-md">
         <h3 className="text-xl font-bold">{data.title}</h3>
         <div className="mt-4 space-y-2 text-sm text-gray-300">

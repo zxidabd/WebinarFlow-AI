@@ -20,6 +20,7 @@ export const modernSaaS: TemplateDefinition = {
         { key: 'links', label: 'Nav Links (comma separated)', type: 'text', default: 'About, FAQ, Register' },
         { key: 'cta_text', label: 'CTA Button', type: 'text', default: 'Register' },
         { key: 'cta_link', label: 'CTA Link', type: 'text', default: '#register' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -31,7 +32,8 @@ export const modernSaaS: TemplateDefinition = {
         { key: 'subtitle', label: 'Subtitle', type: 'textarea', default: 'AI-powered webinar platform that generates landing pages, scripts, email sequences, and sales assets in minutes.', placeholder: 'Supporting text' },
         { key: 'cta_text', label: 'CTA Button Text', type: 'text', default: 'Get Early Access', placeholder: 'Button label' },
         { key: 'cta_link', label: 'CTA Link', type: 'text', default: '#register', placeholder: '/register or #register' },
-        { key: 'background_gradient', label: 'Background Gradient', type: 'text', default: 'from-indigo-600 via-purple-600 to-blue-500', placeholder: 'Tailwind gradient classes' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#4f46e5' },
+        { key: 'background_gradient', label: 'Background Gradient (optional)', type: 'text', default: 'from-indigo-600 via-purple-600 to-blue-500', placeholder: 'Tailwind gradient classes' },
         { key: 'hero_image', label: 'Hero Image URL', type: 'image', default: '/hero-dashboard.png', placeholder: 'URL to hero image' },
       ],
     },
@@ -53,6 +55,7 @@ export const modernSaaS: TemplateDefinition = {
             { key: 'bio', label: 'Bio', type: 'textarea' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -72,6 +75,7 @@ export const modernSaaS: TemplateDefinition = {
             { key: 'label', label: 'Label', type: 'text' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#f8fafc' },
       ],
     },
     {
@@ -90,6 +94,7 @@ export const modernSaaS: TemplateDefinition = {
             { key: 'alt', label: 'Alt Text', type: 'text' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -112,6 +117,7 @@ export const modernSaaS: TemplateDefinition = {
             { key: 'description', label: 'Description', type: 'textarea' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -133,6 +139,7 @@ export const modernSaaS: TemplateDefinition = {
             { key: 'description', label: 'Description', type: 'textarea' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#f8fafc' },
       ],
     },
     {
@@ -153,6 +160,7 @@ export const modernSaaS: TemplateDefinition = {
             { key: 'avatar', label: 'Avatar URL', type: 'image' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -171,6 +179,7 @@ export const modernSaaS: TemplateDefinition = {
             { key: 'answer', label: 'Answer', type: 'textarea' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#f8fafc' },
       ],
     },
     {
@@ -181,6 +190,7 @@ export const modernSaaS: TemplateDefinition = {
         { key: 'enabled', label: 'Show Countdown', type: 'select', options: [{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }], default: 'true' },
         { key: 'end_date', label: 'End Date (ISO)', type: 'text', default: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0] + 'T23:59:00Z', placeholder: '2026-08-01T23:59:00Z' },
         { key: 'message', label: 'Message', type: 'text', default: 'Seats fill fast — reserve yours now' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#4f46e5' },
       ],
     },
     {
@@ -192,6 +202,7 @@ export const modernSaaS: TemplateDefinition = {
         { key: 'cta_text', label: 'Button Text', type: 'text', default: 'Register Now — It\'s Free' },
         { key: 'collect_name', label: 'Collect Name', type: 'select', options: [{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }], default: 'true' },
         { key: 'success_message', label: 'Success Message', type: 'textarea', default: 'You\'re registered! Check your email for details.' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -201,32 +212,9 @@ export const modernSaaS: TemplateDefinition = {
       fields: [
         { key: 'text', label: 'Footer Text', type: 'text', default: '© 2026 WebinarFlow AI. All rights reserved.' },
         { key: 'links', label: 'Links (comma-separated)', type: 'text', default: 'Privacy Policy, Terms of Service' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#0f172a' },
       ],
     },
   ],
-  defaults: {
-    navbar: { logo_text: 'WebinarFlow', links: ['About', 'FAQ', 'Register'], cta_text: 'Register', cta_link: '#register' },
-    hero_v2: {
-      headline: 'Build Webinar Funnels That Convert',
-      subtitle: 'AI-powered webinar platform that generates landing pages, scripts, email sequences, and sales assets in minutes.',
-      badge: '🚀 Free Online Event',
-      date: 'Aug 15, 2026', time: '7:00 PM IST', registrations: '2,500+',
-      cta_text: 'Register Now',
-      cta_link: '#register',
-      background_image: '',
-      background_video: '',
-    },
-    speakers_v2: { title: 'Meet Your Hosts', speakers: [{ name: 'Sarah Chen', title_role: 'CEO, WebinarFlow', avatar: '', bio: '10+ years in digital marketing.', twitter: '#', linkedin: '#', website: '#' }] },
-    speakers: { title: 'Meet Your Hosts', speakers: [] },
-    stats: { stats: [] },
-    logos: { title: 'Trusted by Industry Leaders', logos: [] },
-    benefits: { title: 'Everything You Need', subtitle: '', benefits: [] },
-    agenda: { title: 'Webinar Agenda', items: [] },
-    testimonials: { title: 'What People Are Saying', testimonials: [] },
-    faq: { title: 'Frequently Asked Questions', items: [] },
-    countdown: { enabled: 'false', end_date: '', message: '' },
-    register: { title: 'Reserve Your Spot', cta_text: 'Register Now', collect_name: 'true', success_message: 'You\'re registered!' },
-    sticky_register: { title: 'Register Now', cta_text: 'Register', success_message: '✓ Registered!' },
-    footer: { text: '© 2026 WebinarFlow AI', links: '' },
-  },
+  defaults: {},
 };

@@ -36,6 +36,7 @@ export const education: TemplateDefinition = {
         { key: 'avatar', label: 'Avatar URL', type: 'image', default: '/avatars/instructor.jpg' },
         { key: 'bio', label: 'Bio', type: 'textarea', default: 'Sarah has helped 500+ students build profitable webinar funnels. With 15 years of experience in digital marketing, she breaks down complex strategies into actionable steps.' },
         { key: 'credentials', label: 'Credentials (comma-sep)', type: 'text', default: 'PhD Marketing, ex-Google, 500+ students' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -56,6 +57,7 @@ export const education: TemplateDefinition = {
             { key: 'text', label: 'Outcome', type: 'text' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#f8fafc' },
       ],
     },
     {
@@ -78,6 +80,7 @@ export const education: TemplateDefinition = {
             { key: 'duration', label: 'Duration', type: 'text' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -99,6 +102,7 @@ export const education: TemplateDefinition = {
             { key: 'rating', label: 'Rating (1-5)', type: 'text' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#f8fafc' },
       ],
     },
     {
@@ -109,6 +113,7 @@ export const education: TemplateDefinition = {
         { key: 'title', label: 'Section Title', type: 'text', default: 'Get Certified' },
         { key: 'description', label: 'Description', type: 'textarea', default: 'Earn a certificate of completion to showcase your new skills.' },
         { key: 'image', label: 'Certificate Image URL', type: 'image', default: '/certificate.png' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -119,6 +124,7 @@ export const education: TemplateDefinition = {
         { key: 'enabled', label: 'Show Countdown', type: 'select', options: [{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }], default: 'true' },
         { key: 'end_date', label: 'Enrollment Deadline (ISO)', type: 'text', default: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0] + 'T23:59:00Z' },
         { key: 'message', label: 'Message', type: 'text', default: 'Enrollment closes in' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#4f46e5' },
       ],
     },
     {
@@ -129,6 +135,7 @@ export const education: TemplateDefinition = {
         { key: 'title', label: 'Form Title', type: 'text', default: 'Start Learning Today' },
         { key: 'cta_text', label: 'Button Text', type: 'text', default: 'Enroll Free' },
         { key: 'success_message', label: 'Success Message', type: 'textarea', default: 'Welcome! Check your email for course access.' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#ffffff' },
       ],
     },
     {
@@ -148,6 +155,7 @@ export const education: TemplateDefinition = {
             { key: 'answer', label: 'Answer', type: 'textarea' },
           ],
         },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#f8fafc' },
       ],
     },
     {
@@ -157,19 +165,9 @@ export const education: TemplateDefinition = {
       fields: [
         { key: 'text', label: 'Footer Text', type: 'text', default: '© 2026 Course Platform. All rights reserved.' },
         { key: 'links', label: 'Links (comma-separated)', type: 'text', default: 'Privacy Policy, Terms, Support' },
+        { key: 'bg_color', label: 'Background Color', type: 'color', default: '#0f172a' },
       ],
     },
   ],
-  defaults: {
-    hero: { headline: '', subtitle: '', cta_text: 'Enroll Now — Free', cta_link: '#register', price: 'Free', course_image: '', bg_color: '#0f172a' },
-    instructor: { title: 'Meet Your Instructor', name: '', title_role: '', avatar: '', bio: '', credentials: '' },
-    outcomes: { title: 'What You\'ll Learn', outcomes: [] },
-    curriculum: { title: 'Curriculum', subtitle: '', modules: [] },
-    testimonials: { title: 'What Students Say', testimonials: [] },
-    certificate: { title: 'Get Certified', description: '', image: '' },
-    countdown: { enabled: 'false', end_date: '', message: '' },
-    register: { title: 'Start Learning Today', cta_text: 'Enroll Free', success_message: '' },
-    faq: { title: 'Frequently Asked Questions', items: [] },
-    footer: { text: '© 2026 Course Platform', links: '' },
-  },
+  defaults: {},
 };
