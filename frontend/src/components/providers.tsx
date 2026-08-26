@@ -24,6 +24,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
 
+  // Background keep-warm ping to Render backend
+  useState(() => {
+    if (typeof window !== 'undefined') {
+      const rawApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+      const healthUrl = rawApi.endsWith('/api/v1') ? `${rawApi}/health` : `${rawApi}/health`;
+      fetch(healthUrl, { method: 'GET', keepalive: true }).catch(() => {});
+    }
+  });
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>

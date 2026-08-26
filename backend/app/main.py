@@ -55,19 +55,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS configuration — support configured origins, local dev, and all Vercel deployments.
+# CORS configuration — support configured origins, custom domains, local dev, and all Vercel deployments.
 origins = [str(o).rstrip("/") for o in settings.cors_origins_list if str(o) != "*"]
-if not origins:
-    origins = [
-        "https://webinar-flow-ai-frontend.vercel.app",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
+default_origins = [
+    "https://webinarflow.in",
+    "https://www.webinarflow.in",
+    "https://webinar-flow-ai-frontend.vercel.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+for d in default_origins:
+    if d not in origins:
+        origins.append(d)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"https://.*\.vercel\.app|http://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origin_regex=r"https://.*(vercel\.app|webinarflow\.in)|http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

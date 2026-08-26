@@ -20,12 +20,43 @@ def _domain() -> str:
 
 
 async def send_email(to: str, subject: str, body: str) -> None:
-    if not settings.SMTP_HOST and not settings.SMTP_PASSWORD.startswith("re_"):
+    is_resend = settings.SMTP_PASSWORD.startswith("re_") or "resend" in str(settings.SMTP_HOST).lower()
+    is_brevo = settings.SMTP_PASSWORD.startswith("xkeysib-") or "brevo" in str(settings.SMTP_HOST).lower() or "sendinblue" in str(settings.SMTP_HOST).lower()
+
+    if not settings.SMTP_HOST and not is_resend and not is_brevo:
         log.info("[dev-email] to=%s subject=%s\n%s", to, subject, body)
         return
 
-    # 1. If Resend API key is used, send via Resend HTTPS REST API (Port 443 - never blocked by cloud firewalls)
-    if settings.SMTP_PASSWORD.startswith("re_") or "resend" in str(settings.SMTP_HOST).lower():
+    # 1. If Brevo API key is used (starts with xkeysib-), send via Brevo HTTPS REST API (Port 443)
+    if is_brevo:
+        import httpx
+        try:
+            from_name = settings.SMTP_FROM_NAME or "WebinarFlow AI"
+            from_email = settings.SMTP_FROM_EMAIL or settings.SMTP_USERNAME
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                res = await client.post(
+                    "https://api.brevo.com/v3/smtp/email",
+                    headers={
+                        "api-key": settings.SMTP_PASSWORD,
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                    },
+                    json={
+                        "sender": {"name": from_name, "email": from_email},
+                        "to": [{"email": to}],
+                        "subject": subject,
+                        "htmlContent": body,
+                    },
+                )
+                if res.status_code in (200, 201):
+                    log.info("[brevo-sent] to=%s status=%s", to, res.status_code)
+                    return
+                log.warning("[brevo-api-notice] to=%s status=%s response=%s", to, res.status_code, res.text)
+        except Exception as exc:
+            log.warning("[brevo-api-failed] to=%s error=%s", to, exc)
+
+    # 2. If Resend API key is used, send via Resend HTTPS REST API (Port 443 - never blocked by cloud firewalls)
+    if is_resend:
         import httpx
         try:
             from_addr = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>" if settings.SMTP_FROM_EMAIL else f"{settings.SMTP_FROM_NAME} <onboarding@resend.dev>"
