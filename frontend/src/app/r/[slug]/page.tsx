@@ -5,13 +5,20 @@ import { notFound } from 'next/navigation';
  */
 export const dynamic = 'force-dynamic';
 
+function getApiUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+  return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+}
+
 async function getLandingPage(slug: string) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-    const res = await fetch(`${apiUrl}/landing-pages/public/${slug}`, { cache: 'no-store' });
+    const apiUrl = getApiUrl();
+    const res = await fetch(`${apiUrl}/landing-pages/public/${encodeURIComponent(slug)}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export default async function PublicLandingPage({ params }: { params: Promise<{ slug: string }> }) {

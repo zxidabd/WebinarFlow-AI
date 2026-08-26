@@ -125,6 +125,72 @@ async def get_webinar(
     return webinar
 
 
+def _build_default_lp_content(webinar: Webinar) -> dict:
+    is_paid = bool(getattr(webinar, "is_paid", False))
+    price_cents = int(getattr(webinar, "price_cents", 0) or 0)
+    currency = str(getattr(webinar, "currency", "usd") or "usd")
+
+    currency_symbols = {"usd": "$", "inr": "₹", "eur": "€", "gbp": "£"}
+    sym = currency_symbols.get(currency.lower(), f"{currency.upper()} ")
+    price_str = f"{sym}{price_cents / 100:.2f}" if (is_paid and price_cents > 0) else "Free"
+
+    badge = f"🎟️ Paid Event — {price_str}" if is_paid else "🚀 Free Online Webinar"
+    cta_btn = f"Get Ticket — {price_str}" if is_paid else "Reserve Your Free Spot"
+
+    date_str = webinar.starts_at.strftime("%b %d, %Y") if webinar.starts_at else "Upcoming Event"
+    time_str = webinar.starts_at.strftime("%I:%M %p %Z") if webinar.starts_at else "Live Online"
+
+    return {
+        "template": "modern-saas",
+        "sections": {
+            "navbar": {
+                "logo_text": "WebinarFlow",
+                "links": "About, Agenda, Register",
+                "cta_text": "Register",
+                "cta_link": "#register",
+            },
+            "hero_v2": {
+                "headline": webinar.title,
+                "subtitle": webinar.description or "Join this exclusive live session and discover actionable frameworks, workflows, and insights with live Q&A.",
+                "badge": badge,
+                "date": date_str,
+                "time": time_str,
+                "registrations": "Limited Seats",
+                "cta_text": cta_btn,
+                "cta_link": "#register",
+            },
+            "benefits": {
+                "title": "What You Will Learn",
+                "subtitle": "Practical takeaways and key outcomes from this session",
+                "benefits": [
+                    {"icon": "Zap", "title": "Step-by-Step Mastery", "description": "Learn proven frameworks and strategies that get real results."},
+                    {"icon": "BarChart3", "title": "Live Demos & Breakdown", "description": "Real-world walkthroughs and tactical execution live on stream."},
+                    {"icon": "MessageSquare", "title": "Live Interactive Q&A", "description": "Ask your questions directly and get expert answers in real-time."},
+                    {"icon": "Award", "title": "Exclusive Resources", "description": "Gain access to downloadable templates and bonus materials."},
+                ],
+            },
+            "agenda": {
+                "title": "Event Agenda",
+                "items": [
+                    {"time": "00:00", "title": "Welcome & Overview", "description": "Introduction and key session goals."},
+                    {"time": "15:00", "title": "Core Strategy & Walkthrough", "description": "Deep dive into actionable systems and live demonstration."},
+                    {"time": "45:00", "title": "Live Q&A & Next Steps", "description": "Answering attendee questions and sharing resources."},
+                ],
+            },
+            "register": {
+                "title": f"Reserve Your Spot — {price_str}",
+                "cta_text": f"Complete Registration ({price_str})" if is_paid else "Register Free Now",
+                "collect_name": "true",
+                "success_message": "You're registered! Check your email for access details.",
+            },
+            "footer": {
+                "text": "© 2026 WebinarFlow AI. All rights reserved.",
+                "links": "Privacy Policy, Terms",
+            },
+        },
+    }
+
+
 async def create_webinar(
     session: AsyncSession,
     *,
@@ -156,6 +222,27 @@ async def create_webinar(
     session.add(webinar)
     await session.flush()
     await session.refresh(webinar)
+
+    # Automatically create a default published landing page for this webinar
+    from app.models.landing_page import LandingPage, LandingPageStatus, LandingPageType
+    lp = LandingPage(
+        webinar_id=webinar.id,
+        organization_id=organization_id,
+        created_by=created_by,
+        title=f"{webinar.title} — Registration",
+        slug=webinar.slug,
+        status=LandingPageStatus.published,
+        page_type=LandingPageType.opt_in,
+        template_id="modern-saas",
+        content=_build_default_lp_content(webinar),
+        meta_title=webinar.title,
+        meta_description=webinar.description,
+        is_published=True,
+        published_at=datetime.now(timezone.utc),
+    )
+    session.add(lp)
+    await session.flush()
+
     return webinar
 
 

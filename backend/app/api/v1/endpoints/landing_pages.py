@@ -208,12 +208,11 @@ async def get_landing_page_stats(
     return stats
 
 
-@router.get("/public/{slug}", response_model=LandingPageDetail)
-async def get_public_landing_page(
-    slug: str,
-    db: AsyncSession = Depends(get_db),
-):
-    """Public endpoint for published landing pages. No auth required."""
+async def _resolve_public_landing_page(
+    db: AsyncSession, slug: str
+) -> tuple[LandingPage, Webinar] | None:
+    """Find a published landing page and its parent webinar by either LandingPage.slug or Webinar.slug."""
+    # 1. Match LandingPage.slug directly
     lp = (
         await db.execute(
             select(LandingPage).where(
@@ -222,24 +221,52 @@ async def get_public_landing_page(
             )
         )
     ).scalar_one_or_none()
-    if lp is None:
+
+    if lp is not None:
+        webinar = (
+            await db.execute(select(Webinar).where(Webinar.id == lp.webinar_id))
+        ).scalar_one_or_none()
+        if webinar is not None:
+            return lp, webinar
+
+    # 2. Fallback: match by Webinar.slug
+    webinar = (
+        await db.execute(select(Webinar).where(Webinar.slug == slug))
+    ).scalar_one_or_none()
+    if webinar is not None:
+        lp = (
+            await db.execute(
+                select(LandingPage)
+                .where(
+                    LandingPage.webinar_id == webinar.id,
+                    LandingPage.is_published == True,
+                )
+                .order_by(LandingPage.created_at.desc())
+            )
+        ).scalars().first()
+        if lp is not None:
+            return lp, webinar
+
+    return None
+
+
+@router.get("/public/{slug}", response_model=LandingPageDetail)
+async def get_public_landing_page(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public endpoint for published landing pages. No auth required."""
+    resolved = await _resolve_public_landing_page(db, slug)
+    if resolved is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
+    lp, webinar = resolved
     detail = LandingPageDetail.model_validate(lp)
     # Attach webinar pricing info so the public page can show a payment button
-    webinar = (
-        await db.execute(select(Webinar).where(Webinar.id == lp.webinar_id))
-    ).scalar_one_or_none()
     result = detail.model_dump()
-    if webinar:
-        result["is_paid"] = webinar.is_paid
-        result["price_cents"] = webinar.price_cents
-        result["currency"] = webinar.currency
-        result["payment_gateway"] = getattr(webinar, 'payment_gateway', 'stripe')
-    else:
-        result["is_paid"] = False
-        result["price_cents"] = 0
-        result["currency"] = "usd"
-        result["payment_gateway"] = "stripe"
+    result["is_paid"] = getattr(webinar, "is_paid", False)
+    result["price_cents"] = getattr(webinar, "price_cents", 0)
+    result["currency"] = getattr(webinar, "currency", "usd") or "usd"
+    result["payment_gateway"] = getattr(webinar, "payment_gateway", "stripe") or "stripe"
     return result
 
 
@@ -262,22 +289,10 @@ async def register_via_public_page(
     if not final_email or not final_email.strip():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email is required for registration")
 
-    lp = (
-        await db.execute(
-            select(LandingPage).where(
-                LandingPage.slug == slug,
-                LandingPage.is_published == True,
-            )
-        )
-    ).scalar_one_or_none()
-    if lp is None:
+    resolved = await _resolve_public_landing_page(db, slug)
+    if resolved is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
-
-    webinar = (
-        await db.execute(select(Webinar).where(Webinar.id == lp.webinar_id))
-    ).scalar_one_or_none()
-    if webinar is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Webinar not found")
+    lp, webinar = resolved
 
     from app.services import registration_service
 
@@ -355,16 +370,10 @@ async def verify_razorpay_payment(
     db: AsyncSession = Depends(get_db),
 ):
     """Public endpoint to verify Razorpay payment after checkout."""
-    lp = (
-        await db.execute(
-            select(LandingPage).where(
-                LandingPage.slug == slug,
-                LandingPage.is_published == True,
-            )
-        )
-    ).scalar_one_or_none()
-    if lp is None:
+    resolved = await _resolve_public_landing_page(db, slug)
+    if resolved is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
+    lp, webinar = resolved
 
     try:
         registrant_uuid = uuid.UUID(payload.registrant_id)

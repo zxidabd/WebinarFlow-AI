@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Plus, Pencil, Copy, Trash2, Eye, Search, Loader2, AlertCircle, X, DollarSign } from 'lucide-react';
+import { Plus, Pencil, Copy, Trash2, Eye, Search, Loader2, AlertCircle, X, DollarSign, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -232,8 +232,9 @@ export default function WebinarsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => router.push(`/dashboard/webinars/${w.id}`)} title="View"><Eye className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs px-2 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => router.push(`/dashboard/webinars/${w.id}/landing-pages`)}>LP</Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => window.open(`/r/${w.slug}`, '_blank')} title="View Live Landing Page"><Globe className="h-4 w-4 text-indigo-400" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => router.push(`/dashboard/webinars/${w.id}`)} title="View Details"><Eye className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs px-2 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => router.push(`/dashboard/webinars/${w.id}/landing-pages`)} title="Manage Landing Pages">LP</Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => openEdit(w)} title="Edit"><Pencil className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-300 hover:text-white hover:bg-neutral-800" onClick={() => duplicateMut.mutate(w.id)} title="Duplicate"><Copy className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40" onClick={() => { if (confirm('Delete this webinar?')) deleteMut.mutate(w.id); }} title="Delete"><Trash2 className="h-4 w-4" /></Button>

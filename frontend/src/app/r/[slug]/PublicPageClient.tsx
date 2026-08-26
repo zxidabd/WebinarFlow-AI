@@ -13,15 +13,20 @@ interface Props {
   paymentGateway?: string;
 }
 
+function getApiUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+  return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+}
+
 export default function PublicPageClient({ content, webinarId, slug, isPaid, priceCents, currency, paymentGateway }: Props) {
   const handleRegister = async (email: string, fullName?: string): Promise<any> => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+      const apiUrl = getApiUrl();
       const params = new URLSearchParams({ email });
       if (fullName) params.set('full_name', fullName);
 
       // Endpoint: /landing-pages/public/{slug}/register
-      const res = await fetch(`${apiUrl}/landing-pages/public/${slug}/register?${params.toString()}`, {
+      const res = await fetch(`${apiUrl}/landing-pages/public/${encodeURIComponent(slug)}/register?${params.toString()}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,7 +72,7 @@ export default function PublicPageClient({ content, webinarId, slug, isPaid, pri
             handler: async function (response: any) {
               try {
                 // Verify signature on backend
-                const verifyRes = await fetch(`${apiUrl}/landing-pages/public/${slug}/verify-razorpay`, {
+                const verifyRes = await fetch(`${apiUrl}/landing-pages/public/${encodeURIComponent(slug)}/verify-razorpay`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
