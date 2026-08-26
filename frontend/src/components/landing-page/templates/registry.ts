@@ -52,3 +52,23 @@ export function getTemplate(id: string): TemplateDefinition | null {
 export function getAllTemplates(): TemplateDefinition[] {
   return Object.values(TEMPLATES);
 }
+
+export function extractTemplateDefaults(template: TemplateDefinition): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const section of template.sections) {
+    const secDefaults: Record<string, any> = {};
+    for (const field of section.fields) {
+      if (field.default !== undefined) {
+        secDefaults[field.key] = field.default;
+      }
+    }
+    const manualDefaults = template.defaults?.[section.id] || {};
+    for (const [k, v] of Object.entries(manualDefaults)) {
+      if (v !== '' && (Array.isArray(v) ? v.length > 0 : true)) {
+        secDefaults[k] = v;
+      }
+    }
+    result[section.id] = secDefaults;
+  }
+  return result;
+}

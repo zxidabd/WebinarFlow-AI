@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getTemplate, getAllTemplates } from '../templates/registry';
+import { getTemplate, getAllTemplates, extractTemplateDefaults } from '../templates/registry';
 import type { TemplateDefinition, TemplateSection } from '../templates/registry';
 import LandingPageRenderer from '../LandingPageRenderer';
 
@@ -95,7 +95,7 @@ function FieldEditor({ field, value, onChange }: { field: any; value: any; onCha
             </div>
           ))}
           <button
-            onClick={() => onChange([...val, {}])}
+            onClick={() => onChange([...(Array.isArray(val) ? val : []), {}])}
             className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
           >
             + Add Item
@@ -145,9 +145,10 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
   const [sections, setSections] = useState<Record<string, any>>(() => {
     const initial = initialState?.sections || {};
     const tpl = getTemplate(initialState?.template || 'modern-saas') || getTemplate('modern-saas')!;
+    const defaults = extractTemplateDefaults(tpl);
     const merged: Record<string, any> = {};
     for (const s of tpl.sections) {
-      merged[s.id] = { ...(tpl.defaults?.[s.id] || {}), ...(initial[s.id] || {}) };
+      merged[s.id] = { ...(defaults[s.id] || {}), ...(initial[s.id] || {}) };
     }
     return merged;
   });
@@ -158,7 +159,8 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
     const tpl = getTemplate(newId);
     if (!tpl) return;
     setTemplateId(newId);
-    setSections(tpl.defaults || {});
+    const defaults = extractTemplateDefaults(tpl);
+    setSections(defaults);
     setTab(tpl.sections[0]?.id || null);
   };
 
@@ -170,10 +172,11 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
     );
   }
 
+  const allDefaults = extractTemplateDefaults(template);
   const activeTab = tab || template.sections[0]?.id;
   const activeSection = template.sections.find(s => s.id === activeTab);
   const activeData = activeTab
-    ? { ...(template.defaults?.[activeTab] || {}), ...(sections[activeTab] || {}) }
+    ? { ...(allDefaults[activeTab] || {}), ...(sections[activeTab] || {}) }
     : {};
 
   const handleSectionChange = (newSectionData: any) => {

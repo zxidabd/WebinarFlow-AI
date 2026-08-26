@@ -1,6 +1,6 @@
 'use client';
 
-import { getTemplate } from './templates/registry';
+import { getTemplate, extractTemplateDefaults } from './templates/registry';
 import {
   HeroSection, SpeakersSection, StatsSection, LogosSection,
   BenefitsSection, AgendaSection, TestimonialsSection, FAQSection,
@@ -41,10 +41,18 @@ export default function LandingPageRenderer({ content, webinarId, onRegister, pr
     );
   }
 
+  const allDefaults = extractTemplateDefaults(template);
+
   const getMergedSectionData = (sectionId: string) => {
-    const defaults = template.defaults?.[sectionId] || {};
+    const defaults = allDefaults[sectionId] || {};
     const userOverrides = sections[sectionId] || {};
-    return { ...defaults, ...userOverrides };
+    const cleanedOverrides: Record<string, any> = {};
+    for (const [k, v] of Object.entries(userOverrides)) {
+      if (v !== undefined && v !== null && v !== '') {
+        cleanedOverrides[k] = v;
+      }
+    }
+    return { ...defaults, ...cleanedOverrides };
   };
 
   const sectionComponents: Record<string, React.FC<{ data: any }>> = {
