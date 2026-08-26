@@ -1,6 +1,7 @@
 'use client';
 
 import { getTemplate, extractTemplateDefaults } from './templates/registry';
+import WebinarFlowBadge from './WebinarFlowBadge';
 import {
   HeroSection, SpeakersSection, StatsSection, LogosSection,
   BenefitsSection, AgendaSection, TestimonialsSection, FAQSection,
@@ -92,6 +93,7 @@ export default function LandingPageRenderer({ content, webinarId, onRegister, pr
         const data = getMergedSectionData(section.id);
         return <Component key={section.id} data={data} />;
       })}
+      <WebinarFlowBadge />
     </div>
   );
 }
