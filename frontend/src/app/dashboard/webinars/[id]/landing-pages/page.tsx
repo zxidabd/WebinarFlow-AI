@@ -131,14 +131,23 @@ export default function LandingPagesPage() {
           <CardContent>
             <form onSubmit={form.handleSubmit((v: any) => saveMut.mutate(v))} className="space-y-4 max-w-xl">
               <div>
-                <Label htmlFor="title">Page Title *</Label>
-                <Input id="title" placeholder="e.g. Masterclass Opt-In Page" {...form.register('title')} />
-                {form.formState.errors.title && <p className="text-xs text-rose-500 mt-1">{form.formState.errors.title.message as string}</p>}
+                <label htmlFor="title" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-1.5">Page Title *</label>
+                <input
+                  id="title"
+                  placeholder="e.g. Masterclass Opt-In Page"
+                  className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-all"
+                  {...form.register('title')}
+                />
+                {form.formState.errors.title && <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{form.formState.errors.title.message as string}</p>}
               </div>
 
               <div>
-                <Label htmlFor="page_type">Page Type</Label>
-                <select id="page_type" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" {...form.register('page_type')}>
+                <label htmlFor="page_type" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-1.5">Page Type</label>
+                <select
+                  id="page_type"
+                  className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  {...form.register('page_type')}
+                >
                   <option value="opt_in">Opt-in Page</option>
                   <option value="thank_you">Thank You Page</option>
                   <option value="sales">Sales Page</option>
@@ -148,8 +157,12 @@ export default function LandingPagesPage() {
               </div>
 
               <div>
-                <Label htmlFor="template_id">Choose Design Template</Label>
-                <select id="template_id" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" {...form.register('template_id')}>
+                <label htmlFor="template_id" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-1.5">Choose Design Template</label>
+                <select
+                  id="template_id"
+                  className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  {...form.register('template_id')}
+                >
                   <option value="">Blank / Custom</option>
                   <option value="modern-saas">Modern SaaS (Stripe/Linear style)</option>
                   <option value="corporate">Corporate & Enterprise (Executive style)</option>
@@ -158,8 +171,13 @@ export default function LandingPagesPage() {
               </div>
 
               <div>
-                <Label htmlFor="slug">Custom URL Slug (optional)</Label>
-                <Input id="slug" placeholder="e.g. masterclass-optin (leave empty for auto-generated slug)" {...form.register('slug')} />
+                <label htmlFor="slug" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-1.5">Custom URL Slug (optional)</label>
+                <input
+                  id="slug"
+                  placeholder="e.g. masterclass-optin (leave empty for auto-generated slug)"
+                  className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-all"
+                  {...form.register('slug')}
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

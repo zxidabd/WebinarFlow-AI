@@ -46,21 +46,20 @@ const STATUS_STYLES: Record<WebinarStatus, string> = {
   cancelled: 'bg-rose-950/80 text-rose-300 border-rose-600/40',
 };
 
-// ── Format date for display ─────────────────────────────────────────────
-const fmtDate = (s: string | null) => (s ? new Date(s).toLocaleString() : '—');
-
 // ── Modal component ─────────────────────────────────────────────────────
 function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <Card className="w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>{title}</CardTitle>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white shadow-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-neutral-800">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }
@@ -73,81 +72,145 @@ export default function WebinarsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<WebinarStatus | ''>('');
   const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
-  const [editing, setEditing] = useState<Webinar | null>(null);
+  const [editingWebinar, setEditingWebinar] = useState<Webinar | null>(null);
 
-  // React Query: list webinars
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['webinars', search, statusFilter],
-    queryFn: () => api.listWebinars({ search: search || undefined, status: statusFilter || undefined, sort: 'created_at', order: 'desc' }),
-  });
-
-  // Mutations
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['webinars'] });
-  const deleteMut = useMutation({
-    mutationFn: api.deleteWebinar,
-    onSuccess: () => { toast.success('Webinar deleted'); invalidate(); },
-    onError: (e: any) => { toast.error(apiErrorMessage(e)); },
-  });
-  const duplicateMut = useMutation({ mutationFn: api.duplicateWebinar, onSuccess: (r) => { toast.success('Duplicate created'); router.push(`/dashboard/webinars/${r.duplicate_id}`); invalidate(); } });
-
-  // Form via react-hook-form
+  // Form setup
   const form = useForm<WebinarFormValues>({
     resolver: zodResolver(webinarFormSchema) as any,
-    defaultValues: { title: '', description: null, capacity: null, is_published: false, status: 'draft', is_paid: false, price_amount: 0, currency: 'usd', payment_gateway: 'stripe' },
+    defaultValues: {
+      title: '',
+      description: '',
+      capacity: null,
+      is_published: false,
+      status: 'draft',
+      is_paid: false,
+      price_amount: 0,
+      currency: 'usd',
+      payment_gateway: 'stripe',
+    },
   });
 
-  const openCreate = () => {
-    setEditing(null);
-    form.reset({ title: '', description: null, capacity: null, is_published: false, status: 'draft', is_paid: false, price_amount: 0, currency: 'usd', payment_gateway: 'stripe' });
-    setModalMode('create');
-  };
-  const openEdit = (w: Webinar) => {
-    setEditing(w);
-    form.reset({
-      title: w.title,
-      description: w.description,
-      capacity: w.capacity,
-      is_published: w.is_published,
-      status: w.status,
-      is_paid: w.is_paid ?? false,
-      price_amount: w.price_cents ? w.price_cents / 100 : 0,
-      currency: w.currency ?? 'usd',
-      payment_gateway: w.payment_gateway || 'stripe',
-    });
-    setModalMode('edit');
-  };
-  const closeModal = () => setModalMode(null);
-
-  const onSubmit = useCallback(async (vals: WebinarFormValues) => {
-    try {
-      const priceCents = vals.is_paid ? Math.round(Number(vals.price_amount) * 100) : 0;
-      const payload = {
-        title: vals.title,
-        description: vals.description || null,
-        capacity: vals.capacity ? Number(vals.capacity) : null,
-        is_published: vals.is_published,
-        status: vals.status,
-        is_paid: vals.is_paid,
-        price_cents: priceCents,
-        currency: vals.currency || 'usd',
-        payment_gateway: vals.is_paid ? (vals.payment_gateway || 'stripe') : 'stripe',
-      };
-      if (modalMode === 'create') {
-        await api.createWebinar(payload);
-        toast.success('Webinar created');
-      } else if (editing) {
-        await api.updateWebinar(editing.id, payload);
-        toast.success('Webinar updated');
-      }
-      invalidate();
-      closeModal();
-    } catch (e: any) {
-      toast.error(apiErrorMessage(e));
-    }
-  }, [modalMode, editing, invalidate]);
+  // Fetch webinars list
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['webinars', search, statusFilter],
+    queryFn: () => api.listWebinars({ search: search || undefined, status: statusFilter || undefined }),
+  });
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
+
+  // Mutations
+  const invalidate = useCallback(() => queryClient.invalidateQueries({ queryKey: ['webinars'] }), [queryClient]);
+
+  const createMut = useMutation({
+    mutationFn: (values: WebinarFormValues) => {
+      const priceCents = values.is_paid && values.price_amount ? Math.round(Number(values.price_amount) * 100) : 0;
+      return api.createWebinar({
+        title: values.title,
+        description: values.description || null,
+        capacity: values.capacity ?? null,
+        is_published: values.is_published,
+        status: values.status,
+        is_paid: values.is_paid,
+        price_cents: priceCents,
+        currency: values.currency || 'usd',
+        payment_gateway: values.payment_gateway || 'stripe',
+      });
+    },
+    onSuccess: (newWebinar) => {
+      toast.success('Webinar created!');
+      invalidate();
+      closeModal();
+      if (newWebinar?.id) {
+        router.push(`/dashboard/webinars/${newWebinar.id}/landing-pages`);
+      }
+    },
+    onError: (err) => toast.error(apiErrorMessage(err)),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: (values: WebinarFormValues) => {
+      if (!editingWebinar) throw new Error('No webinar to edit');
+      const priceCents = values.is_paid && values.price_amount ? Math.round(Number(values.price_amount) * 100) : 0;
+      return api.updateWebinar(editingWebinar.id, {
+        title: values.title,
+        description: values.description || null,
+        capacity: values.capacity ?? null,
+        is_published: values.is_published,
+        status: values.status,
+        is_paid: values.is_paid,
+        price_cents: priceCents,
+        currency: values.currency || 'usd',
+        payment_gateway: values.payment_gateway || 'stripe',
+      });
+    },
+    onSuccess: () => {
+      toast.success('Webinar updated!');
+      invalidate();
+      closeModal();
+    },
+    onError: (err) => toast.error(apiErrorMessage(err)),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => api.deleteWebinar(id),
+    onSuccess: () => {
+      toast.success('Webinar deleted');
+      invalidate();
+    },
+    onError: (err) => toast.error(apiErrorMessage(err)),
+  });
+
+  const duplicateMut = useMutation({
+    mutationFn: (id: string) => api.duplicateWebinar(id),
+    onSuccess: () => {
+      toast.success('Webinar duplicated!');
+      invalidate();
+    },
+    onError: (err) => toast.error(apiErrorMessage(err)),
+  });
+
+  const openCreate = () => {
+    form.reset({
+      title: '',
+      description: '',
+      capacity: null,
+      is_published: false,
+      status: 'draft',
+      is_paid: false,
+      price_amount: 0,
+      currency: 'usd',
+      payment_gateway: 'stripe',
+    });
+    setEditingWebinar(null);
+    setModalMode('create');
+  };
+
+  const openEdit = (w: Webinar) => {
+    form.reset({
+      title: w.title,
+      description: w.description || '',
+      capacity: w.capacity,
+      is_published: w.is_published,
+      status: w.status,
+      is_paid: w.is_paid || false,
+      price_amount: w.price_cents ? (w.price_cents / 100) : 0,
+      currency: w.currency || 'usd',
+      payment_gateway: w.payment_gateway || 'stripe',
+    });
+    setEditingWebinar(w);
+    setModalMode('edit');
+  };
+
+  const closeModal = () => {
+    setModalMode(null);
+    setEditingWebinar(null);
+  };
+
+  const onSubmit = (values: WebinarFormValues) => {
+    if (modalMode === 'create') createMut.mutate(values);
+    else if (modalMode === 'edit') updateMut.mutate(values);
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -163,11 +226,16 @@ export default function WebinarsPage() {
       {/* Search + status filter */}
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-10 shadow-sm" placeholder="Search webinars…" value={search} onChange={e => setSearch(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 pl-10 pr-3.5 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 shadow-sm transition-all"
+            placeholder="Search webinars…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
         <select
-          className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
+          className="rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 shadow-sm"
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value as WebinarStatus | '')}
         >
@@ -250,22 +318,33 @@ export default function WebinarsPage() {
       <Modal open={modalMode !== null} onClose={closeModal} title={modalMode === 'create' ? 'Create Webinar' : 'Edit Webinar'}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-foreground font-medium">Title</Label>
-            <Input id="title" placeholder="e.g. AI Webinar Series" {...form.register('title')} />
-            {form.formState.errors.title && <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>}
+            <label htmlFor="title" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Title *</label>
+            <input
+              id="title"
+              placeholder="e.g. AI Webinar Series"
+              className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-all"
+              {...form.register('title')}
+            />
+            {form.formState.errors.title && <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{form.formState.errors.title.message}</p>}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="desc" className="text-foreground font-medium">Description (optional)</Label>
-            <Textarea
-              id="desc" rows={3}
-              placeholder="Brief description…"
+            <label htmlFor="desc" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Description (optional)</label>
+            <textarea
+              id="desc"
+              rows={3}
+              placeholder="Brief description of your masterclass or event…"
+              className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-all"
               {...form.register('description')}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="status" className="text-foreground font-medium">Status</Label>
-              <select id="status" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" {...form.register('status')}>
+              <label htmlFor="status" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Status</label>
+              <select
+                id="status"
+                className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
+                {...form.register('status')}
+              >
                 <option value="draft">Draft</option>
                 <option value="scheduled">Scheduled</option>
                 <option value="live">Live</option>
@@ -274,18 +353,24 @@ export default function WebinarsPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="capacity" className="text-foreground font-medium">Capacity (optional)</Label>
-              <Input id="capacity" type="number" placeholder="Unlimited" {...form.register('capacity')} />
+              <label htmlFor="capacity" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Capacity (optional)</label>
+              <input
+                id="capacity"
+                type="number"
+                placeholder="Unlimited"
+                className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-all"
+                {...form.register('capacity')}
+              />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
-            <input type="checkbox" {...form.register('is_published')} className="rounded border-input bg-background text-primary focus:ring-0" />
+          <label className="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200 cursor-pointer select-none font-medium">
+            <input type="checkbox" {...form.register('is_published')} className="rounded border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-indigo-600 focus:ring-0 h-4 w-4" />
             Publish immediately
           </label>
 
           {/* ── Free / Paid Webinar Selection ─────────────────────────── */}
-          <div className="rounded-lg border border-border p-4 space-y-3">
-            <Label className="text-sm font-medium text-foreground">Pricing Option</Label>
+          <div className="rounded-xl border border-gray-200 dark:border-neutral-700 p-4 space-y-3 bg-gray-50/70 dark:bg-neutral-800/40">
+            <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Pricing Option</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -295,8 +380,8 @@ export default function WebinarsPage() {
                 }}
                 className={`flex items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all ${
                   !form.watch('is_paid')
-                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold shadow-sm'
-                    : 'border-border bg-background text-muted-foreground hover:bg-accent'
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm'
+                    : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-300 hover:bg-gray-50'
                 }`}
               >
                 <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
@@ -310,8 +395,8 @@ export default function WebinarsPage() {
                 }}
                 className={`flex items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all ${
                   form.watch('is_paid')
-                    ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold shadow-sm'
-                    : 'border-border bg-background text-muted-foreground hover:bg-accent'
+                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold shadow-sm'
+                    : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-300 hover:bg-gray-50'
                 }`}
               >
                 <DollarSign className="h-4 w-4 text-amber-500" />
@@ -324,25 +409,26 @@ export default function WebinarsPage() {
               <div className="space-y-3 pt-2">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="price_amount" className="text-foreground font-medium">Ticket Price</Label>
-                    <Input
+                    <label htmlFor="price_amount" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Ticket Price</label>
+                    <input
                       id="price_amount"
                       type="number"
                       step="0.01"
                       min="0.01"
                       placeholder="e.g. 19.99 or 999"
+                      className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-all"
                       {...form.register('price_amount')}
                     />
-                    <p className="text-[11px] text-muted-foreground">Enter ticket amount (e.g. 19.99)</p>
+                    <p className="text-[11px] text-gray-500 dark:text-neutral-400">Enter ticket amount (e.g. 19.99)</p>
                     {form.formState.errors.price_amount && (
-                      <p className="text-xs text-destructive">{form.formState.errors.price_amount.message}</p>
+                      <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{form.formState.errors.price_amount.message}</p>
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="currency" className="text-foreground font-medium">Currency</Label>
+                    <label htmlFor="currency" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Currency</label>
                     <select
                       id="currency"
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
                       {...form.register('currency')}
                     >
                       <option value="usd">USD ($)</option>
@@ -354,15 +440,15 @@ export default function WebinarsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-foreground">Payment Gateway</Label>
+                  <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Payment Gateway</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => form.setValue('payment_gateway', 'stripe')}
                       className={`flex items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-all ${
                         form.watch('payment_gateway') !== 'razorpay'
-                          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm'
-                          : 'border-border bg-background text-muted-foreground hover:bg-accent'
+                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                          : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-300 hover:bg-gray-50'
                       }`}
                     >
                       <span>💳</span> Stripe Checkout
@@ -372,14 +458,14 @@ export default function WebinarsPage() {
                       onClick={() => form.setValue('payment_gateway', 'razorpay')}
                       className={`flex items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-all ${
                         form.watch('payment_gateway') === 'razorpay'
-                          ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold shadow-sm'
-                          : 'border-border bg-background text-muted-foreground hover:bg-accent'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold shadow-sm'
+                          : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-300 hover:bg-gray-50'
                       }`}
                     >
                       <span>⚡</span> Razorpay
                     </button>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">Select gateway to process attendee ticket payments</p>
+                  <p className="text-[11px] text-gray-500 dark:text-neutral-400">Select gateway to process attendee ticket payments</p>
                 </div>
               </div>
             )}
