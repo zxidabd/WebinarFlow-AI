@@ -425,3 +425,46 @@ async def google_signin(
         session, user, membership.organization, user_agent=user_agent, ip=ip
     )
     return user, membership, access, raw_refresh
+
+
+async def linkedin_signin(
+    session: AsyncSession, *, code: str, user_agent: str | None, ip: str | None
+) -> tuple[User, Membership, str, str]:
+    """LinkedIn OAuth sign-in flow (OpenID Connect)."""
+    info = await oauth.exchange_linkedin_code(code)
+    email = info.get("email")
+    if not email:
+        raise CredentialsError("LinkedIn did not return an email address")
+
+    # In OpenID Connect, email_verified is returned or verified by default
+    is_verified = bool(info.get("email_verified", True))
+
+    res = await session.execute(select(User).where(User.email == email))
+    user = res.scalar_one_or_none()
+    if user is None:
+        user = User(
+            email=email,
+            hashed_password=None,
+            full_name=info.get("name") or f"{info.get('given_name', '')} {info.get('family_name', '')}".strip(),
+            email_verified=is_verified,
+            is_verified=is_verified,
+            is_active=True,
+        )
+        session.add(user)
+        await session.flush()
+        membership = await _create_personal_org(session, user)
+    else:
+        if is_verified:
+            user.email_verified = True
+            user.is_verified = True
+        membership = await _default_membership(session, user.id)
+
+    if not user.email_verified:
+        token = await _create_and_record_verification_token(session, user.id)
+        await email_service.send_verification_email(user, token)
+        raise UnverifiedEmailError("Please verify your email before logging in.")
+
+    access, raw_refresh = await _issue_tokens(
+        session, user, membership.organization, user_agent=user_agent, ip=ip
+    )
+    return user, membership, access, raw_refresh

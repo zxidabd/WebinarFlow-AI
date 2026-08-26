@@ -72,3 +72,53 @@ async def exchange_google_code(code: str) -> dict:
         if ui.status_code != 200:
             raise OAuthExchangeError(f"userinfo endpoint returned {ui.status_code}")
         return ui.json()
+
+
+LINKEDIN_AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization"
+LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
+LINKEDIN_USERINFO_URL = "https://api.linkedin.com/v2/userinfo"
+LINKEDIN_SCOPES = ["openid", "profile", "email"]
+
+
+def get_linkedin_auth_url(state: str) -> str:
+    if not settings.LINKEDIN_CLIENT_ID:
+        raise OAuthConfigError("LinkedIn OAuth is not configured (LINKEDIN_CLIENT_ID missing)")
+    params = {
+        "client_id": settings.LINKEDIN_CLIENT_ID,
+        "redirect_uri": settings.LINKEDIN_REDIRECT_URI,
+        "response_type": "code",
+        "scope": " ".join(LINKEDIN_SCOPES),
+        "state": state,
+    }
+    return f"{LINKEDIN_AUTH_URL}?{urlencode(params)}"
+
+
+async def exchange_linkedin_code(code: str) -> dict:
+    """Exchange an auth code for LinkedIn userinfo ({email, name, picture, ...})."""
+    if not settings.LINKEDIN_CLIENT_ID or not settings.LINKEDIN_CLIENT_SECRET:
+        raise OAuthConfigError("LinkedIn OAuth is not configured")
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        tkn = await client.post(
+            LINKEDIN_TOKEN_URL,
+            data={
+                "code": code,
+                "client_id": settings.LINKEDIN_CLIENT_ID,
+                "client_secret": settings.LINKEDIN_CLIENT_SECRET,
+                "redirect_uri": settings.LINKEDIN_REDIRECT_URI,
+                "grant_type": "authorization_code",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        if tkn.status_code != 200:
+            raise OAuthExchangeError(f"LinkedIn token endpoint returned {tkn.status_code}: {tkn.text}")
+        access_token = tkn.json().get("access_token")
+        if not access_token:
+            raise OAuthExchangeError("no access_token in LinkedIn response")
+
+        ui = await client.get(
+            LINKEDIN_USERINFO_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        if ui.status_code != 200:
+            raise OAuthExchangeError(f"LinkedIn userinfo endpoint returned {ui.status_code}: {ui.text}")
+        return ui.json()

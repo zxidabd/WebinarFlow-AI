@@ -231,3 +231,54 @@ async def google_callback(
 
     _set_refresh_cookie(response, raw_refresh)
     return _auth_response(user, membership, access)
+
+
+STATE_COOKIE_LINKEDIN = "wf_linkedin_state"
+
+
+@router.get("/linkedin")
+async def linkedin_auth_url(response: Response):
+    """Return the LinkedIn consent URL and stash a CSRF state token in a cookie."""
+    try:
+        state = secrets.token_urlsafe(24)
+        url = oauth.get_linkedin_auth_url(state=state)
+    except oauth.OAuthConfigError:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "LinkedIn OAuth is not configured on the server")
+    response.set_cookie(
+        STATE_COOKIE_LINKEDIN,
+        state,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax",
+        max_age=600,
+        path=_COOKIE_PATH,
+    )
+    return {"url": url, "state": state}
+
+
+@router.post("/linkedin", response_model=AuthResponse)
+async def linkedin_callback(
+    payload: LinkedInAuthRequest,
+    request: Request,
+    response: Response,
+    wf_linkedin_state: str | None = Cookie(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    if not wf_linkedin_state or (payload.state and payload.state != wf_linkedin_state):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "OAuth state mismatch — retry LinkedIn sign-in")
+    response.delete_cookie(STATE_COOKIE_LINKEDIN, path=_COOKIE_PATH)
+
+    ua, ip = _client_meta(request)
+    try:
+        user, membership, access, raw_refresh = await auth_service.linkedin_signin(
+            db, code=payload.code, user_agent=ua, ip=ip
+        )
+    except oauth.OAuthConfigError:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "LinkedIn OAuth is not configured on the server")
+    except auth_service.UnverifiedEmailError as exc:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc.args[0] if exc.args else "Please verify your email before logging in."))
+    except (oauth.OAuthExchangeError, auth_service.CredentialsError) as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"LinkedIn sign-in failed: {exc}")
+
+    _set_refresh_cookie(response, raw_refresh)
+    return _auth_response(user, membership, access)

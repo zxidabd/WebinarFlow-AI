@@ -95,3 +95,15 @@ export async function googleAuthExchange(code: string, state: string): Promise<A
   const { data } = await api.post<AuthResponse>('/auth/google', { code, state });
   return data;
 }
+
+/** Fetch the LinkedIn consent URL (also sets a short-lived state cookie). */
+export async function linkedinAuthUrl(): Promise<{ url: string; state: string }> {
+  const { data } = await api.get<{ url: string; state: string }>('/auth/linkedin');
+  return data;
+}
+
+/** Complete LinkedIn sign-in. */
+export async function linkedinAuthExchange(code: string, state: string): Promise<AuthResponse> {
+  const { data } = await api.post<AuthResponse>('/auth/linkedin', { code, state });
+  return data;
+}

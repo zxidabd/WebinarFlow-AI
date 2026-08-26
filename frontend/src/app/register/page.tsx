@@ -15,7 +15,7 @@ import { registerSchema, type RegisterValues } from '@/lib/validation/auth';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register: registerUser, beginGoogleSignIn } = useAuth();
+  const { register: registerUser, beginGoogleSignIn, beginLinkedInSignIn } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [phase, setPhase] = useState<'form' | 'check-email'>('form');
@@ -228,6 +228,7 @@ export default function RegisterPage() {
 
           <button
             type="button"
+            onClick={() => beginLinkedInSignIn && beginLinkedInSignIn()}
             className="flex-1 flex items-center justify-center space-x-2 border border-gray-200 rounded-lg py-2.5 px-6 hover:bg-gray-50 transition-colors"
           >
             <Linkedin className="w-5 h-5 text-[#0077b5]" />

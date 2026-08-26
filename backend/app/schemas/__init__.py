@@ -2,6 +2,7 @@
 from app.schemas.auth import (
     ForgotPasswordRequest,
     GoogleAuthRequest,
+    LinkedInAuthRequest,
     LoginRequest,
     RegisterRequest,
     ResendVerificationRequest,

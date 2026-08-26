@@ -31,3 +31,8 @@ class ResetPasswordRequest(BaseModel):
 class GoogleAuthRequest(BaseModel):
     code: str
     state: str | None = None
+
+
+class LinkedInAuthRequest(BaseModel):
+    code: str
+    state: str | None = None

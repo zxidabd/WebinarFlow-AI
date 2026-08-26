@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     GOOGLE_OAUTH_CLIENT_SECRET: str = ""
     GOOGLE_OAUTH_REDIRECT_URI: str = "http://localhost:3000/auth/google/callback"
 
+    # --- LinkedIn OAuth ---
+    LINKEDIN_CLIENT_ID: str = ""
+    LINKEDIN_CLIENT_SECRET: str = ""
+    LINKEDIN_REDIRECT_URI: str = "http://localhost:3000/auth/linkedin/callback"
+
     # --- AI providers ---
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"

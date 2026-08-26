@@ -56,6 +56,22 @@ export function useAuth() {
     [setSession],
   );
 
+  /** Kick off LinkedIn sign-in: fetch the consent URL and redirect the browser. */
+  const beginLinkedInSignIn = useCallback(async () => {
+    const { url } = await authApi.linkedinAuthUrl();
+    window.location.href = url;
+  }, []);
+
+  /** Complete LinkedIn sign-in after the OAuth callback, persisting the session. */
+  const loginWithLinkedIn = useCallback(
+    async (code: string, state: string) => {
+      const res = await authApi.linkedinAuthExchange(code, state);
+      setSession(res);
+      return res;
+    },
+    [setSession],
+  );
+
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
@@ -82,6 +98,8 @@ export function useAuth() {
     register,
     loginWithGoogle,
     beginGoogleSignIn,
+    loginWithLinkedIn,
+    beginLinkedInSignIn,
     logout,
     refreshUser,
   };
