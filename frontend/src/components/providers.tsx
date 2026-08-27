@@ -27,9 +27,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // Background keep-warm ping to Render backend
   useState(() => {
     if (typeof window !== 'undefined') {
-      const rawApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
-      const healthUrl = rawApi.endsWith('/api/v1') ? `${rawApi}/health` : `${rawApi}/health`;
-      fetch(healthUrl, { method: 'GET', keepalive: true }).catch(() => {});
+      const rawApi = (process.env.NEXT_PUBLIC_API_URL || 'https://webinarflow-ai.onrender.com').replace(/\/$/, '').replace(/\/api\/v1\/?$/, '');
+      fetch(`${rawApi}/health`, { method: 'GET', keepalive: true }).catch(() => {});
     }
   });
 

@@ -14,7 +14,7 @@ interface Props {
 }
 
 function getApiUrl(): string {
-  const raw = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+  const raw = (process.env.NEXT_PUBLIC_API_URL || 'https://webinarflow-ai.onrender.com').replace(/\/$/, '');
   return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
 }
 

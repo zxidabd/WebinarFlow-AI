@@ -18,7 +18,7 @@ function PaymentSuccessContent() {
     async function verify() {
       if (sessionId && registrantId) {
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+          const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://webinarflow-ai.onrender.com/api/v1').replace(/\/$/, '');
           const res = await fetch(`${apiUrl}/payments/verify-session?session_id=${encodeURIComponent(sessionId)}&registrant_id=${encodeURIComponent(registrantId)}`);
           if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
