@@ -154,6 +154,8 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
   });
 
   const [tab, setTab] = useState<string | null>(null);
+  const [mobileViewMode, setMobileViewMode] = useState<'both' | 'edit' | 'preview'>('both');
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   const handleTemplateChange = (newId: string) => {
     const tpl = getTemplate(newId);
@@ -188,80 +190,155 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
   };
 
   return (
-    <div className="flex h-full gap-6">
-      {/* Left: Editor form */}
-      <div className="w-96 shrink-0 overflow-y-auto space-y-4 border-r border-gray-100 pr-6">
-        {/* Template selector */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Template</label>
-          <select
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
-            value={templateId}
-            onChange={e => handleTemplateChange(e.target.value)}
-          >
-            {getAllTemplates().map(t => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Section tabs */}
-        <div className="flex flex-wrap gap-1.5 p-1.5 bg-gray-100 rounded-xl">
-          {template.sections.map(s => (
-            <button
-              key={s.id}
-              onClick={() => setTab(s.id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                activeTab === s.id
-                  ? 'bg-white text-indigo-600 font-semibold shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
-              }`}
-            >
-              {s.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Active section fields */}
-        {activeSection && (
-          <SectionEditor
-            section={activeSection}
-            data={activeData}
-            onChange={handleSectionChange}
-          />
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-2 pt-4">
+    <div className="flex flex-col h-full gap-4">
+      {/* Mobile View Toggle Bar (visible only on mobile/tablet screens < lg) */}
+      <div className="flex lg:hidden items-center justify-between bg-white border border-gray-200 rounded-xl p-2 shadow-sm sticky top-0 z-20">
+        <span className="text-xs font-semibold text-gray-700 pl-2">View Mode:</span>
+        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
           <button
-            onClick={() => onSave({ template: templateId, sections })}
-            className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-colors"
+            type="button"
+            onClick={() => setMobileViewMode('edit')}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+              mobileViewMode === 'edit'
+                ? 'bg-white text-indigo-600 font-semibold shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
           >
-            Save Changes
+            ✏️ Edit Only
           </button>
           <button
-            onClick={onCancel}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            type="button"
+            onClick={() => setMobileViewMode('both')}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+              mobileViewMode === 'both'
+                ? 'bg-white text-indigo-600 font-semibold shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
           >
-            Cancel
+            📑 Both (Stacked)
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileViewMode('preview')}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+              mobileViewMode === 'preview'
+                ? 'bg-white text-indigo-600 font-semibold shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            👁️ Preview
           </button>
         </div>
       </div>
 
-      {/* Right: Live preview */}
-      <div className="flex-1 overflow-y-auto bg-gray-100 rounded-xl">
-        <div className="sticky top-0 bg-gray-100 px-4 py-2 text-xs text-gray-400 border-b border-gray-200">
-          Preview
+      {/* Main Container: Flex-col on mobile (stacked), Flex-row on Desktop */}
+      <div className="flex flex-col lg:flex-row h-full gap-6">
+        {/* Editor Form Panel */}
+        <div
+          className={`w-full lg:w-96 lg:shrink-0 overflow-y-auto space-y-4 lg:border-r lg:border-gray-100 lg:pr-6 ${
+            mobileViewMode === 'preview' ? 'hidden lg:block' : 'block'
+          }`}
+        >
+          {/* Template selector */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Template</label>
+            <select
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
+              value={templateId}
+              onChange={e => handleTemplateChange(e.target.value)}
+            >
+              {getAllTemplates().map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Section tabs */}
+          <div className="flex flex-wrap gap-1.5 p-1.5 bg-gray-100 rounded-xl">
+            {template.sections.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setTab(s.id)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  activeTab === s.id
+                    ? 'bg-white text-indigo-600 font-semibold shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                }`}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Active section fields */}
+          {activeSection && (
+            <SectionEditor
+              section={activeSection}
+              data={activeData}
+              onChange={handleSectionChange}
+            />
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-4 sticky bottom-0 bg-white/95 backdrop-blur py-3 border-t border-gray-100 lg:border-none lg:static">
+            <button
+              onClick={() => onSave({ template: templateId, sections })}
+              className="flex-1 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-colors"
+            >
+              Save Changes
+            </button>
+            <button
+              onClick={onCancel}
+              className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-        <LandingPageRenderer
-          content={{ template: templateId, sections }}
-          webinarId={webinarId}
-          preview
-          isPaid={isPaid}
-          priceCents={priceCents}
-          currency={currency}
-          paymentGateway={paymentGateway}
-        />
+
+        {/* Live Preview Panel (Stacked Below on Mobile, Side-by-Side on Desktop) */}
+        <div
+          className={`w-full flex-1 overflow-y-auto bg-gray-100 rounded-xl border border-gray-200 min-h-[500px] ${
+            mobileViewMode === 'edit' ? 'hidden lg:block' : 'block'
+          }`}
+        >
+          {/* Header with Live Status & Device Switcher */}
+          <div className="sticky top-0 z-10 bg-gray-100/95 backdrop-blur px-4 py-2 text-xs text-gray-600 border-b border-gray-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="font-semibold text-gray-700">Live Landing Page Preview</span>
+              <span className="text-gray-400 hidden sm:inline">(Updates as you type)</span>
+            </div>
+            <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setPreviewDevice('desktop')}
+                className={`px-2 py-0.5 text-xs rounded ${previewDevice === 'desktop' ? 'bg-gray-100 font-semibold text-gray-900' : 'text-gray-500'}`}
+              >
+                Desktop
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewDevice('mobile')}
+                className={`px-2 py-0.5 text-xs rounded ${previewDevice === 'mobile' ? 'bg-gray-100 font-semibold text-gray-900' : 'text-gray-500'}`}
+              >
+                Mobile View
+              </button>
+            </div>
+          </div>
+
+          <div className={`p-2 transition-all ${previewDevice === 'mobile' ? 'max-w-sm mx-auto shadow-2xl my-4 rounded-3xl overflow-hidden border-4 border-gray-800' : 'w-full'}`}>
+            <LandingPageRenderer
+              content={{ template: templateId, sections }}
+              webinarId={webinarId}
+              preview
+              isPaid={isPaid}
+              priceCents={priceCents}
+              currency={currency}
+              paymentGateway={paymentGateway}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

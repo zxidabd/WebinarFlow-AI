@@ -89,7 +89,7 @@ export default function LandingPageDetailPage() {
             </Badge>
           </div>
         </div>
-        <div className="flex-1 p-6" style={{ height: 'calc(100vh - 120px)' }}>
+        <div className="flex-1 p-3 sm:p-6 min-h-screen lg:h-[calc(100vh-120px)] overflow-y-auto">
           <TemplateEditor
             initialState={{
               template: (typeof content?.template === 'string' ? content.template : lp.template_id) || 'modern-saas',

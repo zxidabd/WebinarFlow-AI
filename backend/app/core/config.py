@@ -73,10 +73,11 @@ class Settings(BaseSettings):
 
     # --- AI providers ---
     OPENAI_API_KEY: str = ""
+    OPENAI_BASE_URL: str = "http://localhost:20128/v1"
     OPENAI_MODEL: str = "gpt-4o"
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-3-5-sonnet-latest"
-    AI_PROVIDER: Literal["openai", "anthropic"] = "openai"
+    AI_PROVIDER: str = "openai"
 
     # --- Zoom ---
     ZOOM_ACCOUNT_ID: str = ""
