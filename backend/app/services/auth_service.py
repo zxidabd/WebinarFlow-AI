@@ -409,18 +409,14 @@ async def google_signin(
         )
         session.add(user)
         await session.flush()
-        org = await _create_personal_workspace(session, user)
-        membership = await _ensure_owner_membership(session, user, org)
+        membership = await _create_personal_org(session, user)
     else:
         # Link Google account if user already existed
         if not user.email_verified and is_google_verified:
             user.email_verified = True
             user.is_verified = True
             await session.flush()
-        membership = await get_primary_membership(session, user.id)
-        if membership is None:
-            org = await _create_personal_workspace(session, user)
-            membership = await _ensure_owner_membership(session, user, org)
+        membership = await _default_membership(session, user.id)
 
     access, raw_refresh = await _issue_tokens(session, user, membership.organization, user_agent=user_agent, ip=ip)
     return user, membership, access, raw_refresh
