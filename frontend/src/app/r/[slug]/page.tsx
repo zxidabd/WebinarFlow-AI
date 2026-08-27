@@ -25,7 +25,7 @@ async function getLandingPage(slug: string) {
 export default async function PublicLandingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const lp = await getLandingPage(slug);
-  if (!lp || !lp.is_published) notFound();
+  if (!lp) notFound();
 
   const content = lp.content || {};
 

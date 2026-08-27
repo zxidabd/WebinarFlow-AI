@@ -211,16 +211,25 @@ async def get_landing_page_stats(
 async def _resolve_public_landing_page(
     db: AsyncSession, slug: str
 ) -> tuple[LandingPage, Webinar] | None:
-    """Find a published landing page and its parent webinar by either LandingPage.slug or Webinar.slug."""
-    # 1. Match LandingPage.slug directly
-    lp = (
-        await db.execute(
-            select(LandingPage).where(
-                LandingPage.slug == slug,
-                LandingPage.is_published == True,
-            )
-        )
-    ).scalar_one_or_none()
+    """Find a published landing page and its parent webinar by LandingPage.slug, LandingPage.id, or Webinar.slug."""
+    clean_slug = (slug or "").strip().lower()
+    if not clean_slug:
+        return None
+
+    # Parse potential UUID
+    parsed_uuid: uuid.UUID | None = None
+    try:
+        parsed_uuid = uuid.UUID(clean_slug)
+    except (ValueError, AttributeError):
+        pass
+
+    # 1. Match LandingPage by slug (case-insensitive) or UUID
+    query = select(LandingPage).where(
+        (func.lower(LandingPage.slug) == clean_slug)
+        | ((LandingPage.id == parsed_uuid) if parsed_uuid else False),
+        (LandingPage.is_published == True) | (LandingPage.status == LandingPageStatus.published),
+    )
+    lp = (await db.execute(query)).scalars().first()
 
     if lp is not None:
         webinar = (
@@ -229,23 +238,36 @@ async def _resolve_public_landing_page(
         if webinar is not None:
             return lp, webinar
 
-    # 2. Fallback: match by Webinar.slug
-    webinar = (
-        await db.execute(select(Webinar).where(Webinar.slug == slug))
-    ).scalar_one_or_none()
+    # 2. Fallback: match by Webinar.slug (case-insensitive) or Webinar UUID
+    webinar_query = select(Webinar).where(
+        (func.lower(Webinar.slug) == clean_slug)
+        | ((Webinar.id == parsed_uuid) if parsed_uuid else False)
+    )
+    webinar = (await db.execute(webinar_query)).scalars().first()
     if webinar is not None:
         lp = (
             await db.execute(
                 select(LandingPage)
                 .where(
                     LandingPage.webinar_id == webinar.id,
-                    LandingPage.is_published == True,
+                    (LandingPage.is_published == True) | (LandingPage.status == LandingPageStatus.published),
                 )
                 .order_by(LandingPage.created_at.desc())
             )
         ).scalars().first()
         if lp is not None:
             return lp, webinar
+
+        # If no explicit published LP, check any landing page for this webinar
+        lp_any = (
+            await db.execute(
+                select(LandingPage)
+                .where(LandingPage.webinar_id == webinar.id)
+                .order_by(LandingPage.created_at.desc())
+            )
+        ).scalars().first()
+        if lp_any is not None:
+            return lp_any, webinar
 
     return None
 
