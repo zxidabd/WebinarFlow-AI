@@ -8,6 +8,7 @@
 
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/store/auth';
 import * as authApi from '@/lib/auth-api';
 import type { LoginPayload, RegisterPayload } from '@/types/auth';
