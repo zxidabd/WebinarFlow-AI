@@ -30,11 +30,13 @@ class OAuthExchangeError(RuntimeError):
 
 
 def get_google_auth_url(state: str) -> str:
-    if not settings.GOOGLE_OAUTH_CLIENT_ID:
+    client_id = (settings.GOOGLE_OAUTH_CLIENT_ID or "").strip().replace("\n", "").replace("\r", "")
+    redirect_uri = (settings.GOOGLE_OAUTH_REDIRECT_URI or f"{settings.FRONTEND_URL}/auth/google/callback").strip().replace("\n", "").replace("\r", "")
+    if not client_id:
         raise OAuthConfigError("Google OAuth is not configured (GOOGLE_OAUTH_CLIENT_ID missing)")
     params = {
-        "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
-        "redirect_uri": settings.GOOGLE_OAUTH_REDIRECT_URI,
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": " ".join(SCOPES),
         "state": state,
@@ -46,16 +48,19 @@ def get_google_auth_url(state: str) -> str:
 
 async def exchange_google_code(code: str) -> dict:
     """Exchange an auth code for userinfo ({email, name, picture, ...})."""
-    if not settings.GOOGLE_OAUTH_CLIENT_ID or not settings.GOOGLE_OAUTH_CLIENT_SECRET:
+    client_id = (settings.GOOGLE_OAUTH_CLIENT_ID or "").strip().replace("\n", "").replace("\r", "")
+    client_secret = (settings.GOOGLE_OAUTH_CLIENT_SECRET or "").strip().replace("\n", "").replace("\r", "")
+    redirect_uri = (settings.GOOGLE_OAUTH_REDIRECT_URI or f"{settings.FRONTEND_URL}/auth/google/callback").strip().replace("\n", "").replace("\r", "")
+    if not client_id or not client_secret:
         raise OAuthConfigError("Google OAuth is not configured")
     async with httpx.AsyncClient(timeout=15.0) as client:
         tkn = await client.post(
             GOOGLE_TOKEN_URL,
             data={
                 "code": code,
-                "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
-                "client_secret": settings.GOOGLE_OAUTH_CLIENT_SECRET,
-                "redirect_uri": settings.GOOGLE_OAUTH_REDIRECT_URI,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
                 "grant_type": "authorization_code",
             },
         )
@@ -81,11 +86,13 @@ LINKEDIN_SCOPES = ["openid", "profile", "email"]
 
 
 def get_linkedin_auth_url(state: str) -> str:
-    if not settings.LINKEDIN_CLIENT_ID:
+    client_id = (settings.LINKEDIN_CLIENT_ID or "").strip().replace("\n", "").replace("\r", "")
+    redirect_uri = (settings.LINKEDIN_REDIRECT_URI or f"{settings.FRONTEND_URL}/auth/linkedin/callback").strip().replace("\n", "").replace("\r", "")
+    if not client_id:
         raise OAuthConfigError("LinkedIn OAuth is not configured (LINKEDIN_CLIENT_ID missing)")
     params = {
-        "client_id": settings.LINKEDIN_CLIENT_ID,
-        "redirect_uri": settings.LINKEDIN_REDIRECT_URI,
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": " ".join(LINKEDIN_SCOPES),
         "state": state,
@@ -95,16 +102,19 @@ def get_linkedin_auth_url(state: str) -> str:
 
 async def exchange_linkedin_code(code: str) -> dict:
     """Exchange an auth code for LinkedIn userinfo ({email, name, picture, ...})."""
-    if not settings.LINKEDIN_CLIENT_ID or not settings.LINKEDIN_CLIENT_SECRET:
+    client_id = (settings.LINKEDIN_CLIENT_ID or "").strip().replace("\n", "").replace("\r", "")
+    client_secret = (settings.LINKEDIN_CLIENT_SECRET or "").strip().replace("\n", "").replace("\r", "")
+    redirect_uri = (settings.LINKEDIN_REDIRECT_URI or f"{settings.FRONTEND_URL}/auth/linkedin/callback").strip().replace("\n", "").replace("\r", "")
+    if not client_id or not client_secret:
         raise OAuthConfigError("LinkedIn OAuth is not configured")
     async with httpx.AsyncClient(timeout=15.0) as client:
         tkn = await client.post(
             LINKEDIN_TOKEN_URL,
             data={
                 "code": code,
-                "client_id": settings.LINKEDIN_CLIENT_ID,
-                "client_secret": settings.LINKEDIN_CLIENT_SECRET,
-                "redirect_uri": settings.LINKEDIN_REDIRECT_URI,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
                 "grant_type": "authorization_code",
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"},
