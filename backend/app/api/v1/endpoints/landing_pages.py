@@ -14,7 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_active_user, get_current_membership, get_db
-from app.models import LandingPage, User, Webinar
+from app.models import LandingPage, LandingPageStatus, User, Webinar
 from app.schemas.landing_page import (
     LandingPageCreate,
     LandingPageDetail,
