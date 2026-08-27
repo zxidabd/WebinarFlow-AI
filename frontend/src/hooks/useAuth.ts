@@ -41,9 +41,14 @@ export function useAuth() {
 
   /** Kick off Google sign-in: fetch the consent URL and redirect the browser. */
   const beginGoogleSignIn = useCallback(async () => {
-    const { url } = await authApi.googleAuthUrl();
-    // Full-page navigation so Google's consent screen loads in the top frame.
-    window.location.href = url;
+    try {
+      const { url } = await authApi.googleAuthUrl();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (e: any) {
+      toast.error(authApi.apiErrorMessage(e, 'Google OAuth is not configured on the server yet. Please add GOOGLE_OAUTH_CLIENT_ID in Render.'));
+    }
   }, []);
 
   /** Complete Google sign-in after the OAuth callback, persisting the session. */
@@ -58,8 +63,14 @@ export function useAuth() {
 
   /** Kick off LinkedIn sign-in: fetch the consent URL and redirect the browser. */
   const beginLinkedInSignIn = useCallback(async () => {
-    const { url } = await authApi.linkedinAuthUrl();
-    window.location.href = url;
+    try {
+      const { url } = await authApi.linkedinAuthUrl();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (e: any) {
+      toast.error(authApi.apiErrorMessage(e, 'LinkedIn OAuth is not configured on the server yet. Please add LINKEDIN_CLIENT_ID in Render.'));
+    }
   }, []);
 
   /** Complete LinkedIn sign-in after the OAuth callback, persisting the session. */
