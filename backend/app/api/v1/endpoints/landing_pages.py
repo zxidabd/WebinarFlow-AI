@@ -272,7 +272,7 @@ async def _resolve_public_landing_page(
     return None
 
 
-@router.get("/public/{slug}", response_model=LandingPageDetail)
+@router.get("/public/{slug}")
 async def get_public_landing_page(
     slug: str,
     db: AsyncSession = Depends(get_db),
@@ -282,14 +282,31 @@ async def get_public_landing_page(
     if resolved is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
     lp, webinar = resolved
-    detail = LandingPageDetail.model_validate(lp)
-    # Attach webinar pricing info so the public page can show a payment button
-    result = detail.model_dump()
-    result["is_paid"] = getattr(webinar, "is_paid", False)
-    result["price_cents"] = getattr(webinar, "price_cents", 0)
-    result["currency"] = getattr(webinar, "currency", "usd") or "usd"
-    result["payment_gateway"] = getattr(webinar, "payment_gateway", "stripe") or "stripe"
-    return result
+
+    status_val = lp.status.value if hasattr(lp.status, "value") else str(lp.status)
+    page_type_val = lp.page_type.value if hasattr(lp.page_type, "value") else str(lp.page_type)
+
+    return {
+        "id": str(lp.id),
+        "webinar_id": str(lp.webinar_id),
+        "organization_id": str(lp.organization_id),
+        "title": lp.title,
+        "slug": lp.slug,
+        "status": status_val,
+        "page_type": page_type_val,
+        "content": lp.content or {},
+        "meta_title": lp.meta_title,
+        "meta_description": lp.meta_description,
+        "meta_image": lp.meta_image,
+        "custom_head_html": lp.custom_head_html,
+        "custom_body_html": lp.custom_body_html,
+        "is_published": bool(lp.is_published or status_val == "published"),
+        "template_id": lp.template_id,
+        "is_paid": getattr(webinar, "is_paid", False) or False,
+        "price_cents": getattr(webinar, "price_cents", 0) or 0,
+        "currency": getattr(webinar, "currency", "usd") or "usd",
+        "payment_gateway": getattr(webinar, "payment_gateway", "stripe") or "stripe",
+    }
 
 
 class PublicRegisterPayload(BaseModel):

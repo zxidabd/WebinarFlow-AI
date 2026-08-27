@@ -82,11 +82,13 @@ class LandingPageDetail(LandingPageBase):
     id: uuid.UUID
     webinar_id: uuid.UUID
     organization_id: uuid.UUID
-    created_by: uuid.UUID
+    created_by: uuid.UUID | None = None
     is_paid: bool = False
     price_cents: int = 0
     currency: str = "usd"
     payment_gateway: str = "stripe"
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class LandingPageListResponse(BaseModel):
