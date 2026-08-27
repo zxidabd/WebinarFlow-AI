@@ -27,6 +27,13 @@ export const metadata: Metadata = {
       'Generate landing pages, webinar scripts, email campaigns, WhatsApp sequences, and sales funnels with AI.',
     type: 'website',
   },
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/icon.svg',
+    apple: '/apple-icon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
