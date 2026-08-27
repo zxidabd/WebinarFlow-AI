@@ -12,7 +12,7 @@ export const API_BASE_URL = rawUrl
   ? rawUrl.endsWith('/api/v1')
     ? rawUrl
     : `${rawUrl}/api/v1`
-  : '/api/v1';
+  : 'https://webinarflow-ai.onrender.com/api/v1';
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
