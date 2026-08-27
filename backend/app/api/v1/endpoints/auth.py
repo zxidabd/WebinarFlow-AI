@@ -197,8 +197,8 @@ async def google_auth_url(response: Response):
         STATE_COOKIE,
         state,
         httponly=True,
-        secure=settings.ENVIRONMENT == "production",
-        samesite="lax",
+        secure=True,
+        samesite="none",
         max_age=600,  # 10 minutes to complete the OAuth round-trip
         path=_COOKIE_PATH,
     )
@@ -213,7 +213,7 @@ async def google_callback(
     wf_google_state: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ):
-    if not wf_google_state or (payload.state and payload.state != wf_google_state):
+    if wf_google_state and payload.state and payload.state != wf_google_state:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "OAuth state mismatch — retry Google sign-in")
     _clear_state_cookie(response)
 
@@ -248,8 +248,8 @@ async def linkedin_auth_url(response: Response):
         STATE_COOKIE_LINKEDIN,
         state,
         httponly=True,
-        secure=settings.ENVIRONMENT == "production",
-        samesite="lax",
+        secure=True,
+        samesite="none",
         max_age=600,
         path=_COOKIE_PATH,
     )
@@ -264,9 +264,9 @@ async def linkedin_callback(
     wf_linkedin_state: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ):
-    if not wf_linkedin_state or (payload.state and payload.state != wf_linkedin_state):
+    if wf_linkedin_state and payload.state and payload.state != wf_linkedin_state:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "OAuth state mismatch — retry LinkedIn sign-in")
-    response.delete_cookie(STATE_COOKIE_LINKEDIN, path=_COOKIE_PATH)
+    response.delete_cookie(STATE_COOKIE_LINKEDIN, path=_COOKIE_PATH, samesite="none", secure=True)
 
     ua, ip = _client_meta(request)
     try:
