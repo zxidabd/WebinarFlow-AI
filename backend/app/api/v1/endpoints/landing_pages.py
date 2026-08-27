@@ -208,6 +208,9 @@ async def get_landing_page_stats(
     return stats
 
 
+# ── Public routes ───────────────────────────────────────────────────────────
+
+
 async def _resolve_public_landing_page(
     db: AsyncSession, slug: str
 ) -> tuple[LandingPage, Webinar] | None:
@@ -223,13 +226,36 @@ async def _resolve_public_landing_page(
     except (ValueError, AttributeError):
         pass
 
-    # 1. Match LandingPage by slug (case-insensitive) or UUID
-    query = select(LandingPage).where(
-        (func.lower(LandingPage.slug) == clean_slug)
-        | ((LandingPage.id == parsed_uuid) if parsed_uuid else False),
-        (LandingPage.is_published == True) | (LandingPage.status == LandingPageStatus.published),
+    # 1. Match LandingPage directly by slug (case-insensitive) or UUID
+    conditions = [func.lower(LandingPage.slug) == clean_slug]
+    if parsed_uuid is not None:
+        conditions.append(LandingPage.id == parsed_uuid)
+
+    pub_conditions = or_(
+        LandingPage.is_published.is_(True),
+        LandingPage.status == LandingPageStatus.published,
+        LandingPage.status == "published",
+    )
+
+    query = (
+        select(LandingPage)
+        .where(
+            or_(*conditions),
+            pub_conditions,
+        )
+        .order_by(LandingPage.created_at.desc())
     )
     lp = (await db.execute(query)).scalars().first()
+
+    # If no published LP found by exact slug, check if any LP exists with this slug
+    if lp is None:
+        lp = (
+            await db.execute(
+                select(LandingPage)
+                .where(or_(*conditions))
+                .order_by(LandingPage.created_at.desc())
+            )
+        ).scalars().first()
 
     if lp is not None:
         webinar = (
@@ -239,18 +265,20 @@ async def _resolve_public_landing_page(
             return lp, webinar
 
     # 2. Fallback: match by Webinar.slug (case-insensitive) or Webinar UUID
-    webinar_query = select(Webinar).where(
-        (func.lower(Webinar.slug) == clean_slug)
-        | ((Webinar.id == parsed_uuid) if parsed_uuid else False)
-    )
+    w_conditions = [func.lower(Webinar.slug) == clean_slug]
+    if parsed_uuid is not None:
+        w_conditions.append(Webinar.id == parsed_uuid)
+
+    webinar_query = select(Webinar).where(or_(*w_conditions))
     webinar = (await db.execute(webinar_query)).scalars().first()
     if webinar is not None:
+        # Check published LP for this webinar
         lp = (
             await db.execute(
                 select(LandingPage)
                 .where(
                     LandingPage.webinar_id == webinar.id,
-                    (LandingPage.is_published == True) | (LandingPage.status == LandingPageStatus.published),
+                    pub_conditions,
                 )
                 .order_by(LandingPage.created_at.desc())
             )
@@ -258,7 +286,7 @@ async def _resolve_public_landing_page(
         if lp is not None:
             return lp, webinar
 
-        # If no explicit published LP, check any landing page for this webinar
+        # Fallback to any landing page for this webinar
         lp_any = (
             await db.execute(
                 select(LandingPage)
@@ -269,6 +297,26 @@ async def _resolve_public_landing_page(
         if lp_any is not None:
             return lp_any, webinar
 
+    # 3. Partial / substring match fallback
+    partial_lp = (
+        await db.execute(
+            select(LandingPage)
+            .where(
+                or_(
+                    func.lower(LandingPage.slug).like(f"%{clean_slug}%"),
+                    func.lower(LandingPage.title).like(f"%{clean_slug}%"),
+                )
+            )
+            .order_by(LandingPage.created_at.desc())
+        )
+    ).scalars().first()
+    if partial_lp is not None:
+        webinar = (
+            await db.execute(select(Webinar).where(Webinar.id == partial_lp.webinar_id))
+        ).scalar_one_or_none()
+        if webinar is not None:
+            return partial_lp, webinar
+
     return None
 
 
@@ -278,35 +326,42 @@ async def get_public_landing_page(
     db: AsyncSession = Depends(get_db),
 ):
     """Public endpoint for published landing pages. No auth required."""
-    resolved = await _resolve_public_landing_page(db, slug)
-    if resolved is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
-    lp, webinar = resolved
+    try:
+        resolved = await _resolve_public_landing_page(db, slug)
+        if resolved is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Landing page '{slug}' not found")
+        lp, webinar = resolved
 
-    status_val = lp.status.value if hasattr(lp.status, "value") else str(lp.status)
-    page_type_val = lp.page_type.value if hasattr(lp.page_type, "value") else str(lp.page_type)
+        status_val = lp.status.value if hasattr(lp.status, "value") else str(lp.status or "published")
+        page_type_val = lp.page_type.value if hasattr(lp.page_type, "value") else str(lp.page_type or "opt_in")
 
-    return {
-        "id": str(lp.id),
-        "webinar_id": str(lp.webinar_id),
-        "organization_id": str(lp.organization_id),
-        "title": lp.title,
-        "slug": lp.slug,
-        "status": status_val,
-        "page_type": page_type_val,
-        "content": lp.content or {},
-        "meta_title": lp.meta_title,
-        "meta_description": lp.meta_description,
-        "meta_image": lp.meta_image,
-        "custom_head_html": lp.custom_head_html,
-        "custom_body_html": lp.custom_body_html,
-        "is_published": bool(lp.is_published or status_val == "published"),
-        "template_id": lp.template_id,
-        "is_paid": getattr(webinar, "is_paid", False) or False,
-        "price_cents": getattr(webinar, "price_cents", 0) or 0,
-        "currency": getattr(webinar, "currency", "usd") or "usd",
-        "payment_gateway": getattr(webinar, "payment_gateway", "stripe") or "stripe",
-    }
+        return {
+            "id": str(lp.id),
+            "webinar_id": str(lp.webinar_id),
+            "organization_id": str(lp.organization_id) if getattr(lp, "organization_id", None) else "",
+            "title": lp.title or "Webinar Landing Page",
+            "slug": lp.slug,
+            "status": status_val,
+            "page_type": page_type_val,
+            "content": lp.content or {},
+            "meta_title": lp.meta_title or lp.title,
+            "meta_description": lp.meta_description,
+            "meta_image": lp.meta_image,
+            "custom_head_html": lp.custom_head_html,
+            "custom_body_html": lp.custom_body_html,
+            "is_published": bool(lp.is_published or status_val == "published"),
+            "template_id": lp.template_id,
+            "is_paid": bool(getattr(webinar, "is_paid", False)),
+            "price_cents": int(getattr(webinar, "price_cents", 0) or 0),
+            "currency": str(getattr(webinar, "currency", "usd") or "usd"),
+            "payment_gateway": str(getattr(webinar, "payment_gateway", "stripe") or "stripe"),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Error loading landing page: {exc}")
 
 
 class PublicRegisterPayload(BaseModel):
