@@ -25,6 +25,12 @@ logger = logging.getLogger("webinarflow")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s [%s]", settings.APP_NAME, __version__, settings.ENVIRONMENT)
+    logger.info(
+        "Config check: GOOGLE_CLIENT_ID=%s, RESEND=%s, FRONTEND_URL=%s",
+        "SET" if bool(settings.GOOGLE_OAUTH_CLIENT_ID) else "MISSING",
+        "SET" if bool(settings.RESEND_API_KEY or settings.SMTP_PASSWORD) else "MISSING",
+        settings.FRONTEND_URL,
+    )
     await _run_startup_seeding()
     yield
     logger.info("Shutting down %s", settings.APP_NAME)
