@@ -20,24 +20,50 @@ def _domain() -> str:
 
 
 async def send_email(to: str, subject: str, body: str) -> None:
-    is_resend = settings.SMTP_PASSWORD.startswith("re_") or "resend" in str(settings.SMTP_HOST).lower()
-    is_brevo = settings.SMTP_PASSWORD.startswith("xkeysib-") or "brevo" in str(settings.SMTP_HOST).lower() or "sendinblue" in str(settings.SMTP_HOST).lower()
+    resend_key = (getattr(settings, "RESEND_API_KEY", "") or settings.SMTP_PASSWORD or "").strip()
+    brevo_key = (getattr(settings, "BREVO_API_KEY", "") or settings.SMTP_PASSWORD or "").strip()
 
-    if not settings.SMTP_HOST and not is_resend and not is_brevo:
-        log.info("[dev-email] to=%s subject=%s\n%s", to, subject, body)
+    is_resend = resend_key.startswith("re_") or "resend" in str(settings.SMTP_HOST).lower()
+    is_brevo = brevo_key.startswith("xkeysib-") or "brevo" in str(settings.SMTP_HOST).lower() or "sendinblue" in str(settings.SMTP_HOST).lower()
+
+    # 1. If Resend API key is used, send via Resend HTTPS REST API (Port 443 - never blocked by cloud firewalls)
+    if is_resend:
+        import httpx
+        try:
+            from_addr = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>" if settings.SMTP_FROM_EMAIL else f"{settings.SMTP_FROM_NAME} <onboarding@resend.dev>"
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                res = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={
+                        "Authorization": f"Bearer {resend_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "from": from_addr,
+                        "to": [to],
+                        "subject": subject,
+                        "html": body,
+                    },
+                )
+                if res.status_code in (200, 201):
+                    log.info("[resend-sent] to=%s status=%s", to, res.status_code)
+                    return
+                log.warning("[resend-api-notice] to=%s status=%s response=%s", to, res.status_code, res.text)
+        except Exception as exc:
+            log.warning("[resend-api-failed] to=%s error=%s", to, exc)
         return
 
-    # 1. If Brevo API key is used (starts with xkeysib-), send via Brevo HTTPS REST API (Port 443)
+    # 2. If Brevo API key is used (starts with xkeysib-), send via Brevo HTTPS REST API (Port 443)
     if is_brevo:
         import httpx
         try:
             from_name = settings.SMTP_FROM_NAME or "WebinarFlow AI"
-            from_email = settings.SMTP_FROM_EMAIL or settings.SMTP_USERNAME
+            from_email = str(settings.SMTP_FROM_EMAIL) if settings.SMTP_FROM_EMAIL else (settings.SMTP_USERNAME or "noreply@webinarflow.in")
             async with httpx.AsyncClient(timeout=8.0) as client:
                 res = await client.post(
                     "https://api.brevo.com/v3/smtp/email",
                     headers={
-                        "api-key": settings.SMTP_PASSWORD,
+                        "api-key": brevo_key,
                         "Content-Type": "application/json",
                         "Accept": "application/json",
                     },
@@ -54,34 +80,13 @@ async def send_email(to: str, subject: str, body: str) -> None:
                 log.warning("[brevo-api-notice] to=%s status=%s response=%s", to, res.status_code, res.text)
         except Exception as exc:
             log.warning("[brevo-api-failed] to=%s error=%s", to, exc)
+        return
 
-    # 2. If Resend API key is used, send via Resend HTTPS REST API (Port 443 - never blocked by cloud firewalls)
-    if is_resend:
-        import httpx
-        try:
-            from_addr = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>" if settings.SMTP_FROM_EMAIL else f"{settings.SMTP_FROM_NAME} <onboarding@resend.dev>"
-            async with httpx.AsyncClient(timeout=6.0) as client:
-                res = await client.post(
-                    "https://api.resend.com/emails",
-                    headers={
-                        "Authorization": f"Bearer {settings.SMTP_PASSWORD}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "from": from_addr,
-                        "to": [to],
-                        "subject": subject,
-                        "html": body,
-                    },
-                )
-                if res.status_code in (200, 201):
-                    log.info("[resend-sent] to=%s status=%s", to, res.status_code)
-                    return
-                log.warning("[resend-api-notice] to=%s status=%s response=%s", to, res.status_code, res.text)
-        except Exception as exc:
-            log.warning("[resend-api-failed] to=%s error=%s", to, exc)
+    if not settings.SMTP_HOST:
+        log.info("[dev-email] to=%s subject=%s\n%s", to, subject, body)
+        return
 
-    # 2. Standard SMTP (e.g. Gmail SMTP) with short 5s timeout
+    # 3. Standard SMTP with short 5s timeout
     import aiosmtplib  # lazy: keeps the app bootable without aiosmtplib installed
     from email.mime.text import MIMEText
 

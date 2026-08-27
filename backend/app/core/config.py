@@ -51,7 +51,9 @@ class Settings(BaseSettings):
     EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS: int = 24
     PASSWORD_RESET_TOKEN_EXPIRE_HOURS: int = 2
 
-    # --- Email (SMTP) ---
+    # --- Email (Resend / Brevo / SMTP) ---
+    RESEND_API_KEY: str = ""
+    BREVO_API_KEY: str = ""
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USERNAME: str = ""
