@@ -12,16 +12,85 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_active_user, get_current_membership, get_db
-from app.models import Registrant, User, Webinar, WebinarStatus
+from app.models import Registrant, RegistrantStatus, User, Webinar, WebinarStatus
 from app.schemas.webinar import WebinarDetail
 from app.services import registration_service
 
 router = APIRouter()
+
+
+@router.get("")
+async def list_org_registrants(
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(get_current_active_user),
+    membership = Depends(get_current_membership),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all registrants/customers for the organizer's active organization."""
+    query = (
+        select(Registrant, Webinar)
+        .join(Webinar, Registrant.webinar_id == Webinar.id)
+        .where(Webinar.organization_id == membership.organization_id)
+        .order_by(Registrant.created_at.desc())
+    )
+
+    if search and search.strip():
+        s = f"%{search.strip().lower()}%"
+        query = query.where(
+            or_(
+                func.lower(Registrant.email).like(s),
+                func.lower(Registrant.full_name).like(s),
+                func.lower(Webinar.title).like(s),
+            )
+        )
+
+    results = (await db.execute(query)).all()
+    total = len(results)
+
+    items = []
+    total_revenue = 0.0
+    active_buyers = 0
+
+    for reg, web in results:
+        is_buyer = reg.status in (RegistrantStatus.converted, "purchased", "converted")
+        spent = (web.price_cents / 100.0) if (web.is_paid and is_buyer) else 0.0
+        if is_buyer:
+            active_buyers += 1
+            total_revenue += spent
+
+        st_label = "Purchased" if is_buyer else ("Attended" if reg.status in (RegistrantStatus.attended, "attended") else "Registered")
+        if status and status.lower() != "all" and st_label.lower() != status.strip().lower():
+            continue
+
+        items.append({
+            "id": str(reg.id),
+            "name": reg.full_name or reg.email.split("@")[0],
+            "email": reg.email,
+            "webinarTitle": web.title,
+            "status": st_label,
+            "totalSpent": spent,
+            "dateJoined": reg.created_at.strftime("%Y-%m-%d") if reg.created_at else "",
+        })
+
+    paginated_items = items[offset : offset + limit]
+    avg_ltv = (total_revenue / active_buyers) if active_buyers > 0 else 0.0
+
+    return {
+        "items": paginated_items,
+        "total": len(items),
+        "totalLeads": total,
+        "activeBuyers": active_buyers,
+        "totalRevenue": total_revenue,
+        "avgLtv": avg_ltv,
+    }
 
 
 def _get_client_ip(request: Request) -> str | None:

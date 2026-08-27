@@ -119,7 +119,7 @@ export interface RegistrantListResponse {
   offset: number;
 }
 
-export async function listRegistrations(
+export async function listLandingPageRegistrations(
   landingPageId: string,
   params?: { search?: string; order?: 'asc' | 'desc'; limit?: number }
 ): Promise<RegistrantListResponse> {
@@ -183,4 +183,71 @@ export async function getLandingPageStats(id: string): Promise<LandingPageStats>
 
 export async function deleteRegistrant(id: string): Promise<void> {
   await api.delete(`${REGISTRANT_PREFIX}/${id}`);
+}
+
+export interface RegistrationsResponse {
+  items: Array<{
+    id: string;
+    name: string;
+    email: string;
+    webinarTitle: string;
+    status: 'Registered' | 'Attended' | 'Purchased';
+    totalSpent: number;
+    dateJoined: string;
+  }>;
+  total: number;
+  totalLeads: number;
+  activeBuyers: number;
+  totalRevenue: number;
+  avgLtv: number;
+}
+
+export function listRegistrations(
+  landingPageId: string,
+  params?: { search?: string; order?: 'asc' | 'desc'; limit?: number }
+): Promise<RegistrantListResponse>;
+export function listRegistrations(
+  params?: { search?: string; status?: string; limit?: number; offset?: number }
+): Promise<RegistrationsResponse>;
+export async function listRegistrations(
+  landingPageIdOrParams?: string | { search?: string; status?: string; limit?: number; offset?: number },
+  params?: { search?: string; order?: 'asc' | 'desc'; limit?: number }
+): Promise<any> {
+  if (typeof landingPageIdOrParams === 'string') {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.set('search', params.search);
+    searchParams.set('order', params?.order || 'desc');
+    searchParams.set('limit', String(params?.limit || 200));
+    const { data } = await api.get<RegistrantListResponse>(
+      `${LANDING_PAGE_PREFIX}/${landingPageIdOrParams}/registrations?${searchParams}`
+    );
+    return data;
+  }
+  const { data } = await api.get<RegistrationsResponse>('/registrations', { params: landingPageIdOrParams });
+  return data;
+}
+
+export interface AnalyticsOverviewResponse {
+  total_views: number;
+  total_registrations: number;
+  attendance_rate: number;
+  total_revenue: number;
+  funnel_steps: Array<{
+    name: string;
+    value: number;
+    percentage: number;
+  }>;
+  top_webinars: Array<{
+    id: string;
+    title: string;
+    date: string;
+    registrants: number;
+    conversion: string;
+    revenue: string;
+  }>;
+}
+
+export async function getAnalyticsOverview(range?: string): Promise<AnalyticsOverviewResponse> {
+  const { data } = await api.get<AnalyticsOverviewResponse>('/analytics/overview', { params: { range } });
+  return data;
 }
