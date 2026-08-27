@@ -54,9 +54,11 @@ export default function Footer() {
           {/* Brand */}
           <motion.div variants={slideUp} className="col-span-2">
             <a href="#" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/10 shadow-sm">
-                <Zap className="h-4 w-4 text-white" fill="white" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="WebinarFlow.AI"
+                className="h-8 w-8 rounded-lg object-contain bg-black shadow-sm border border-white/10"
+              />
               <span className="text-base font-semibold text-white">
                 WebinarFlow<span className="text-[#D6D6D6]">.AI</span>
               </span>

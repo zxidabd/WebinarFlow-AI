@@ -50,9 +50,11 @@ export function DashboardTopbar() {
             </Button>
 
             <Link href="/dashboard" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#45141B] text-white shadow-sm shadow-[#45141B]/30">
-                <Zap className="h-4 w-4 fill-white" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="WebinarFlow.AI"
+                className="h-8 w-8 rounded-lg object-contain bg-black shadow-sm"
+              />
               <span className="text-base font-semibold tracking-tight text-neutral-900">
                 WebinarFlow<span className="text-[#45141B] font-bold">.AI</span>
               </span>

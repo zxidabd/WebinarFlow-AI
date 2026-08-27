@@ -60,9 +60,11 @@ export function DashboardSidebar() {
   return (
     <aside className="flex h-full w-60 flex-col border-r border-neutral-200 bg-white">
       <Link href="/dashboard" className="flex h-16 items-center gap-2.5 px-6 border-b border-neutral-100">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#45141B] text-white shadow-sm shadow-[#45141B]/30">
-          <Zap className="h-4.5 w-4.5 fill-white" />
-        </div>
+        <img
+          src="/logo.png"
+          alt="WebinarFlow.AI"
+          className="h-8 w-8 rounded-lg object-contain bg-black shadow-sm"
+        />
         <span className="text-base font-semibold tracking-tight text-neutral-900">
           WebinarFlow<span className="text-[#45141B] font-bold">.AI</span>
         </span>

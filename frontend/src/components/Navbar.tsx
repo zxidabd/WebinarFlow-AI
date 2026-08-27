@@ -41,15 +41,11 @@ export default function Navbar() {
       >
         {/* Logo */}
         <a href="#" className="group flex items-center gap-3">
-          <div
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl shadow-lg border border-white/30 transition-transform group-hover:scale-105"
-            style={{
-              background:
-                'linear-gradient(135deg, #6b6b6f 0%, #c8c8cc 20%, #ffffff 40%, #9a9a9e 60%, #d4d4d8 80%, #707074 100%)',
-            }}
-          >
-            <Zap className="h-4 w-4 text-black fill-black" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="WebinarFlow.AI"
+            className="h-9 w-9 rounded-xl object-contain shadow-md border border-white/20 transition-transform group-hover:scale-105 bg-black/40"
+          />
           <span className="text-xl font-bold tracking-tight text-white">
             WebinarFlow<span className="text-[#D6D6D6]">.AI</span>
           </span>

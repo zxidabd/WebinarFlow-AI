@@ -31,10 +31,12 @@ export function AuthShell({
 
         {/* Top: Logo */}
         <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#4a6cf7]">
-              <Zap className="h-5 w-5 text-white" />
-            </div>
+          <Link href="/" className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="WebinarFlow.AI"
+              className="h-9 w-9 rounded-xl object-contain bg-black shadow-md border border-white/20"
+            />
             <span className="text-xl font-bold text-white">WebinarFlow AI</span>
           </Link>
         </div>
@@ -48,32 +50,19 @@ export function AuthShell({
             Create, manage, and scale your automated webinars with the power of AI. Streamline your entire funnel today.
           </p>
           <div className="flex items-center gap-2">
-            <div className="h-2 w-8 rounded-full bg-white"></div>
-            <div className="h-2 w-2 rounded-full bg-gray-500"></div>
-            <div className="h-2 w-2 rounded-full bg-gray-500"></div>
+            <div className="h-1.5 w-6 rounded-full bg-[#4a6cf7]"></div>
+            <div className="h-1.5 w-1.5 rounded-full bg-white/40"></div>
+            <div className="h-1.5 w-1.5 rounded-full bg-white/40"></div>
           </div>
         </div>
 
-        {/* Bottom: Footer & Socials */}
-        <div className="relative z-10">
-          <div className="mb-6 flex gap-4">
-            <Link href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
-              <Facebook className="h-5 w-5 text-white" />
-            </Link>
-            <Link href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
-              <Twitter className="h-5 w-5 text-white" />
-            </Link>
-            <Link href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
-              <Linkedin className="h-5 w-5 text-white" />
-            </Link>
+        {/* Bottom: Footer note */}
+        <div className="relative z-10 flex items-center justify-between text-xs text-gray-400">
+          <div className="flex gap-4">
+            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-400">
-            <Link href="#" className="hover:text-white">Privacy Policy</Link>
-            <span>·</span>
-            <Link href="#" className="hover:text-white">Contact</Link>
-            <span>·</span>
-            <span>© 2025 WebinarFlow AI</span>
-          </div>
+          <span>© 2025 WebinarFlow AI</span>
         </div>
       </div>
 
@@ -85,10 +74,12 @@ export function AuthShell({
         
         {/* Mobile Header (Shows only on small screens) */}
         <div className="flex items-center p-6 lg:hidden">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#4a6cf7]">
-              <Zap className="h-5 w-5 text-white" />
-            </div>
+          <Link href="/" className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="WebinarFlow.AI"
+              className="h-8 w-8 rounded-lg object-contain bg-black shadow-sm"
+            />
             <span className="text-xl font-bold text-[#2d3561]">WebinarFlow AI</span>
           </Link>
         </div>
