@@ -220,7 +220,7 @@ async def google_callback(
     ua, ip = _client_meta(request)
     try:
         user, membership, access, raw_refresh = await auth_service.google_signin(
-            db, code=payload.code, user_agent=ua, ip=ip
+            db, code=payload.code, redirect_uri=payload.redirect_uri, user_agent=ua, ip=ip
         )
     except oauth.OAuthConfigError:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Google OAuth is not configured on the server")
@@ -271,7 +271,7 @@ async def linkedin_callback(
     ua, ip = _client_meta(request)
     try:
         user, membership, access, raw_refresh = await auth_service.linkedin_signin(
-            db, code=payload.code, user_agent=ua, ip=ip
+            db, code=payload.code, redirect_uri=payload.redirect_uri, user_agent=ua, ip=ip
         )
     except oauth.OAuthConfigError:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "LinkedIn OAuth is not configured on the server")

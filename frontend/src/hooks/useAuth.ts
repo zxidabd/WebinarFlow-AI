@@ -55,7 +55,8 @@ export function useAuth() {
   /** Complete Google sign-in after the OAuth callback, persisting the session. */
   const loginWithGoogle = useCallback(
     async (code: string, state: string) => {
-      const res = await authApi.googleAuthExchange(code, state);
+      const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}/auth/google/callback` : undefined;
+      const res = await authApi.googleAuthExchange(code, state, redirectUri);
       setSession(res);
       return res;
     },
@@ -77,7 +78,8 @@ export function useAuth() {
   /** Complete LinkedIn sign-in after the OAuth callback, persisting the session. */
   const loginWithLinkedIn = useCallback(
     async (code: string, state: string) => {
-      const res = await authApi.linkedinAuthExchange(code, state);
+      const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}/auth/linkedin/callback` : undefined;
+      const res = await authApi.linkedinAuthExchange(code, state, redirectUri);
       setSession(res);
       return res;
     },

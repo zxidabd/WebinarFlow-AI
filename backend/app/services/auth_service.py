@@ -382,13 +382,13 @@ async def reset_password(session: AsyncSession, token: str, new_password: str) -
 
 
 async def google_signin(
-    session: AsyncSession, *, code: str, user_agent: str | None, ip: str | None
+    session: AsyncSession, *, code: str, redirect_uri: str | None = None, user_agent: str | None, ip: str | None
 ) -> tuple[User, Membership, str, str]:
     """Google OAuth sign-in flow.
 
     Inspects Google userinfo for explicit verified_email claim before marking verified.
     """
-    info = await oauth.exchange_google_code(code)
+    info = await oauth.exchange_google_code(code, redirect_uri=redirect_uri)
     email = info.get("email")
     if not email:
         raise CredentialsError("Google did not return an email address")
@@ -409,29 +409,28 @@ async def google_signin(
         )
         session.add(user)
         await session.flush()
-        membership = await _create_personal_org(session, user)
+        org = await _create_personal_workspace(session, user)
+        membership = await _ensure_owner_membership(session, user, org)
     else:
-        if is_google_verified:
+        # Link Google account if user already existed
+        if not user.email_verified and is_google_verified:
             user.email_verified = True
             user.is_verified = True
-        membership = await _default_membership(session, user.id)
+            await session.flush()
+        membership = await get_primary_membership(session, user.id)
+        if membership is None:
+            org = await _create_personal_workspace(session, user)
+            membership = await _ensure_owner_membership(session, user, org)
 
-    if not user.email_verified:
-        token = await _create_and_record_verification_token(session, user.id)
-        await email_service.send_verification_email(user, token)
-        raise UnverifiedEmailError("Please verify your email before logging in.")
-
-    access, raw_refresh = await _issue_tokens(
-        session, user, membership.organization, user_agent=user_agent, ip=ip
-    )
+    access, raw_refresh = await _issue_tokens(session, user, membership.organization, user_agent=user_agent, ip=ip)
     return user, membership, access, raw_refresh
 
 
 async def linkedin_signin(
-    session: AsyncSession, *, code: str, user_agent: str | None, ip: str | None
+    session: AsyncSession, *, code: str, redirect_uri: str | None = None, user_agent: str | None, ip: str | None
 ) -> tuple[User, Membership, str, str]:
     """LinkedIn OAuth sign-in flow (OpenID Connect)."""
-    info = await oauth.exchange_linkedin_code(code)
+    info = await oauth.exchange_linkedin_code(code, redirect_uri=redirect_uri)
     email = info.get("email")
     if not email:
         raise CredentialsError("LinkedIn did not return an email address")

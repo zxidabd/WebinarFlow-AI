@@ -91,8 +91,8 @@ export async function googleAuthUrl(): Promise<{ url: string; state: string }> {
  * and exchanges the code with Google itself. Returns the same `AuthResponse`
  * as login (access token in the body, refresh token in the cookie).
  */
-export async function googleAuthExchange(code: string, state: string): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>('/auth/google', { code, state });
+export async function googleAuthExchange(code: string, state: string, redirect_uri?: string): Promise<AuthResponse> {
+  const { data } = await api.post<AuthResponse>('/auth/google', { code, state, redirect_uri });
   return data;
 }
 
@@ -103,7 +103,7 @@ export async function linkedinAuthUrl(): Promise<{ url: string; state: string }>
 }
 
 /** Complete LinkedIn sign-in. */
-export async function linkedinAuthExchange(code: string, state: string): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>('/auth/linkedin', { code, state });
+export async function linkedinAuthExchange(code: string, state: string, redirect_uri?: string): Promise<AuthResponse> {
+  const { data } = await api.post<AuthResponse>('/auth/linkedin', { code, state, redirect_uri });
   return data;
 }

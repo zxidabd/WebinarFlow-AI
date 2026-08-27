@@ -46,11 +46,16 @@ def get_google_auth_url(state: str) -> str:
     return f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
 
 
-async def exchange_google_code(code: str) -> dict:
+async def exchange_google_code(code: str, redirect_uri: str | None = None) -> dict:
     """Exchange an auth code for userinfo ({email, name, picture, ...})."""
     client_id = (settings.GOOGLE_OAUTH_CLIENT_ID or "").strip().replace("\n", "").replace("\r", "")
     client_secret = (settings.GOOGLE_OAUTH_CLIENT_SECRET or "").strip().replace("\n", "").replace("\r", "")
-    redirect_uri = (settings.GOOGLE_OAUTH_REDIRECT_URI or f"{settings.FRONTEND_URL}/auth/google/callback").strip().replace("\n", "").replace("\r", "")
+    target_redirect_uri = (
+        (redirect_uri or settings.GOOGLE_OAUTH_REDIRECT_URI or f"{settings.FRONTEND_URL}/auth/google/callback")
+        .strip()
+        .replace("\n", "")
+        .replace("\r", "")
+    )
     if not client_id or not client_secret:
         raise OAuthConfigError("Google OAuth is not configured")
     async with httpx.AsyncClient(timeout=15.0) as client:
@@ -60,12 +65,13 @@ async def exchange_google_code(code: str) -> dict:
                 "code": code,
                 "client_id": client_id,
                 "client_secret": client_secret,
-                "redirect_uri": redirect_uri,
+                "redirect_uri": target_redirect_uri,
                 "grant_type": "authorization_code",
             },
         )
         if tkn.status_code != 200:
-            raise OAuthExchangeError(f"token endpoint returned {tkn.status_code}: {tkn.text}")
+            log.error("[google-exchange-failed] status=%s response=%s redirect_uri=%s", tkn.status_code, tkn.text, target_redirect_uri)
+            raise OAuthExchangeError(f"Google token endpoint returned {tkn.status_code}: {tkn.text}")
         access_token = tkn.json().get("access_token")
         if not access_token:
             raise OAuthExchangeError("no access_token in Google response")
@@ -75,6 +81,7 @@ async def exchange_google_code(code: str) -> dict:
             headers={"Authorization": f"Bearer {access_token}"},
         )
         if ui.status_code != 200:
+            log.error("[google-userinfo-failed] status=%s response=%s", ui.status_code, ui.text)
             raise OAuthExchangeError(f"userinfo endpoint returned {ui.status_code}")
         return ui.json()
 
