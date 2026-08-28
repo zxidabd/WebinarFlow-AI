@@ -34,23 +34,21 @@ export default function SettingsPage() {
     setMounted(true);
     async function loadOrgKeys() {
       try {
-        const orgsRes = await api.get('/organizations');
-        const orgs = orgsRes.data || [];
-        const org = orgs.find((o: any) => o.is_default) || orgs[0];
-        if (org && org.id) {
-          setActiveOrgId(org.id);
-          const keysRes = await api.get(`/organizations/${org.id}/payment-keys`);
-          const k = keysRes.data || {};
-          if (k.stripe_publishable_key) setStripePublishableKey(k.stripe_publishable_key);
-          if (k.stripe_secret_key) setStripeSecretKey(k.stripe_secret_key);
-          if (k.stripe_webhook_secret) setStripeWebhookSecret(k.stripe_webhook_secret);
-          if (k.stripe_enabled !== undefined) setStripeEnabled(k.stripe_enabled);
-
-          if (k.razorpay_key_id) setRazorpayKeyId(k.razorpay_key_id);
-          if (k.razorpay_key_secret) setRazorpayKeySecret(k.razorpay_key_secret);
-          if (k.razorpay_enabled !== undefined) setRazorpayEnabled(k.razorpay_enabled);
-          return;
+        const keysRes = await api.get('/organizations/payment-keys');
+        const k = keysRes.data || {};
+        if (k.stripe_publishable_key) setStripePublishableKey(k.stripe_publishable_key);
+        if (k.stripe_secret_key) setStripeSecretKey(k.stripe_secret_key);
+        if (k.stripe_webhook_secret && !k.stripe_webhook_secret.includes('webinarflow') && !k.stripe_webhook_secret.startsWith('http')) {
+          setStripeWebhookSecret(k.stripe_webhook_secret);
+        } else {
+          setStripeWebhookSecret('');
         }
+        if (k.stripe_enabled !== undefined) setStripeEnabled(k.stripe_enabled);
+
+        if (k.razorpay_key_id) setRazorpayKeyId(k.razorpay_key_id);
+        if (k.razorpay_key_secret) setRazorpayKeySecret(k.razorpay_key_secret);
+        if (k.razorpay_enabled !== undefined) setRazorpayEnabled(k.razorpay_enabled);
+        return;
       } catch (err) {
         console.error('Error fetching org payment keys:', err);
       }
@@ -68,7 +66,9 @@ export default function SettingsPage() {
 
         if (savedStripePk) setStripePublishableKey(savedStripePk);
         if (savedStripeSk) setStripeSecretKey(savedStripeSk);
-        if (savedStripeWh) setStripeWebhookSecret(savedStripeWh);
+        if (savedStripeWh && !savedStripeWh.includes('webinarflow') && !savedStripeWh.startsWith('http')) {
+          setStripeWebhookSecret(savedStripeWh);
+        }
         setStripeEnabled(savedStripeOn !== false);
 
         if (savedRzpKey) setRazorpayKeyId(savedRzpKey);
@@ -85,10 +85,13 @@ export default function SettingsPage() {
   const handleSavePaymentKeys = async () => {
     setSaving(true);
     try {
+      const cleanWebhookSecret = (stripeWebhookSecret || '').trim();
+      const finalWebhookSecret = (cleanWebhookSecret.startsWith('http') || cleanWebhookSecret.includes('webinarflow')) ? '' : cleanWebhookSecret;
+
       // 1. Save to local storage for local client caching
       localStorage.setItem('wf_stripe_pk', stripePublishableKey);
       localStorage.setItem('wf_stripe_sk', stripeSecretKey);
-      localStorage.setItem('wf_stripe_wh', stripeWebhookSecret);
+      localStorage.setItem('wf_stripe_wh', finalWebhookSecret);
       localStorage.setItem('wf_stripe_enabled', String(stripeEnabled));
 
       localStorage.setItem('wf_rzp_key', razorpayKeyId);
@@ -96,24 +99,19 @@ export default function SettingsPage() {
       localStorage.setItem('wf_rzp_enabled', String(razorpayEnabled));
 
       // 2. Persist to Backend Organization database
-      let targetOrgId = activeOrgId;
-      if (!targetOrgId) {
-        const orgsRes = await api.get('/organizations');
-        const orgs = orgsRes.data || [];
-        const org = orgs.find((o: any) => o.is_default) || orgs[0];
-        if (org && org.id) targetOrgId = org.id;
-      }
+      await api.patch('/organizations/payment-keys', {
+        stripe_enabled: stripeEnabled,
+        stripe_publishable_key: stripePublishableKey,
+        stripe_secret_key: stripeSecretKey,
+        stripe_webhook_secret: finalWebhookSecret,
+        razorpay_enabled: razorpayEnabled,
+        razorpay_key_id: razorpayKeyId,
+        razorpay_key_secret: razorpayKeySecret,
+      });
 
-      if (targetOrgId) {
-        await api.patch(`/organizations/${targetOrgId}/payment-keys`, {
-          stripe_enabled: stripeEnabled,
-          stripe_publishable_key: stripePublishableKey,
-          stripe_secret_key: stripeSecretKey,
-          stripe_webhook_secret: stripeWebhookSecret,
-          razorpay_enabled: razorpayEnabled,
-          razorpay_key_id: razorpayKeyId,
-          razorpay_key_secret: razorpayKeySecret,
-        });
+      if (cleanWebhookSecret && cleanWebhookSecret !== finalWebhookSecret) {
+        setStripeWebhookSecret('');
+        toast.info('Cleared website URL from webhook secret field. Signing secrets start with whsec_');
       }
 
       toast.success('Payment gateway credentials saved successfully to your workspace!');
@@ -243,13 +241,13 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="whsec_..."
+                    placeholder="whsec_... (optional, from Stripe Developers -> Webhooks)"
                     value={stripeWebhookSecret}
                     onChange={(e) => setStripeWebhookSecret(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-black focus:outline-none focus:border-[#4a6cf7]"
                   />
                   <p className="mt-1 text-[11px] text-slate-500">
-                    Set your Stripe webhook destination to: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-800">http://localhost:8000/api/v1/payments/webhook</code>
+                    Set your Stripe webhook destination to: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-800 font-mono select-all">https://webinarflow-ai.onrender.com/api/v1/payments/webhook/stripe</code>
                   </p>
                 </div>
               </div>
