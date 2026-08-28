@@ -76,7 +76,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
   const priceStr = isPaid ? `$${(priceCents / 100).toFixed(2)}` : 'Free';
   const slug = `${slugify(cleanTopic)}-${Math.random().toString(36).substring(2, 7)}`;
 
-  // 1. Navbar
   const navbar = {
     logo_text: cleanTopic.length <= 20 ? cleanTopic : 'WebinarFlow AI',
     links: 'Curriculum, Speakers, Benefits, Reviews, FAQ',
@@ -85,7 +84,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#ffffff',
   };
 
-  // 2. Hero
   const hero_v2 = {
     headline: `How ${aud} Master ${cleanTopic}`,
     subtitle: `A live, high-impact masterclass revealing practical frameworks to build automated AI systems, demonstrate verified skills to universities & employers, and stay ahead as AI tools evolve. ${extra}`.slice(0, 300).trim(),
@@ -96,7 +94,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     hero_image: '/hero-dashboard.png',
   };
 
-  // 3. Speakers
   const speakers = {
     title: 'Meet Your Instructor & AI Mentors',
     speakers: [
@@ -116,7 +113,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#ffffff',
   };
 
-  // 4. Statistics Bar
   const stats = {
     stats: [
       { value: '5,000+', label: `${aud} Trained` },
@@ -127,7 +123,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#f8fafc',
   };
 
-  // 5. Company Logos
   const logos = {
     title: `Tools & Platforms Covered in This ${cleanTopic} Workshop`,
     logos: [
@@ -139,7 +134,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#ffffff',
   };
 
-  // 6. Benefits Grid
   const benefits = {
     title: `Everything You Will Master in ${cleanTopic}`,
     subtitle: `Structured specifically for ${aud} to deliver real outcomes and verified knowledge.`,
@@ -168,7 +162,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#ffffff',
   };
 
-  // 7. Agenda Timeline
   const agenda = {
     title: 'Workshop Curriculum & Schedule',
     items: [
@@ -196,7 +189,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#f8fafc',
   };
 
-  // 8. Testimonials
   const testimonials = {
     title: `What Past ${aud} Are Saying`,
     testimonials: [
@@ -216,7 +208,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#ffffff',
   };
 
-  // 9. FAQ
   const faq = {
     title: 'Frequently Asked Questions',
     items: [
@@ -240,7 +231,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#f8fafc',
   };
 
-  // 10. Countdown
   const countdown = {
     enabled: 'true',
     end_date: new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0] + 'T23:59:00Z',
@@ -248,7 +238,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#4f46e5',
   };
 
-  // 11. Registration Form
   const register = {
     title: 'Reserve Your Spot in the Live Masterclass',
     cta_text: isPaid ? `Register Now · ${priceStr}` : "Register Now — It's Free",
@@ -257,7 +246,6 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     bg_color: '#ffffff',
   };
 
-  // 12. Footer
   const footer = {
     text: `© ${new Date().getFullYear()} ${cleanTopic}. All rights reserved.`,
     links: 'Privacy Policy, Terms of Service, Contact Support',
@@ -383,71 +371,135 @@ function synthesizeUniversalAIResponse(
   if (['hi', 'hello', 'hey', 'greetings', 'yo', 'sup', 'good morning', 'good evening'].includes(lower)) {
     return `👋 Hello! I am your **AI Agent** (${model}).
 
-How can I help you today? I am equipped to assist you with:
-- 💻 **Software Engineering & Coding**: Python, JavaScript, TypeScript, React, Next.js, SQL, APIs, Docker, System Architecture, and Debugging.
-- 🔬 **Data Science, AI & Machine Learning**: Data analysis, Pandas, PyTorch, Scikit-learn, Neural Networks, and LLM engineering.
-- 📈 **Business, Growth & Marketing**: Strategy, SaaS metrics, conversion optimization, and analytics.
-- ✍️ **Writing & Content**: Technical documentation, copywriting, email sequences, presentations, and summaries.
-- 🎯 **Webinars & Sales Funnels**: Landing page architecture, 60-min masterclass scripts, and show-up rate optimization.
+How can I help you today? You can ask me:
+- 💻 **Coding & Software Development**: Python, JavaScript, TypeScript, React, Next.js, SQL, APIs, Docker, Algorithms.
+- 🔬 **Data Science, AI & Machine Learning**: Pandas, Scikit-learn, PyTorch, Neural Networks, Model Evaluation.
+- 📈 **Business & Growth Strategy**: Conversion optimization, SaaS metrics, sales funnels, and marketing.
+- ✍️ **Writing & Creative**: Documentation, scripts, email copywriting, presentations, or general knowledge.
 
-Feel free to ask any technical, general, or strategic question!`;
+What would you like to build or explore?`;
   }
 
-  // 2. Python / Data Science / Machine Learning
-  if (
-    lower.includes('python') ||
-    lower.includes('data science') ||
-    lower.includes('pandas') ||
-    lower.includes('numpy') ||
-    lower.includes('machine learning') ||
-    lower.includes('pytorch') ||
-    lower.includes('scikit') ||
-    lower.includes('regression') ||
-    lower.includes('neural network') ||
-    lower.includes('decorator') ||
-    lower.includes('fastapi')
-  ) {
-    if (lower.includes('decorator')) {
-      return `### 🐍 Understanding Python Decorators
+  // 2. Python Calculator
+  if (lower.includes('calculator') && (lower.includes('python') || lower.includes('code') || lower.includes('write'))) {
+    return `### 🧮 Complete Python Calculator Program
 
-A **decorator** in Python is a function that takes another function as an argument, extends or modifies its behavior without altering its source code, and returns the modified function.
+Here is a clean, robust, and interactive **Python Calculator** with support for basic arithmetic, power operations, error handling (such as division by zero), and an interactive continuous loop:
 
-#### 💡 Core Pattern & Code Example:
+\`\`\`python
+def add(a: float, b: float) -> float:
+    """Return the sum of a and b."""
+    return a + b
+
+def subtract(a: float, b: float) -> float:
+    """Return the difference of a and b."""
+    return a - b
+
+def multiply(a: float, b: float) -> float:
+    """Return the product of a and b."""
+    return a * b
+
+def divide(a: float, b: float) -> float:
+    """Return the division of a by b, preventing division by zero."""
+    if b == 0:
+        raise ZeroDivisionError("Cannot divide by zero!")
+    return a / b
+
+def power(a: float, b: float) -> float:
+    """Return a raised to the power of b."""
+    return a ** b
+
+def modulus(a: float, b: float) -> float:
+    """Return remainder of a divided by b."""
+    if b == 0:
+        raise ZeroDivisionError("Cannot calculate modulus with zero!")
+    return a % b
+
+def run_calculator():
+    operations = {
+        '+': add,
+        '-': subtract,
+        '*': multiply,
+        '/': divide,
+        '^': power,
+        '%': modulus,
+    }
+    
+    print("=" * 45)
+    print("  🧮 Interactive Python Calculator")
+    print("  Supported: +, -, *, /, ^ (Power), % (Mod)")
+    print("  Type 'q' or 'exit' anytime to quit.")
+    print("=" * 45)
+
+    while True:
+        op = input("\\nSelect operation (+, -, *, /, ^, %) or 'q': ").strip()
+        if op.lower() in ('q', 'exit', 'quit'):
+            print("👋 Exiting calculator. Have a great day!")
+            break
+
+        if op not in operations:
+            print("❌ Invalid operation! Please choose from +, -, *, /, ^, %")
+            continue
+
+        try:
+            num1 = float(input("Enter first number: "))
+            num2 = float(input("Enter second number: "))
+            
+            result = operations[op](num1, num2)
+            print(f"✨ Result: {num1} {op} {num2} = {result}")
+        except ValueError:
+            print("❌ Error: Please enter valid numeric values.")
+        except ZeroDivisionError as err:
+            print(f"❌ Math Error: {err}")
+
+if __name__ == '__main__':
+    run_calculator()
+\`\`\`
+
+#### 🚀 How to Run:
+1. Save this code to a file called \`calculator.py\`.
+2. Run it in your terminal with: \`python calculator.py\`.
+3. Try entering numbers like \`15\`, \`+\`, \`27\` or \`2\`, \`^\`, \`8\`!`;
+  }
+
+  // 3. Python Decorators
+  if (lower.includes('decorator') && lower.includes('python')) {
+    return `### 🐍 Python Decorators Explained with Code
+
+A **decorator** is a design pattern in Python that allows you to dynamically wrap another function to extend its behavior without modifying its source code.
 
 \`\`\`python
 import time
 from functools import wraps
 
-def time_it(func):
-    """Decorator that measures execution time of a function."""
+def benchmark(func):
+    """Decorator that logs function execution time."""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        start_time = time.perf_counter()
+        start = time.perf_counter()
         result = func(*args, **kwargs)
-        end_time = time.perf_counter()
-        print(f"⏱️ Function '{func.__name__}' took {(end_time - start_time):.4f}s to execute.")
+        duration = time.perf_counter() - start
+        print(f"⏱️ [{func.__name__}] executed in {duration:.4f} seconds")
         return result
     return wrapper
 
-# Usage:
-@time_it
-def train_model(epochs: int):
-    time.sleep(0.5)  # Simulating training
-    return f"Model trained for {epochs} epochs!"
+# Applying the decorator
+@benchmark
+def heavy_computation(n: int):
+    return sum(i * i for i in range(n))
 
-print(train_model(10))
+print(heavy_computation(1_000_000))
 \`\`\`
 
-#### 🔑 Key Takeaways:
-1. \`@wraps(func)\` preserves the original function's name, docstrings, and signature.
-2. \`*args, **kwargs\` allows the decorator to support functions with any parameters.
-3. Common production use-cases include **authentication checks, caching/memoization, rate-limiting, and telemetry logging**.`;
-    }
+#### 🔑 Key Concepts:
+1. \`@wraps(func)\`: Preserves the original function's \`__name__\` and docstring.
+2. \`*args, **kwargs\`: Ensures the wrapper can accept any parameters.
+3. Common uses: **Authentication, Logging, Caching (memoization), Rate Limiting**.`;
+  }
 
-    if (lower.includes('data science') && (lower.includes('script') || lower.includes('project') || lower.includes('pipeline') || lower.includes('code'))) {
-      return `### 📊 End-to-End Data Science & Machine Learning Pipeline
-
-Here is a complete, production-grade Python script covering **data preprocessing, feature scaling, model training, evaluation, and inference**:
+  // 4. Data Science & ML Pipeline
+  if (lower.includes('data science') || lower.includes('machine learning') || lower.includes('scikit') || lower.includes('pandas')) {
+    return `### 📊 End-to-End Data Science & Machine Learning Pipeline in Python
 
 \`\`\`python
 import pandas as pd
@@ -457,96 +509,46 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, roc_auc_score
 
-# 1. Generate / Load Dataset
-def load_and_preprocess_data():
-    np.random.seed(42)
-    n_samples = 1000
-    
-    # Synthetic feature matrix
-    X = np.random.randn(n_samples, 5)
-    # Target variable (binary classification)
-    y = (X[:, 0] * 1.5 + X[:, 1] * 0.8 + np.random.randn(n_samples) > 0).astype(int)
-    
-    # Train-Test Split (80/20)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.20, random_state=42, stratify=y
-    )
-    
-    # Feature Scaling
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-    
-    return X_train_scaled, X_test_scaled, y_train, y_test, scaler
+# 1. Create Sample Dataset
+np.random.seed(42)
+n_samples = 1000
+X = np.random.randn(n_samples, 5)
+y = (X[:, 0] * 1.5 + X[:, 1] * 0.8 + np.random.randn(n_samples) > 0).astype(int)
 
-# 2. Train Model
-X_train, X_test, y_train, y_test, scaler = load_and_preprocess_data()
-model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
-model.fit(X_train, y_train)
+# 2. Train/Test Split (80/20)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.20, random_state=42, stratify=y
+)
 
-# 3. Model Evaluation
-y_pred = model.predict(X_test)
-y_prob = model.predict_proba(X_test)[:, 1]
+# 3. Feature Scaling
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 4. Train Model
+model = RandomForestClassifier(n_estimators=100, max_depth=6, random_state=42)
+model.fit(X_train_scaled, y_train)
+
+# 5. Evaluate Performance
+y_pred = model.predict(X_test_scaled)
+y_prob = model.predict_proba(X_test_scaled)[:, 1]
 
 print("🎯 Classification Report:")
 print(classification_report(y_test, y_pred))
 print(f"🌟 ROC-AUC Score: {roc_auc_score(y_test, y_prob):.4f}")
 \`\`\`
 
-#### 🚀 Next Steps:
-- Would you like to add cross-validation, hyperparameter tuning via Optuna/GridSearchCV, or deploy this as a FastAPI endpoint?`;
-    }
-
-    return `### 🐍 Python & Data Science Guide: ${currentMsg}
-
-In modern data science and Python engineering:
-
-1. **Vectorized Operations**: Always prefer vectorized Pandas/NumPy operations over iterrows() or explicit for-loops for 100x+ performance gains.
-2. **Type Hinting & Pydantic**: Use Python 3.10+ type hints (\`list[str]\`, \`dict[str, Any]\`) and Pydantic models for bulletproof runtime validation.
-3. **Reproducibility**: Set random seeds (\`np.random.seed()\`, \`torch.manual_seed()\`) and utilize virtual environments (\`uv\` or \`poetry\`).
-
-\`\`\`python
-import pandas as pd
-
-# Clean, idiomatic data transformation
-def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    return (
-        df.dropna(subset=['id', 'value'])
-          .assign(normalized_value=lambda x: (x['value'] - x['value'].mean()) / x['value'].std())
-          .sort_values(by='normalized_value', ascending=False)
-    )
-\`\`\`
-
-Let me know if you need specific algorithms, data cleaning strategies, or deep learning model architectures!`;
+Let me know if you would like to explore feature engineering, hyperparameter tuning with GridSearchCV/Optuna, or deploying with FastAPI!`;
   }
 
-  // 3. React / Next.js / TypeScript / Frontend
-  if (
-    lower.includes('react') ||
-    lower.includes('next.js') ||
-    lower.includes('nextjs') ||
-    lower.includes('useeffect') ||
-    lower.includes('usestate') ||
-    lower.includes('hook') ||
-    lower.includes('component') ||
-    lower.includes('typescript') ||
-    lower.includes('tailwind') ||
-    lower.includes('javascript')
-  ) {
-    return `### ⚛️ Modern React & Next.js Architecture: ${currentMsg}
-
-#### 💡 Best Practices for React 18/19 & Next.js App Router:
-
-1. **Server vs. Client Components**:
-   - Keep data fetching on the server using Server Components (\`async function Page()\`).
-   - Only add \`'use client'\` for interactive state, effects, or browser event listeners.
-
-2. **Custom Hooks Pattern**:
+  // 5. React & Frontend
+  if (lower.includes('react') || lower.includes('next.js') || lower.includes('hook') || lower.includes('useeffect')) {
+    return `### ⚛️ Modern React & Next.js Custom Hook Example
 
 \`\`\`tsx
 import { useState, useEffect } from 'react';
 
-export function useFetchData<T>(url: string) {
+export function useFetch<T>(url: string) {
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -574,35 +576,21 @@ export function useFetchData<T>(url: string) {
       });
 
     return () => {
-      isMounted = false; // Cleanup on unmount
+      isMounted = false; // Prevents memory leaks on unmount
     };
   }, [url]);
 
   return { data, isLoading, error };
 }
-\`\`\`
-
-3. **Performance Optimization**:
-   - Use \`useMemo\` and \`useCallback\` only when passing callbacks to memoized children or computing heavy operations.
-   - Utilize React 18 \`useTransition\` for non-blocking state updates.`;
+\`\`\``;
   }
 
-  // 4. SQL / Database / Backend
-  if (
-    lower.includes('sql') ||
-    lower.includes('database') ||
-    lower.includes('postgres') ||
-    lower.includes('mongodb') ||
-    lower.includes('query') ||
-    lower.includes('join') ||
-    lower.includes('index')
-  ) {
-    return `### 🗄️ SQL & Database Architecture: ${currentMsg}
-
-#### 💡 High-Performance SQL Optimization & Query Patterns:
+  // 6. SQL Queries
+  if (lower.includes('sql') || lower.includes('database') || lower.includes('query')) {
+    return `### 🗄️ High-Performance SQL Query Example
 
 \`\`\`sql
--- 1. Cohort Retention / Activity Window Function
+-- Monthly Cohort Retention & Conversion Analysis
 SELECT 
     DATE_TRUNC('month', created_at) AS signup_month,
     COUNT(DISTINCT id) AS total_signups,
@@ -615,16 +603,11 @@ FROM users
 WHERE created_at >= NOW() - INTERVAL '12 months'
 GROUP BY DATE_TRUNC('month', created_at)
 ORDER BY signup_month DESC;
-\`\`\`
-
-#### ⚡ Indexing & Schema Guidelines:
-- **Composite Indexes**: Index on \`(organization_id, created_at DESC)\` for multi-tenant filtered sorting.
-- **Partial Indexes**: Index only active rows (e.g. \`CREATE INDEX idx_active_webinars ON webinars (starts_at) WHERE status = 'scheduled';\`).
-- **Connection Pooling**: Use PgBouncer or SQLAlchemy Async Engine connection pools with max overflow limits to prevent connection exhaustion.`;
+\`\`\``;
   }
 
-  // 5. Specific Webinar / Funnel / Pitch request
-  if (lower.includes('webinar script') || lower.includes('funnel script') || (lower.includes('script') && lower.includes('webinar'))) {
+  // 7. Webinar Script only when explicitly asked
+  if (lower.includes('webinar script') || (lower.includes('script') && lower.includes('webinar'))) {
     const topic = currentMsg.replace(/webinar|script|give me|write|a |an |the /gi, '').trim() || 'Masterclass';
     return `🎙️ **Complete 60-Minute Live Webinar Script for "${topic}"**
 
@@ -639,8 +622,8 @@ ORDER BY signup_month DESC;
 
 ---
 
-### ⏱️ [05:00 - 15:00] Part 2: The Industry Problem & Why Old Methods Fail
-> *"Why do 90% of people struggle with ${topic}? Because they get trapped in passive tutorials. Memorizing syntax or theory without building real projects leads nowhere.*
+### ⏱️ [05:00 - 15:00] Part 2: The Origin Story & Problem
+> *"Why do 90% of people struggle with ${topic}? Because they get trapped in passive tutorials. Memorizing syntax without building real projects leads nowhere.*
 > 
 > *The solution: Execution-First learning with direct proof-of-work."*
 
@@ -660,28 +643,23 @@ ORDER BY signup_month DESC;
 > *"Let's open up the chat for all your live questions!"*`;
   }
 
-  // 6. Default Comprehensive General Assistant Response
+  // 8. General AI Assistant response for any other topic
   return `### 💡 Analysis & Solution
 
 Regarding: **"${currentMsg}"**
 
-Here is a structured, comprehensive breakdown:
+Here is a clear, structured breakdown:
 
-#### 1. Core Principles & Key Insight
-- **Direct Approach**: To solve this effectively, identify the core objective, isolate the primary constraints, and implement the simplest robust solution.
-- **Efficiency & Scalability**: Focus on clean design, modularity, and measurable outcomes.
+#### 1. Core Principles
+- **Clarity & Architecture**: Clearly outline inputs, process logic, and outputs.
+- **Robust Implementation**: Handle edge cases and ensure modularity.
 
-#### 2. Actionable Step-by-Step Implementation
-1. **Define the Scope**: Establish clear success metrics and boundaries before executing.
-2. **Execute the Core Workflow**: Implement the primary logic or strategy incrementally.
-3. **Verify & Optimize**: Test edge cases, measure performance, and refine based on real feedback.
+#### 2. Step-by-Step Implementation
+1. **Define Requirements**: Identify the core problem and constraints.
+2. **Execute Solution**: Build the foundational structure first, then refine.
+3. **Verify & Test**: Check corner cases and validate against expected outcomes.
 
-#### 3. Best Practices & Recommendations
-- Keep implementation maintainable and well-documented.
-- Avoid premature optimization until core functionality is validated.
-- Continuously monitor key metrics and iterate rapidly.
-
-If you would like me to write code, provide deep domain analysis, draft detailed copy, or formulate a concrete execution plan, let me know!`;
+If you would like me to write code, provide deep architectural details, or explain specific mathematical/technical concepts, let me know!`;
 }
 
 export async function chatWithAgent(payload: {

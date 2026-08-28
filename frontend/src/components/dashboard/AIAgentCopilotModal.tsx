@@ -9,9 +9,11 @@ import {
   Loader2,
   X,
   Copy,
+  Check,
   CheckCircle2,
   Bot,
   Zap,
+  Code2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +25,145 @@ import * as aiApi from '@/lib/ai-api';
 interface AIAgentCopilotModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+// Formatted Chat Message Renderer with Code Highlight & Copy
+function ChatMessageContent({ content }: { content: string }) {
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const handleCopyCode = (codeText: string, index: number) => {
+    navigator.clipboard.writeText(codeText);
+    setCopiedIndex(index);
+    toast.success('Code copied to clipboard!');
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  // Split by code blocks
+  const parts = content.split(/(```[\s\S]*?```)/g);
+
+  return (
+    <div className="space-y-2 text-xs leading-relaxed">
+      {parts.map((part, index) => {
+        if (part.startsWith('```') && part.endsWith('```')) {
+          const firstLineEnd = part.indexOf('\n');
+          const lang = part.slice(3, firstLineEnd).trim() || 'code';
+          const codeContent = part.slice(firstLineEnd + 1, -3).trim();
+
+          return (
+            <div
+              key={index}
+              className="my-2.5 rounded-xl bg-black/80 border border-[#5a1a23]/60 overflow-hidden shadow-md font-mono text-[11px]"
+            >
+              <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#1a0609] border-b border-[#5a1a23]/40 text-gray-400 text-[10px]">
+                <span className="flex items-center gap-1.5 font-semibold text-[#f8a5b2] uppercase tracking-wider">
+                  <Code2 className="h-3 w-3" />
+                  {lang}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopyCode(codeContent, index)}
+                  className="flex items-center gap-1 hover:text-white text-[#f8d7dc] transition-colors py-0.5 px-2 rounded bg-white/5 hover:bg-white/10"
+                >
+                  {copiedIndex === index ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-400" />
+                      <span className="text-emerald-400">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3" />
+                      <span>Copy Code</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <pre className="p-3.5 overflow-x-auto text-emerald-300/90 whitespace-pre leading-relaxed">
+                <code>{codeContent}</code>
+              </pre>
+            </div>
+          );
+        }
+
+        // Render standard text with bold and headers
+        const lines = part.split('\n');
+        return (
+          <div key={index} className="space-y-1">
+            {lines.map((line, lIdx) => {
+              if (!line.trim()) return <div key={lIdx} className="h-1" />;
+
+              if (line.startsWith('### ')) {
+                return (
+                  <h4 key={lIdx} className="text-sm font-bold text-white mt-2 mb-1 flex items-center gap-1.5">
+                    {line.replace('### ', '')}
+                  </h4>
+                );
+              }
+              if (line.startsWith('#### ')) {
+                return (
+                  <h5 key={lIdx} className="text-xs font-semibold text-[#f8a5b2] mt-1.5 mb-0.5">
+                    {line.replace('#### ', '')}
+                  </h5>
+                );
+              }
+              if (line.startsWith('> ')) {
+                return (
+                  <blockquote
+                    key={lIdx}
+                    className="border-l-2 border-[#a63344] pl-2.5 py-0.5 italic text-gray-300 my-1 bg-[#45141b]/10 rounded-r"
+                  >
+                    {line.replace('> ', '')}
+                  </blockquote>
+                );
+              }
+              if (line.startsWith('- ') || line.startsWith('* ')) {
+                return (
+                  <div key={lIdx} className="flex items-start gap-2 ml-1 text-gray-200">
+                    <span className="text-[#f8a5b2] mt-0.5">•</span>
+                    <span>{renderInlineFormatting(line.slice(2))}</span>
+                  </div>
+                );
+              }
+
+              return (
+                <p key={lIdx} className="text-gray-200">
+                  {renderInlineFormatting(line)}
+                </p>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function renderInlineFormatting(text: string) {
+  // Bold **text**
+  const boldParts = text.split(/(\*\*.*?\*\*)/g);
+  return boldParts.map((bPart, bIdx) => {
+    if (bPart.startsWith('**') && bPart.endsWith('**')) {
+      return (
+        <strong key={bIdx} className="font-bold text-white">
+          {bPart.slice(2, -2)}
+        </strong>
+      );
+    }
+    // Inline code `code`
+    const codeParts = bPart.split(/(`.*?`)/g);
+    return codeParts.map((cPart, cIdx) => {
+      if (cPart.startsWith('`') && cPart.endsWith('`')) {
+        return (
+          <code
+            key={cIdx}
+            className="px-1.5 py-0.5 rounded bg-black/60 border border-[#5a1a23]/60 text-amber-300 font-mono text-[11px]"
+          >
+            {cPart.slice(1, -1)}
+          </code>
+        );
+      }
+      return cPart;
+    });
+  });
 }
 
 export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProps) {
@@ -48,7 +189,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
     {
       role: 'assistant',
       content:
-        '👋 Hello! I am your **WebinarFlow AI Agent**.\n\nI can write complete scripts, draft email sequences, optimize your pricing, and build full 11-section webinar funnels.\n\nWhat webinar topic or script are you working on?',
+        '👋 Hello! I am your **WebinarFlow AI Agent**.\n\nI can write code, answer technical & data science questions, draft email sequences, and build complete 11-section webinar funnels.\n\nWhat would you like to work on today?',
     },
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
@@ -64,7 +205,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
           }
         })
         .catch(() => {
-          // Fallbacks handled gracefully in ai-api
+          // Handled gracefully
         });
     }
   }, [isOpen, selectedModel]);
@@ -140,17 +281,12 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
         ...newConvo,
         {
           role: 'assistant',
-          content: 'I have analyzed your request. Click "1-Click Funnel Generator" to generate all 11 sections customized to your description!',
+          content: 'I have analyzed your request. Click "1-Click Funnel Generator" or ask any technical question!',
         },
       ]);
     } finally {
       setIsChatLoading(false);
     }
-  };
-
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard!`);
   };
 
   return (
@@ -166,7 +302,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 WebinarFlow AI Agent
               </h2>
-              <p className="text-xs text-[#f1d0d5]/80">Autonomous Webinar Funnel Architect & Co-pilot</p>
+              <p className="text-xs text-[#f1d0d5]/80">Autonomous Technical Assistant & Funnel Co-pilot</p>
             </div>
           </div>
 
@@ -497,7 +633,10 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                                   {em.type}
                                 </Badge>
                                 <button
-                                  onClick={() => copyToClipboard(`${em.subject}\n\n${em.body}`, 'Email')}
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(`${em.subject}\n\n${em.body}`);
+                                    toast.success('Email copied to clipboard!');
+                                  }}
                                   className="text-xs text-gray-400 hover:text-white flex items-center gap-1"
                                 >
                                   <Copy className="h-3 w-3" /> Copy
@@ -570,10 +709,14 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                       className={`max-w-2xl rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                         msg.role === 'user'
                           ? 'bg-[#852533] text-white border border-[#a63344]/40 shadow-sm'
-                          : 'bg-[#170508]/90 border border-[#5a1a23]/60 text-gray-200 shadow-sm whitespace-pre-line'
+                          : 'bg-[#170508]/90 border border-[#5a1a23]/60 text-gray-200 shadow-sm'
                       }`}
                     >
-                      {msg.content}
+                      {msg.role === 'user' ? (
+                        <p>{msg.content}</p>
+                      ) : (
+                        <ChatMessageContent content={msg.content} />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -595,7 +738,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                 <Input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Ask your AI Agent anything (e.g. 'write a 60-min script', 'give me email copy', 'how to price my webinar')..."
+                  placeholder="Ask your AI Agent anything (e.g. 'write python calculator code', 'explain React hooks', 'write email copy')..."
                   className="bg-black/60 border-[#5a1a23]/60 focus:border-[#a63344] text-white text-xs placeholder:text-gray-500"
                 />
                 <Button
