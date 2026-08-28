@@ -84,57 +84,187 @@ function ChatMessageContent({ content }: { content: string }) {
           );
         }
 
-        // Render standard text with bold and headers
-        const lines = part.split('\n');
+        // Render rich formatted text blocks including tables, headers, and lists
         return (
-          <div key={index} className="space-y-1">
-            {lines.map((line, lIdx) => {
-              if (!line.trim()) return <div key={lIdx} className="h-1" />;
-
-              if (line.startsWith('### ')) {
-                return (
-                  <h4 key={lIdx} className="text-sm font-bold text-white mt-2 mb-1 flex items-center gap-1.5">
-                    {line.replace('### ', '')}
-                  </h4>
-                );
-              }
-              if (line.startsWith('#### ')) {
-                return (
-                  <h5 key={lIdx} className="text-xs font-semibold text-[#f8a5b2] mt-1.5 mb-0.5">
-                    {line.replace('#### ', '')}
-                  </h5>
-                );
-              }
-              if (line.startsWith('> ')) {
-                return (
-                  <blockquote
-                    key={lIdx}
-                    className="border-l-2 border-[#a63344] pl-2.5 py-0.5 italic text-gray-300 my-1 bg-[#45141b]/10 rounded-r"
-                  >
-                    {line.replace('> ', '')}
-                  </blockquote>
-                );
-              }
-              if (line.startsWith('- ') || line.startsWith('* ')) {
-                return (
-                  <div key={lIdx} className="flex items-start gap-2 ml-1 text-gray-200">
-                    <span className="text-[#f8a5b2] mt-0.5">•</span>
-                    <span>{renderInlineFormatting(line.slice(2))}</span>
-                  </div>
-                );
-              }
-
-              return (
-                <p key={lIdx} className="text-gray-200">
-                  {renderInlineFormatting(line)}
-                </p>
-              );
-            })}
+          <div key={index} className="space-y-1.5">
+            {renderMarkdownBlocks(part, index)}
           </div>
         );
       })}
     </div>
   );
+}
+
+function renderMarkdownBlocks(text: string, partIndex: number) {
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      elements.push(<div key={`sp-${partIndex}-${i}`} className="h-1" />);
+      i++;
+      continue;
+    }
+
+    // 1. Horizontal Rule (---, ***, ___)
+    if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
+      elements.push(
+        <hr key={`hr-${partIndex}-${i}`} className="border-t border-[#5a1a23]/70 my-3" />
+      );
+      i++;
+      continue;
+    }
+
+    // 2. Markdown Table Detection
+    if (trimmed.startsWith('|') && trimmed.endsWith('|') && i + 1 < lines.length && lines[i + 1].includes('---')) {
+      const tableLines: string[] = [];
+      const startLine = i;
+      while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+
+      if (tableLines.length >= 2) {
+        const headerCells = tableLines[0]
+          .split('|')
+          .slice(1, -1)
+          .map((c) => c.trim());
+        const dataRows = tableLines.slice(2).map((row) =>
+          row
+            .split('|')
+            .slice(1, -1)
+            .map((c) => c.trim())
+        );
+
+        elements.push(
+          <div
+            key={`tbl-${partIndex}-${startLine}`}
+            className="my-3 overflow-x-auto rounded-xl border border-[#5a1a23] bg-black/70 shadow-lg"
+          >
+            <table className="w-full text-left text-[11px] border-collapse">
+              <thead>
+                <tr className="bg-[#24080c] border-b border-[#5a1a23] text-white">
+                  {headerCells.map((h, hIdx) => (
+                    <th key={hIdx} className="px-3 py-2 font-semibold text-[#f8d7dc] tracking-wide">
+                      {renderInlineFormatting(h)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#5a1a23]/40">
+                {dataRows.map((row, rIdx) => (
+                  <tr
+                    key={rIdx}
+                    className={`transition-colors hover:bg-[#381016]/30 ${
+                      rIdx % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.02]'
+                    }`}
+                  >
+                    {row.map((cell, cIdx) => (
+                      <td key={cIdx} className="px-3 py-2 text-gray-200">
+                        {renderInlineFormatting(cell)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+        continue;
+      }
+    }
+
+    // 3. Headings
+    if (line.startsWith('# ')) {
+      elements.push(
+        <h2 key={`h1-${partIndex}-${i}`} className="text-base font-bold text-white mt-3 mb-1.5">
+          {renderInlineFormatting(line.replace('# ', ''))}
+        </h2>
+      );
+      i++;
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      elements.push(
+        <h3 key={`h2-${partIndex}-${i}`} className="text-sm font-bold text-white mt-2.5 mb-1">
+          {renderInlineFormatting(line.replace('## ', ''))}
+        </h3>
+      );
+      i++;
+      continue;
+    }
+    if (line.startsWith('### ')) {
+      elements.push(
+        <h4 key={`h3-${partIndex}-${i}`} className="text-xs font-bold text-[#f8a5b2] mt-2 mb-1">
+          {renderInlineFormatting(line.replace('### ', ''))}
+        </h4>
+      );
+      i++;
+      continue;
+    }
+    if (line.startsWith('#### ')) {
+      elements.push(
+        <h5 key={`h4-${partIndex}-${i}`} className="text-xs font-semibold text-[#f8d7dc] mt-1.5 mb-0.5">
+          {renderInlineFormatting(line.replace('#### ', ''))}
+        </h5>
+      );
+      i++;
+      continue;
+    }
+
+    // 4. Blockquotes
+    if (line.startsWith('> ')) {
+      elements.push(
+        <blockquote
+          key={`quote-${partIndex}-${i}`}
+          className="border-l-2 border-[#a63344] pl-2.5 py-1 italic text-gray-300 my-1 bg-[#45141b]/15 rounded-r"
+        >
+          {renderInlineFormatting(line.replace('> ', ''))}
+        </blockquote>
+      );
+      i++;
+      continue;
+    }
+
+    // 5. Bullet Lists
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      elements.push(
+        <div key={`bullet-${partIndex}-${i}`} className="flex items-start gap-2 ml-1 text-gray-200">
+          <span className="text-[#f8a5b2] mt-0.5 font-bold">•</span>
+          <span>{renderInlineFormatting(line.slice(2))}</span>
+        </div>
+      );
+      i++;
+      continue;
+    }
+
+    // 6. Numbered Lists
+    const numMatch = line.match(/^(\d+)\.\s+(.*)$/);
+    if (numMatch) {
+      elements.push(
+        <div key={`num-${partIndex}-${i}`} className="flex items-start gap-2 ml-1 text-gray-200">
+          <span className="font-semibold text-[#f8a5b2] min-w-[16px]">{numMatch[1]}.</span>
+          <span>{renderInlineFormatting(numMatch[2])}</span>
+        </div>
+      );
+      i++;
+      continue;
+    }
+
+    // 7. Standard Paragraph
+    elements.push(
+      <p key={`p-${partIndex}-${i}`} className="text-gray-200 leading-relaxed">
+        {renderInlineFormatting(line)}
+      </p>
+    );
+    i++;
+  }
+
+  return elements;
 }
 
 function renderInlineFormatting(text: string) {
