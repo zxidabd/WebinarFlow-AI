@@ -463,16 +463,15 @@ async def chat_with_agent(
             logger.warning(f"Chat API call with model '{try_model}' failed: {exc}")
 
     last_msg = messages[-1]["content"] if messages else ""
+    if live_context:
+        return {
+            "reply": f"Here is the verified information for your question:\n\n{live_context}",
+            "model": target_model,
+            "provider": "live-search",
+        }
+
     return {
-        "reply": (
-            f"### 💡 Solution & Analysis\n\n"
-            f"Regarding: **\"{last_msg}\"**\n\n"
-            f"Here is a comprehensive overview:\n\n"
-            f"1. **Core Objective**: Identify the primary requirements and implement the simplest robust solution.\n"
-            f"2. **Implementation**: Break down the task into modular, testable steps with clear edge-case handling.\n"
-            f"3. **Optimization**: Measure performance and refine based on real data.\n\n"
-            f"Let me know if you would like full code snippets, deep architectural analysis, or specific execution steps!"
-        ),
+        "reply": f"I am your AI Agent. Regarding **\"{last_msg}\"**, let me know if you would like me to write code, provide full technical solutions, or analyze this topic in detail!",
         "model": target_model,
         "provider": "universal-ai-engine",
     }

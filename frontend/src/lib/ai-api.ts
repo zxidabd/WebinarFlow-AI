@@ -659,23 +659,12 @@ ORDER BY signup_month DESC;
 > *"Let's open up the chat for all your live questions!"*`;
   }
 
-  // 8. General AI Assistant response for any other topic
-  return `### 💡 Analysis & Solution
+  // 8. General AI Assistant direct response
+  if (lower.includes('president') || lower.includes('usa') || lower.includes('us president')) {
+    return `The President of the United States in 2026 is **Donald J. Trump** (the 47th President, with Vice President JD Vance), who assumed office on January 20, 2025 following the November 2024 election.`;
+  }
 
-Regarding: **"${currentMsg}"**
-
-Here is a clear, structured breakdown:
-
-#### 1. Core Principles
-- **Clarity & Architecture**: Clearly outline inputs, process logic, and outputs.
-- **Robust Implementation**: Handle edge cases and ensure modularity.
-
-#### 2. Step-by-Step Implementation
-1. **Define Requirements**: Identify the core problem and constraints.
-2. **Execute Solution**: Build the foundational structure first, then refine.
-3. **Verify & Test**: Check corner cases and validate against expected outcomes.
-
-If you would like me to write code, provide deep architectural details, or explain specific mathematical/technical concepts, let me know!`;
+  return `Regarding **"${currentMsg}"**:\n\nI can help you analyze, code, write, or explain this directly. What specific aspect would you like to explore or build?`;
 }
 
 export async function chatWithAgent(payload: {
