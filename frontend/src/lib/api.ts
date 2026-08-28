@@ -33,10 +33,22 @@ function readToken(): string | null {
   }
 }
 
+function readOrgId(): string | null {
+  try {
+    const raw = localStorage.getItem('webinarflow-auth');
+    if (!raw) return null;
+    return (JSON.parse(raw)?.state?.organization?.id as string) || null;
+  } catch {
+    return null;
+  }
+}
+
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (!bootstrapped) bootstrapped = true;
   const token = readToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  const orgId = readOrgId();
+  if (orgId) config.headers['X-Organization-Id'] = orgId;
   return config;
 });
 

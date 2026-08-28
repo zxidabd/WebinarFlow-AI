@@ -85,20 +85,36 @@ async def get_analytics_overview(
     total_registrations = 0
     total_attended = 0
     regs_by_webinar: dict[uuid.UUID, list[Registrant]] = {}
+
+    target_conditions = []
     if webinar_ids:
+        target_conditions.append(Registrant.webinar_id.in_(webinar_ids))
+    if lp_ids:
+        target_conditions.append(Registrant.landing_page_id.in_(lp_ids))
+
+    if target_conditions:
         r_query = select(Registrant).where(
-            Registrant.webinar_id.in_(webinar_ids),
+            or_(*target_conditions),
             Registrant.status != RegistrantStatus.cancelled,
         )
         if start_time:
-            r_query = r_query.where(Registrant.created_at >= start_time)
+            r_query = r_query.where(
+                or_(
+                    Registrant.created_at >= start_time,
+                    Registrant.registered_at >= start_time,
+                )
+            )
         regs = (await db.execute(r_query)).scalars().all()
         total_registrations = len(regs)
 
         for r in regs:
-            regs_by_webinar.setdefault(r.webinar_id, []).append(r)
+            if r.webinar_id:
+                regs_by_webinar.setdefault(r.webinar_id, []).append(r)
             if r.status in (RegistrantStatus.attended, "attended", RegistrantStatus.converted, "converted", "purchased"):
                 total_attended += 1
+
+    # Ensure total views is at least equal to registrations (each registrant viewed the page)
+    total_views = max(total_views, total_registrations)
 
     # 5. Offer / CTA Clicks
     total_cta_clicks = 0
@@ -137,7 +153,7 @@ async def get_analytics_overview(
         for w in webinars:
             w_regs = regs_by_webinar.get(w.id, [])
             w_lp_ids = webinar_to_lp_ids.get(w.id, [])
-            w_views = sum(lp_visits_count_by_lp.get(lp_id, 0) for lp_id in w_lp_ids)
+            w_views = max(sum(lp_visits_count_by_lp.get(lp_id, 0) for lp_id in w_lp_ids), len(w_regs))
             w_payments = payments_by_webinar.get(w.id, [])
             w_rev = float(sum(p.amount for p in w_payments))
             w_buyers_count = len({p.registrant_id for p in w_payments})

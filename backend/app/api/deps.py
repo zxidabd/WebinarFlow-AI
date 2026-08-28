@@ -101,7 +101,7 @@ async def get_current_membership(
             raise HTTPException(status.HTTP_403_FORBIDDEN, "You do not have access to this organization")
         return membership
 
-    # Fall back to the user's default membership, else their earliest membership.
+    # Fall back to the user's default membership, else their most active / latest membership.
     membership = (
         await db.execute(
             stmt_base().where(Membership.is_default.is_(True))
@@ -109,8 +109,8 @@ async def get_current_membership(
     ).scalar_one_or_none()
     if membership is None:
         membership = (
-            await db.execute(stmt_base().order_by(Membership.created_at))
-        ).scalar_one_or_none()
+            await db.execute(stmt_base().order_by(Membership.created_at.desc()))
+        ).scalars().first()
     if membership is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "You are not a member of any organization")
     return membership

@@ -51,11 +51,19 @@ async def list_org_registrants(
     for p in payments_res:
         payments_by_registrant[p.registrant_id] = payments_by_registrant.get(p.registrant_id, 0.0) + float(p.amount)
 
-    # 2. Query registrants joined with webinars
+    # 2. Query registrants joined with webinars & landing pages
+    from app.models import LandingPage
+
     query = (
-        select(Registrant, Webinar)
-        .join(Webinar, Registrant.webinar_id == Webinar.id)
-        .where(Webinar.organization_id == org_id)
+        select(Registrant, Webinar, LandingPage)
+        .outerjoin(Webinar, Registrant.webinar_id == Webinar.id)
+        .outerjoin(LandingPage, Registrant.landing_page_id == LandingPage.id)
+        .where(
+            or_(
+                Webinar.organization_id == org_id,
+                LandingPage.organization_id == org_id,
+            )
+        )
         .order_by(Registrant.created_at.desc())
     )
 
@@ -66,46 +74,55 @@ async def list_org_registrants(
                 func.lower(Registrant.email).like(s),
                 func.lower(Registrant.full_name).like(s),
                 func.lower(Webinar.title).like(s),
+                func.lower(LandingPage.title).like(s),
             )
         )
 
     results = (await db.execute(query)).all()
-    total = len(results)
 
     items = []
     total_revenue = 0.0
-    active_buyers = 0
+    active_buyers_set: set[str] = set()
+    unique_contacts_set: set[str] = set()
 
-    for reg, web in results:
+    for reg, web, lp in results:
+        contact_key = (reg.email or "").strip().lower()
+        unique_contacts_set.add(contact_key)
+
         actual_spent = payments_by_registrant.get(reg.id, 0.0)
         is_buyer = actual_spent > 0 or reg.status in (RegistrantStatus.converted, "purchased", "converted")
         
         if is_buyer:
-            active_buyers += 1
+            active_buyers_set.add(contact_key)
             total_revenue += actual_spent
 
         st_label = "Purchased" if is_buyer else ("Attended" if reg.status in (RegistrantStatus.attended, "attended") else "Registered")
         if status and status.lower() != "all" and st_label.lower() != status.strip().lower():
             continue
 
+        created_dt = reg.created_at or reg.registered_at
+        title = (web.title if web else None) or (lp.title if lp else "Webinar Registration")
+
         items.append({
             "id": str(reg.id),
             "name": reg.full_name or reg.email.split("@")[0],
             "email": reg.email,
-            "webinarTitle": web.title,
+            "webinarTitle": title,
             "status": st_label,
             "totalSpent": actual_spent,
-            "dateJoined": reg.created_at.strftime("%Y-%m-%d") if reg.created_at else "",
+            "dateJoined": created_dt.strftime("%Y-%m-%d") if created_dt else "",
         })
 
     paginated_items = items[offset : offset + limit]
-    avg_ltv = (total_revenue / active_buyers) if active_buyers > 0 else 0.0
+    active_buyers_count = len(active_buyers_set)
+    total_leads_count = len(unique_contacts_set) if unique_contacts_set else len(items)
+    avg_ltv = (total_revenue / active_buyers_count) if active_buyers_count > 0 else 0.0
 
     return {
         "items": paginated_items,
         "total": len(items),
-        "totalLeads": total,
-        "activeBuyers": active_buyers,
+        "totalLeads": total_leads_count,
+        "activeBuyers": active_buyers_count,
         "totalRevenue": total_revenue,
         "avgLtv": avg_ltv,
     }
