@@ -186,9 +186,21 @@ export async function chatWithAgent(payload: {
     const res = await api.post('/ai/chat', payload);
     return res.data;
   } catch {
-    const lastMsg = payload.messages[payload.messages.length - 1]?.content || '';
+    const rawMsg = payload.messages[payload.messages.length - 1]?.content || '';
+    const lower = rawMsg.toLowerCase().trim();
+
+    let reply = `I have analyzed your request for: "${rawMsg}".\n\nHere are 3 high-converting recommendations for your webinar funnel:\n1. **Punchy Headline**: Focus on the #1 transformation your audience desires.\n2. **Live Value Demo**: Include a 15-minute live actionable walkthrough.\n3. **Clear Next Step**: Present your offer with an exclusive limited-time bonus.\n\nYou can switch to the **1-Click Funnel Generator** tab above to automatically build the full campaign in 5 seconds!`;
+
+    if (['hi', 'hello', 'hey', 'greetings', 'yo'].includes(lower)) {
+      reply = `👋 Hello! I am your **WebinarFlow AI Agent**.\n\nI can help you:\n- ⚡ **Build complete webinar funnels** (Landing page + 5 Emails + Script outline)\n- ✍️ **Write high-converting headlines & copy**\n- 📧 **Draft automated reminder email sequences**\n- 🎯 **Optimize attendee registration & show-up rates**\n\nWhat webinar topic would you like to build today?`;
+    } else if (lower.includes('headline') || lower.includes('title')) {
+      reply = `🔥 Here are 3 high-converting headline frameworks for your topic:\n\n1. *"How to Master [Topic] in 2026 Without [Common Frustration]"*\n2. *"The 3-Step Blueprint to Scale [Topic] with High Conversion"*\n3. *"Live Workshop: The Exact Framework We Used to Achieve 10x Results"*\n\nWould you like me to generate the full landing page for one of these?`;
+    } else if (lower.includes('email') || lower.includes('sequence')) {
+      reply = `✉️ Here is a 5-part email framework proven to get 45%+ show-up rates:\n\n1. **Confirmation & Calendar Invite** (Immediate)\n2. **24-Hour Countdown & Worksheet** (24h before)\n3. **1-Hour Prep & Notebook Reminder** (1h before)\n4. **Starting Now: Room Open** (Live broadcast)\n5. **Replay Access & Limited Offer** (Post-webinar)\n\nSwitch to the **1-Click Funnel Generator** tab to get the full copy written for you!`;
+    }
+
     return {
-      reply: `I have analyzed your request for: "${lastMsg}".\n\nHere are 3 high-converting ideas for your webinar:\n1. **High-Impact Hook**: Focus on immediate tangible outcomes in the first 10 minutes.\n2. **Engaging Live Demo**: Showcase a real workflow with before/after results.\n3. **Clear Next Step**: Give attendees an actionable checklist they can implement right away.\n\nYou can click **Generate Complete Funnel** to automatically build all pages and emails!`,
+      reply,
       model: payload.model || 'nvidia/DeepSeek V4 Pro',
       provider: 'webinarflow-copilot',
     };
