@@ -7,9 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
+import { api } from '@/lib/api';
+
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [activeOrgId, setActiveOrgId] = useState<string | null>(null);
 
   // Stripe State
   const [stripeEnabled, setStripeEnabled] = useState(true);
@@ -26,35 +29,63 @@ export default function SettingsPage() {
 
   const [saving, setSaving] = useState(false);
 
-  // Load saved credentials on mount
+  // Load saved credentials on mount from backend DB and local storage
   useEffect(() => {
     setMounted(true);
-    try {
-      const savedStripePk = localStorage.getItem('wf_stripe_pk') || '';
-      const savedStripeSk = localStorage.getItem('wf_stripe_sk') || '';
-      const savedStripeWh = localStorage.getItem('wf_stripe_wh') || '';
-      const savedStripeOn = localStorage.getItem('wf_stripe_enabled') === 'true';
+    async function loadOrgKeys() {
+      try {
+        const orgsRes = await api.get('/organizations');
+        const orgs = orgsRes.data || [];
+        const org = orgs.find((o: any) => o.is_default) || orgs[0];
+        if (org && org.id) {
+          setActiveOrgId(org.id);
+          const keysRes = await api.get(`/organizations/${org.id}/payment-keys`);
+          const k = keysRes.data || {};
+          if (k.stripe_publishable_key) setStripePublishableKey(k.stripe_publishable_key);
+          if (k.stripe_secret_key) setStripeSecretKey(k.stripe_secret_key);
+          if (k.stripe_webhook_secret) setStripeWebhookSecret(k.stripe_webhook_secret);
+          if (k.stripe_enabled !== undefined) setStripeEnabled(k.stripe_enabled);
 
-      const savedRzpKey = localStorage.getItem('wf_rzp_key') || '';
-      const savedRzpSecret = localStorage.getItem('wf_rzp_secret') || '';
-      const savedRzpOn = localStorage.getItem('wf_rzp_enabled') === 'true';
+          if (k.razorpay_key_id) setRazorpayKeyId(k.razorpay_key_id);
+          if (k.razorpay_key_secret) setRazorpayKeySecret(k.razorpay_key_secret);
+          if (k.razorpay_enabled !== undefined) setRazorpayEnabled(k.razorpay_enabled);
+          return;
+        }
+      } catch (err) {
+        console.error('Error fetching org payment keys:', err);
+      }
 
-      if (savedStripePk) setStripePublishableKey(savedStripePk);
-      if (savedStripeSk) setStripeSecretKey(savedStripeSk);
-      if (savedStripeWh) setStripeWebhookSecret(savedStripeWh);
-      setStripeEnabled(savedStripeOn !== false);
+      // Local storage fallback
+      try {
+        const savedStripePk = localStorage.getItem('wf_stripe_pk') || '';
+        const savedStripeSk = localStorage.getItem('wf_stripe_sk') || '';
+        const savedStripeWh = localStorage.getItem('wf_stripe_wh') || '';
+        const savedStripeOn = localStorage.getItem('wf_stripe_enabled') === 'true';
 
-      if (savedRzpKey) setRazorpayKeyId(savedRzpKey);
-      if (savedRzpSecret) setRazorpayKeySecret(savedRzpSecret);
-      setRazorpayEnabled(savedRzpOn);
-    } catch (e) {
-      console.error(e);
+        const savedRzpKey = localStorage.getItem('wf_rzp_key') || '';
+        const savedRzpSecret = localStorage.getItem('wf_rzp_secret') || '';
+        const savedRzpOn = localStorage.getItem('wf_rzp_enabled') === 'true';
+
+        if (savedStripePk) setStripePublishableKey(savedStripePk);
+        if (savedStripeSk) setStripeSecretKey(savedStripeSk);
+        if (savedStripeWh) setStripeWebhookSecret(savedStripeWh);
+        setStripeEnabled(savedStripeOn !== false);
+
+        if (savedRzpKey) setRazorpayKeyId(savedRzpKey);
+        if (savedRzpSecret) setRazorpayKeySecret(savedRzpSecret);
+        setRazorpayEnabled(savedRzpOn);
+      } catch (e) {
+        console.error(e);
+      }
     }
+
+    loadOrgKeys();
   }, []);
 
-  const handleSavePaymentKeys = () => {
+  const handleSavePaymentKeys = async () => {
     setSaving(true);
     try {
+      // 1. Save to local storage for local client caching
       localStorage.setItem('wf_stripe_pk', stripePublishableKey);
       localStorage.setItem('wf_stripe_sk', stripeSecretKey);
       localStorage.setItem('wf_stripe_wh', stripeWebhookSecret);
@@ -64,9 +95,31 @@ export default function SettingsPage() {
       localStorage.setItem('wf_rzp_secret', razorpayKeySecret);
       localStorage.setItem('wf_rzp_enabled', String(razorpayEnabled));
 
-      toast.success('Payment gateway credentials saved successfully!');
-    } catch (err) {
-      toast.error('Failed to save payment keys');
+      // 2. Persist to Backend Organization database
+      let targetOrgId = activeOrgId;
+      if (!targetOrgId) {
+        const orgsRes = await api.get('/organizations');
+        const orgs = orgsRes.data || [];
+        const org = orgs.find((o: any) => o.is_default) || orgs[0];
+        if (org && org.id) targetOrgId = org.id;
+      }
+
+      if (targetOrgId) {
+        await api.patch(`/organizations/${targetOrgId}/payment-keys`, {
+          stripe_enabled: stripeEnabled,
+          stripe_publishable_key: stripePublishableKey,
+          stripe_secret_key: stripeSecretKey,
+          stripe_webhook_secret: stripeWebhookSecret,
+          razorpay_enabled: razorpayEnabled,
+          razorpay_key_id: razorpayKeyId,
+          razorpay_key_secret: razorpayKeySecret,
+        });
+      }
+
+      toast.success('Payment gateway credentials saved successfully to your workspace!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.detail || 'Failed to save payment keys');
     } finally {
       setSaving(false);
     }

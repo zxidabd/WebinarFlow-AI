@@ -83,18 +83,27 @@ async def create_stripe_checkout_session(
     ).scalar_one_or_none()
     if existing_payment:
         # Reuse the existing pending payment
-        base_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        base_url = os.getenv("FRONTEND_URL", "https://www.webinarflow.in").replace("http://localhost:3000", "https://www.webinarflow.in")
         existing_url = f"{base_url}/payment/success?session_id={existing_payment.checkout_session_id}&registrant_id={registrant.id}"
         return CheckoutSessionResult(url=existing_url, session_id=existing_payment.checkout_session_id)
 
-    stripe_key = (os.getenv("STRIPE_SECRET_KEY", "")).strip()
+    # 1. Look up organization-level custom Stripe key first, fallback to environment
+    from app.models import Organization
+    org = (await db.execute(select(Organization).where(Organization.id == webinar.organization_id))).scalar_one_or_none()
+    org_settings = getattr(org, "settings", {}) or {}
+
+    stripe_key = (org_settings.get("stripe_secret_key") or os.getenv("STRIPE_SECRET_KEY", "")).strip()
     if not stripe_key or stripe_key.startswith("sk_test_your"):
         raise PaymentError(
-            "Stripe is not configured. Please set a valid STRIPE_SECRET_KEY in backend environment.",
+            "Stripe is not configured. Please set your Stripe Secret Key in Dashboard Settings.",
             code="STRIPE_NOT_CONFIGURED",
         )
 
     stripe.api_key = stripe_key
+
+    base_url = (os.getenv("FRONTEND_URL", "https://www.webinarflow.in")).rstrip("/")
+    final_success_url = success_url or f"{base_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}&registrant_id={registrant.id}"
+    final_cancel_url = cancel_url or f"{base_url}/r/{webinar.slug}"
 
     try:
         session = stripe.checkout.Session.create(
@@ -114,8 +123,8 @@ async def create_stripe_checkout_session(
                 }
             ],
             client_reference_id=str(registrant.id),
-            success_url=success_url,
-            cancel_url=cancel_url,
+            success_url=final_success_url,
+            cancel_url=final_cancel_url,
             metadata={
                 "webinar_id": str(webinar.id),
                 "registrant_id": str(registrant.id),
@@ -276,12 +285,17 @@ async def create_razorpay_order(
     # For USD, Razorpay expects amount in smallest unit too
     razorpay_amount = amount_cents
 
-    razorpay_key_id = (os.getenv('RAZORPAY_KEY_ID', '')).strip()
-    razorpay_key_secret = (os.getenv('RAZORPAY_KEY_SECRET', '')).strip()
+    # Look up organization-level custom Razorpay keys first, fallback to environment
+    from app.models import Organization
+    org = (await db.execute(select(Organization).where(Organization.id == webinar.organization_id))).scalar_one_or_none()
+    org_settings = getattr(org, "settings", {}) or {}
+
+    razorpay_key_id = (org_settings.get("razorpay_key_id") or os.getenv('RAZORPAY_KEY_ID', '')).strip()
+    razorpay_key_secret = (org_settings.get("razorpay_key_secret") or os.getenv('RAZORPAY_KEY_SECRET', '')).strip()
 
     if not razorpay_key_id or not razorpay_key_secret or razorpay_key_id.startswith('rzp_test_your'):
         raise PaymentError(
-            "Razorpay is not configured. Please set valid RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in backend environment.",
+            "Razorpay is not configured. Please set valid RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Dashboard Settings.",
             code="RAZORPAY_NOT_CONFIGURED",
         )
 
@@ -349,12 +363,22 @@ async def verify_razorpay_payment(
     registrant_id: uuid.UUID,
 ) -> Payment:
     """Verify Razorpay payment signature and mark payment as completed."""
-    razorpay_key_id = (os.getenv('RAZORPAY_KEY_ID', '')).strip()
-    razorpay_key_secret = (os.getenv('RAZORPAY_KEY_SECRET', '')).strip()
+    # Find registrant & webinar for org settings
+    registrant = (await db.execute(select(Registrant).where(Registrant.id == registrant_id))).scalar_one_or_none()
+    org_settings = {}
+    if registrant:
+        webinar = (await db.execute(select(Webinar).where(Webinar.id == registrant.webinar_id))).scalar_one_or_none()
+        if webinar:
+            from app.models import Organization
+            org = (await db.execute(select(Organization).where(Organization.id == webinar.organization_id))).scalar_one_or_none()
+            org_settings = getattr(org, "settings", {}) or {}
+
+    razorpay_key_id = (org_settings.get("razorpay_key_id") or os.getenv('RAZORPAY_KEY_ID', '')).strip()
+    razorpay_key_secret = (org_settings.get("razorpay_key_secret") or os.getenv('RAZORPAY_KEY_SECRET', '')).strip()
 
     if not razorpay_key_id or not razorpay_key_secret or razorpay_key_id.startswith('rzp_test_your'):
         raise PaymentError(
-            "Razorpay is not configured. Please set valid credentials in the backend environment.",
+            "Razorpay is not configured. Please set valid credentials in Dashboard Settings.",
             code="RAZORPAY_NOT_CONFIGURED",
         )
 
@@ -380,46 +404,16 @@ async def verify_razorpay_payment(
     if payment.status == PaymentStatus.completed:
         return payment
 
-    payment.status = PaymentStatus.completed
-    payment.provider_txn_id = razorpay_payment_id
-
-    # Update registrant status
-    registrant = (
-        await db.execute(select(Registrant).where(Registrant.id == registrant_id))
-    ).scalar_one_or_none()
-    if registrant:
-        was_pending = registrant.status != RegistrantStatus.registered
-        registrant.status = RegistrantStatus.registered
-
-        webinar = (await db.execute(select(Webinar).where(Webinar.id == registrant.webinar_id))).scalar_one_or_none()
-        if was_pending and webinar:
-            webinar.registration_count += 1
-
-        # Create activity log
-        from datetime import datetime, timezone
-        from app.models import WebinarActivity
-        activity = WebinarActivity(
-            registrant_id=registrant_id,
-            webinar_id=registrant.webinar_id,
-            event_type='registered',
-            occurred_at=datetime.now(timezone.utc),
-            meta={
-                'provider': 'razorpay',
-                'payment_id': razorpay_payment_id,
-                'order_id': razorpay_order_id,
-                'payment_verified': True,
-            },
-        )
-        db.add(activity)
-
-        if webinar:
-            try:
-                from app.services import email_service
-                await email_service.send_registration_confirmation_email(registrant, webinar)
-            except Exception:
-                pass
-
-    await db.flush()
+    # Mark payment completed & update registrant
+    payment = await process_successful_payment(
+        db,
+        registrant_id=registrant_id,
+        provider="razorpay",
+        provider_txn_id=razorpay_payment_id,
+        checkout_session_id=razorpay_order_id,
+        amount=payment.amount,
+        currency=payment.currency,
+    )
     return payment
 
 
@@ -430,7 +424,16 @@ async def verify_stripe_checkout_session(
     registrant_id: uuid.UUID,
 ) -> Payment:
     """Verify a Stripe checkout session when the user returns to the success page."""
-    stripe_key = (os.getenv("STRIPE_SECRET_KEY", "")).strip()
+    registrant = (await db.execute(select(Registrant).where(Registrant.id == registrant_id))).scalar_one_or_none()
+    org_settings = {}
+    if registrant:
+        webinar = (await db.execute(select(Webinar).where(Webinar.id == registrant.webinar_id))).scalar_one_or_none()
+        if webinar:
+            from app.models import Organization
+            org = (await db.execute(select(Organization).where(Organization.id == webinar.organization_id))).scalar_one_or_none()
+            org_settings = getattr(org, "settings", {}) or {}
+
+    stripe_key = (org_settings.get("stripe_secret_key") or os.getenv("STRIPE_SECRET_KEY", "")).strip()
     if not stripe_key or stripe_key.startswith("sk_test_your"):
         raise PaymentError("Stripe is not configured.", code="STRIPE_NOT_CONFIGURED")
 

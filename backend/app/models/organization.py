@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
@@ -28,6 +28,7 @@ class Organization(UUIDMixin, TimestampMixin, Base):
     # A "personal" org is auto-created on signup and cannot be left/deleted
     # via member management; shared orgs are user-created.
     is_personal: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    settings: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
 
     members: Mapped[list["Membership"]] = relationship(  # type: ignore[name-defined]
         "Membership", back_populates="organization", cascade="all, delete-orphan"

@@ -211,3 +211,76 @@ async def remove_member(
     if target is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Membership not found")
     await db.delete(target)
+
+
+from pydantic import BaseModel
+
+class PaymentKeysPayload(BaseModel):
+    stripe_enabled: bool | None = None
+    stripe_publishable_key: str | None = None
+    stripe_secret_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    razorpay_enabled: bool | None = None
+    razorpay_key_id: str | None = None
+    razorpay_key_secret: str | None = None
+
+
+@router.get("/{org_id}/payment-keys")
+async def get_organization_payment_keys(
+    org_id: uuid.UUID,
+    membership: Membership = Depends(require_org_permissions("org:manage")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve payment gateway configuration for this organization."""
+    org = membership.organization
+    settings = dict(getattr(org, "settings", {}) or {})
+    
+    sk = settings.get("stripe_secret_key") or ""
+    masked_sk = (sk[:7] + "•" * 24 + sk[-4:]) if len(sk) > 12 else (sk if sk else "")
+    
+    rzp_sec = settings.get("razorpay_key_secret") or ""
+    masked_rzp_sec = (rzp_sec[:4] + "•" * 16 + rzp_sec[-3:]) if len(rzp_sec) > 8 else (rzp_sec if rzp_sec else "")
+
+    return {
+        "stripe_enabled": bool(settings.get("stripe_enabled", True)),
+        "stripe_publishable_key": settings.get("stripe_publishable_key") or "",
+        "stripe_secret_key": masked_sk,
+        "has_stripe_secret_key": bool(sk),
+        "stripe_webhook_secret": settings.get("stripe_webhook_secret") or "",
+        "razorpay_enabled": bool(settings.get("razorpay_enabled", False)),
+        "razorpay_key_id": settings.get("razorpay_key_id") or "",
+        "razorpay_key_secret": masked_rzp_sec,
+        "has_razorpay_key_secret": bool(rzp_sec),
+    }
+
+
+@router.patch("/{org_id}/payment-keys")
+async def update_organization_payment_keys(
+    org_id: uuid.UUID,
+    payload: PaymentKeysPayload,
+    membership: Membership = Depends(require_org_permissions("org:manage")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update payment gateway configuration for this organization."""
+    org = membership.organization
+    settings = dict(getattr(org, "settings", {}) or {})
+
+    if payload.stripe_enabled is not None:
+        settings["stripe_enabled"] = payload.stripe_enabled
+    if payload.stripe_publishable_key is not None:
+        settings["stripe_publishable_key"] = payload.stripe_publishable_key.strip()
+    if payload.stripe_secret_key is not None and not payload.stripe_secret_key.startswith("••") and "•" not in payload.stripe_secret_key:
+        settings["stripe_secret_key"] = payload.stripe_secret_key.strip()
+    if payload.stripe_webhook_secret is not None:
+        settings["stripe_webhook_secret"] = payload.stripe_webhook_secret.strip()
+
+    if payload.razorpay_enabled is not None:
+        settings["razorpay_enabled"] = payload.razorpay_enabled
+    if payload.razorpay_key_id is not None:
+        settings["razorpay_key_id"] = payload.razorpay_key_id.strip()
+    if payload.razorpay_key_secret is not None and not payload.razorpay_key_secret.startswith("••") and "•" not in payload.razorpay_key_secret:
+        settings["razorpay_key_secret"] = payload.razorpay_key_secret.strip()
+
+    org.settings = settings
+    await db.flush()
+    return {"status": "ok", "message": "Payment gateway credentials saved"}
