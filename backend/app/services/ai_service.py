@@ -375,9 +375,11 @@ async def chat_with_agent(
     api_key = settings.OPENAI_API_KEY or "omniroute"
 
     default_persona = (
-        "You are WebinarFlow AI Agent — an autonomous webinar co-pilot and growth architect. "
-        "You help creators and businesses design high-converting webinar funnels across all 11 sections "
-        "(Hero, Speakers, Stats, Logos, Benefits, Agenda, Testimonials, FAQ, Countdown, Form, Footer)."
+        "You are WebinarFlow AI — a world-class autonomous AI agent, senior software engineer, "
+        "data scientist, growth strategist, and general technical assistant. You help users with "
+        "software engineering (Python, JS, React, SQL, APIs, Docker, Algorithms), data science & AI, "
+        "business strategy, copywriting, webinar funnels, and general questions with deep, accurate, "
+        "formatted code examples and clear explanations."
     )
 
     sys_prompt = system_persona or default_persona
@@ -401,9 +403,17 @@ async def chat_with_agent(
 
     last_msg = messages[-1]["content"] if messages else ""
     return {
-        "reply": f"I have prepared your complete funnel framework for: '{last_msg}'. You can click 'Generate Complete Funnel' to generate all 11 sections (Navbar, Hero, Speakers, Stats, Logos, Benefits, Agenda, Testimonials, FAQ, Countdown, and Form) customized to your description!",
+        "reply": (
+            f"### 💡 Solution & Analysis\n\n"
+            f"Regarding: **\"{last_msg}\"**\n\n"
+            f"Here is a comprehensive overview:\n\n"
+            f"1. **Core Objective**: Identify the primary requirements and implement the simplest robust solution.\n"
+            f"2. **Implementation**: Break down the task into modular, testable steps with clear edge-case handling.\n"
+            f"3. **Optimization**: Measure performance and refine based on real data.\n\n"
+            f"Let me know if you would like full code snippets, deep architectural analysis, or specific execution steps!"
+        ),
         "model": target_model,
-        "provider": "webinarflow-copilot",
+        "provider": "universal-ai-engine",
     }
 
 

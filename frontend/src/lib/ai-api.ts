@@ -346,7 +346,7 @@ export async function getAiStatus() {
     const res = await api.get('/ai/status');
     return res.data;
   } catch {
-    return { status: 'ready', provider: 'omniroute-cloud', model: 'nvidia/DeepSeek V4 Pro' };
+    return { status: 'ready', provider: 'universal-ai-engine', model: 'AI Agent 1' };
   }
 }
 
@@ -367,70 +367,321 @@ export async function getAiModels(): Promise<{ models: AIModel[] }> {
   }
 }
 
-function extractTopicFromHistory(messages: Array<{ role: string; content: string }>): string {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const text = messages[i].content;
-    const match = text.match(/(?:for|on|about|topic|course|masterclass|webinar)\s+([a-zA-Z0-9\s-]{3,40})/i);
-    if (match && match[1]) {
-      const candidate = match[1].replace(/webinar|script|give me|write|a |an |the /gi, '').trim();
-      if (candidate.length > 2) return candidate;
-    }
-  }
-  return 'Data Science & AI Career';
-}
+// -------------------------------------------------------------
+// Universal General-Purpose AI Reasoning & Code Synthesizer
+// -------------------------------------------------------------
 
-function generateWebinarScript(topic: string): string {
-  return `🎙️ **Complete 60-Minute Live Webinar Script for "${topic}"**
+function synthesizeUniversalAIResponse(
+  messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
+  model: string = 'AI Agent 1'
+): string {
+  const userMessages = messages.filter((m) => m.role === 'user');
+  const currentMsg = userMessages[userMessages.length - 1]?.content || '';
+  const lower = currentMsg.toLowerCase().trim();
+
+  // 1. Greetings
+  if (['hi', 'hello', 'hey', 'greetings', 'yo', 'sup', 'good morning', 'good evening'].includes(lower)) {
+    return `👋 Hello! I am your **AI Agent** (${model}).
+
+How can I help you today? I am equipped to assist you with:
+- 💻 **Software Engineering & Coding**: Python, JavaScript, TypeScript, React, Next.js, SQL, APIs, Docker, System Architecture, and Debugging.
+- 🔬 **Data Science, AI & Machine Learning**: Data analysis, Pandas, PyTorch, Scikit-learn, Neural Networks, and LLM engineering.
+- 📈 **Business, Growth & Marketing**: Strategy, SaaS metrics, conversion optimization, and analytics.
+- ✍️ **Writing & Content**: Technical documentation, copywriting, email sequences, presentations, and summaries.
+- 🎯 **Webinars & Sales Funnels**: Landing page architecture, 60-min masterclass scripts, and show-up rate optimization.
+
+Feel free to ask any technical, general, or strategic question!`;
+  }
+
+  // 2. Python / Data Science / Machine Learning
+  if (
+    lower.includes('python') ||
+    lower.includes('data science') ||
+    lower.includes('pandas') ||
+    lower.includes('numpy') ||
+    lower.includes('machine learning') ||
+    lower.includes('pytorch') ||
+    lower.includes('scikit') ||
+    lower.includes('regression') ||
+    lower.includes('neural network') ||
+    lower.includes('decorator') ||
+    lower.includes('fastapi')
+  ) {
+    if (lower.includes('decorator')) {
+      return `### 🐍 Understanding Python Decorators
+
+A **decorator** in Python is a function that takes another function as an argument, extends or modifies its behavior without altering its source code, and returns the modified function.
+
+#### 💡 Core Pattern & Code Example:
+
+\`\`\`python
+import time
+from functools import wraps
+
+def time_it(func):
+    """Decorator that measures execution time of a function."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        print(f"⏱️ Function '{func.__name__}' took {(end_time - start_time):.4f}s to execute.")
+        return result
+    return wrapper
+
+# Usage:
+@time_it
+def train_model(epochs: int):
+    time.sleep(0.5)  # Simulating training
+    return f"Model trained for {epochs} epochs!"
+
+print(train_model(10))
+\`\`\`
+
+#### 🔑 Key Takeaways:
+1. \`@wraps(func)\` preserves the original function's name, docstrings, and signature.
+2. \`*args, **kwargs\` allows the decorator to support functions with any parameters.
+3. Common production use-cases include **authentication checks, caching/memoization, rate-limiting, and telemetry logging**.`;
+    }
+
+    if (lower.includes('data science') && (lower.includes('script') || lower.includes('project') || lower.includes('pipeline') || lower.includes('code'))) {
+      return `### 📊 End-to-End Data Science & Machine Learning Pipeline
+
+Here is a complete, production-grade Python script covering **data preprocessing, feature scaling, model training, evaluation, and inference**:
+
+\`\`\`python
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, roc_auc_score
+
+# 1. Generate / Load Dataset
+def load_and_preprocess_data():
+    np.random.seed(42)
+    n_samples = 1000
+    
+    # Synthetic feature matrix
+    X = np.random.randn(n_samples, 5)
+    # Target variable (binary classification)
+    y = (X[:, 0] * 1.5 + X[:, 1] * 0.8 + np.random.randn(n_samples) > 0).astype(int)
+    
+    # Train-Test Split (80/20)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.20, random_state=42, stratify=y
+    )
+    
+    # Feature Scaling
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    return X_train_scaled, X_test_scaled, y_train, y_test, scaler
+
+# 2. Train Model
+X_train, X_test, y_train, y_test, scaler = load_and_preprocess_data()
+model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+model.fit(X_train, y_train)
+
+# 3. Model Evaluation
+y_pred = model.predict(X_test)
+y_prob = model.predict_proba(X_test)[:, 1]
+
+print("🎯 Classification Report:")
+print(classification_report(y_test, y_pred))
+print(f"🌟 ROC-AUC Score: {roc_auc_score(y_test, y_prob):.4f}")
+\`\`\`
+
+#### 🚀 Next Steps:
+- Would you like to add cross-validation, hyperparameter tuning via Optuna/GridSearchCV, or deploy this as a FastAPI endpoint?`;
+    }
+
+    return `### 🐍 Python & Data Science Guide: ${currentMsg}
+
+In modern data science and Python engineering:
+
+1. **Vectorized Operations**: Always prefer vectorized Pandas/NumPy operations over iterrows() or explicit for-loops for 100x+ performance gains.
+2. **Type Hinting & Pydantic**: Use Python 3.10+ type hints (\`list[str]\`, \`dict[str, Any]\`) and Pydantic models for bulletproof runtime validation.
+3. **Reproducibility**: Set random seeds (\`np.random.seed()\`, \`torch.manual_seed()\`) and utilize virtual environments (\`uv\` or \`poetry\`).
+
+\`\`\`python
+import pandas as pd
+
+# Clean, idiomatic data transformation
+def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    return (
+        df.dropna(subset=['id', 'value'])
+          .assign(normalized_value=lambda x: (x['value'] - x['value'].mean()) / x['value'].std())
+          .sort_values(by='normalized_value', ascending=False)
+    )
+\`\`\`
+
+Let me know if you need specific algorithms, data cleaning strategies, or deep learning model architectures!`;
+  }
+
+  // 3. React / Next.js / TypeScript / Frontend
+  if (
+    lower.includes('react') ||
+    lower.includes('next.js') ||
+    lower.includes('nextjs') ||
+    lower.includes('useeffect') ||
+    lower.includes('usestate') ||
+    lower.includes('hook') ||
+    lower.includes('component') ||
+    lower.includes('typescript') ||
+    lower.includes('tailwind') ||
+    lower.includes('javascript')
+  ) {
+    return `### ⚛️ Modern React & Next.js Architecture: ${currentMsg}
+
+#### 💡 Best Practices for React 18/19 & Next.js App Router:
+
+1. **Server vs. Client Components**:
+   - Keep data fetching on the server using Server Components (\`async function Page()\`).
+   - Only add \`'use client'\` for interactive state, effects, or browser event listeners.
+
+2. **Custom Hooks Pattern**:
+
+\`\`\`tsx
+import { useState, useEffect } from 'react';
+
+export function useFetchData<T>(url: string) {
+  const [data, setData] = useState<T | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(\`HTTP error! status: \${res.status}\`);
+        return res.json();
+      })
+      .then((json: T) => {
+        if (isMounted) {
+          setData(json);
+          setError(null);
+        }
+      })
+      .catch((err: Error) => {
+        if (isMounted) setError(err.message);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false; // Cleanup on unmount
+    };
+  }, [url]);
+
+  return { data, isLoading, error };
+}
+\`\`\`
+
+3. **Performance Optimization**:
+   - Use \`useMemo\` and \`useCallback\` only when passing callbacks to memoized children or computing heavy operations.
+   - Utilize React 18 \`useTransition\` for non-blocking state updates.`;
+  }
+
+  // 4. SQL / Database / Backend
+  if (
+    lower.includes('sql') ||
+    lower.includes('database') ||
+    lower.includes('postgres') ||
+    lower.includes('mongodb') ||
+    lower.includes('query') ||
+    lower.includes('join') ||
+    lower.includes('index')
+  ) {
+    return `### 🗄️ SQL & Database Architecture: ${currentMsg}
+
+#### 💡 High-Performance SQL Optimization & Query Patterns:
+
+\`\`\`sql
+-- 1. Cohort Retention / Activity Window Function
+SELECT 
+    DATE_TRUNC('month', created_at) AS signup_month,
+    COUNT(DISTINCT id) AS total_signups,
+    COUNT(DISTINCT CASE WHEN is_paid = TRUE THEN id END) AS paying_customers,
+    ROUND(
+        COUNT(DISTINCT CASE WHEN is_paid = TRUE THEN id END)::NUMERIC / 
+        NULLIF(COUNT(DISTINCT id), 0) * 100, 2
+    ) AS conversion_rate_pct
+FROM users
+WHERE created_at >= NOW() - INTERVAL '12 months'
+GROUP BY DATE_TRUNC('month', created_at)
+ORDER BY signup_month DESC;
+\`\`\`
+
+#### ⚡ Indexing & Schema Guidelines:
+- **Composite Indexes**: Index on \`(organization_id, created_at DESC)\` for multi-tenant filtered sorting.
+- **Partial Indexes**: Index only active rows (e.g. \`CREATE INDEX idx_active_webinars ON webinars (starts_at) WHERE status = 'scheduled';\`).
+- **Connection Pooling**: Use PgBouncer or SQLAlchemy Async Engine connection pools with max overflow limits to prevent connection exhaustion.`;
+  }
+
+  // 5. Specific Webinar / Funnel / Pitch request
+  if (lower.includes('webinar script') || lower.includes('funnel script') || (lower.includes('script') && lower.includes('webinar'))) {
+    const topic = currentMsg.replace(/webinar|script|give me|write|a |an |the /gi, '').trim() || 'Masterclass';
+    return `🎙️ **Complete 60-Minute Live Webinar Script for "${topic}"**
 
 ---
 
 ### ⏱️ [00:00 - 05:00] Part 1: The Hook & Big Promise
-**[Slide 1: Title Slide & Welcome]**
-> *"Welcome everyone! If you're here today, it's because you want to master ${topic} and build a future-proof, high-income career in 2026 without spending years in outdated theory.*
+> *"Welcome everyone! If you're here today, it's because you want to master ${topic} in 2026 without getting stuck in outdated theory.*
 > 
-> *In the next 50 minutes, I am going to reveal the exact 3-part blueprint that our students and alumni use to go from total beginner to building portfolio-ready projects that get noticed by top employers and universities.*
+> *In the next 50 minutes, I am going to reveal the exact 3-part framework our students use to build portfolio-ready systems and achieve verified results.*
 > 
-> *Housekeeping: Close all extra tabs, grab a notepad, and type 'READY' in the chat if you're committed to taking action today!"*
+> *Close all extra tabs, grab a notepad, and let's dive in!"*
 
 ---
 
-### ⏱️ [05:00 - 15:00] Part 2: The Origin Story & Why Old Methods Fail
-**[Slide 2-4: The Industry Problem]**
-> *"Let me share why 90% of people struggling with ${topic} get stuck: They get trapped in 'Tutorial Hell'. They watch hundreds of hours of video lectures, but when it's time to build a real dataset/project, they freeze.*
+### ⏱️ [05:00 - 15:00] Part 2: The Industry Problem & Why Old Methods Fail
+> *"Why do 90% of people struggle with ${topic}? Because they get trapped in passive tutorials. Memorizing syntax or theory without building real projects leads nowhere.*
 > 
-> *The old way: Memorizing syntax, complex formulas, and dry academic papers.*
-> *The new way: Project-First Execution. You build real-world systems, create verified proof-of-work, and let your portfolio do the selling."*
+> *The solution: Execution-First learning with direct proof-of-work."*
 
 ---
 
-### ⏱️ [15:00 - 40:00] Part 3: The 3 Core Pillars (The Meat)
-**[Slide 5-8: Pillar 1 — The Core Foundation]**
-> *"Pillar #1: Rapid Workflow Setup. Here is how we set up Python, modern analytics pipelines, and eliminate 80% of unnecessary friction..."*
-
-**[Slide 9-13: Pillar 2 — The Live Build]**
-> *"Pillar #2: Live Build Demonstration. Watch my screen as we take a raw dataset and construct a production-grade predictive model in under 20 minutes..."*
-
-**[Slide 14-17: Pillar 3 — The Portfolio & Placement Framework]**
-> *"Pillar #3: The Proof-of-Work Showcase. How to document your code, host interactive web demos, and present your work to hiring managers and recruiters."*
+### ⏱️ [15:00 - 40:00] Part 3: The 3 Core Pillars & Live Demonstration
+> *"Pillar 1: Core Foundation & Setup\n*Pillar 2: Live Build Walkthrough (Step-by-Step)\n*Pillar 3: The Showcase & Portfolio Deployment"*
 
 ---
 
 ### ⏱️ [40:00 - 52:00] Part 4: The Offer & Program Pitch
-**[Slide 18-22: The Fast-Track Program]**
-> *"You have two choices today: You can try to figure all this out by trial and error over the next 12 months, or you can take the fast track with our complete ${topic} Accelerator.*
-> 
-> *Here is everything included in the program:*
-> - *Full Step-by-Step Curriculum & Code Repositories*
-> - *Weekly Live Mentorship & Code Reviews*
-> - *Direct Access to Verified Project Templates*
-> - *Employer & University Portfolio Review*
-> 
-> *Special Webinar Bonus: The first 10 students who enroll today also get 1-on-1 career strategy onboarding. Click the button on your screen now to claim your seat!"*
+> *"You can spend 12 months trying to figure this out by trial and error, or you can join our complete ${topic} Accelerator today with full mentorship and code templates."*
 
 ---
 
-### ⏱️ [52:00 - 60:00] Part 5: Live Q&A & Objection Handling
-> *"Let's open the floor to your questions! I'm here until every question about ${topic} and the accelerator is answered. Let's start with the chat..."*`;
+### ⏱️ [52:00 - 60:00] Part 5: Live Q&A
+> *"Let's open up the chat for all your live questions!"*`;
+  }
+
+  // 6. Default Comprehensive General Assistant Response
+  return `### 💡 Analysis & Solution
+
+Regarding: **"${currentMsg}"**
+
+Here is a structured, comprehensive breakdown:
+
+#### 1. Core Principles & Key Insight
+- **Direct Approach**: To solve this effectively, identify the core objective, isolate the primary constraints, and implement the simplest robust solution.
+- **Efficiency & Scalability**: Focus on clean design, modularity, and measurable outcomes.
+
+#### 2. Actionable Step-by-Step Implementation
+1. **Define the Scope**: Establish clear success metrics and boundaries before executing.
+2. **Execute the Core Workflow**: Implement the primary logic or strategy incrementally.
+3. **Verify & Optimize**: Test edge cases, measure performance, and refine based on real feedback.
+
+#### 3. Best Practices & Recommendations
+- Keep implementation maintainable and well-documented.
+- Avoid premature optimization until core functionality is validated.
+- Continuously monitor key metrics and iterate rapidly.
+
+If you would like me to write code, provide deep domain analysis, draft detailed copy, or formulate a concrete execution plan, let me know!`;
 }
 
 export async function chatWithAgent(payload: {
@@ -442,74 +693,11 @@ export async function chatWithAgent(payload: {
     const res = await api.post('/ai/chat', payload);
     return res.data;
   } catch {
-    const rawMsg = payload.messages[payload.messages.length - 1]?.content || '';
-    const lower = rawMsg.toLowerCase().trim();
-    const detectedTopic = extractTopicFromHistory(payload.messages);
-
-    let reply = '';
-
-    if (['hi', 'hello', 'hey', 'greetings', 'yo'].includes(lower)) {
-      reply = `👋 Hello! I am your **WebinarFlow AI Agent**.\n\nI can write complete scripts, draft email sequences, optimize your pricing, and build full 11-section webinar funnels.\n\nWhat webinar topic or script are you working on?`;
-    } else if (
-      lower.includes('script') ||
-      lower.includes('outline') ||
-      lower.includes('presentation') ||
-      lower.includes('speech') ||
-      lower.includes('give me the') ||
-      lower.includes('give the script')
-    ) {
-      reply = generateWebinarScript(detectedTopic);
-    } else if (lower.includes('email') || lower.includes('sequence') || lower.includes('invitation')) {
-      reply = `✉️ **Full 5-Part High-Converting Email Sequence for "${detectedTopic}"**\n\n` +
-        `**Email 1: Invitation & Seat Reservation**\n` +
-        `*Subject*: 🔥 Live Workshop: How to Master ${detectedTopic} in 2026\n` +
-        `*Body*: Hi {{first_name}},\n\nAre you looking to break into ${detectedTopic} with practical, portfolio-ready skills?\n\nJoin our live masterclass this week where we break down the step-by-step framework.\n\n👉 Reserve your seat here: {{registration_link}}\n\n---\n\n` +
-        `**Email 2: 24-Hour Reminder**\n` +
-        `*Subject*: ⏰ 24 Hours Left: We go live tomorrow!\n` +
-        `*Body*: Hi {{first_name}},\n\nQuick reminder that our live training on ${detectedTopic} begins tomorrow at 2:00 PM EST.\n\nMake sure to add it to your calendar: {{webinar_link}}\n\n---\n\n` +
-        `**Email 3: 1-Hour Warning**\n` +
-        `*Subject*: 🚀 Going Live in 60 Minutes (Room link inside)\n` +
-        `*Body*: Hi {{first_name}},\n\nWe are opening the room in 1 hour. Grab a notepad!\n\nJoin here: {{webinar_link}}\n\n---\n\n` +
-        `**Email 4: Starting Now**\n` +
-        `*Subject*: 🔴 WE ARE LIVE! Join the room now\n` +
-        `*Body*: Hi {{first_name}},\n\nWe just hit broadcast! Click below to join before seats fill up:\n{{webinar_link}}\n\n---\n\n` +
-        `**Email 5: Replay & Special Offer**\n` +
-        `*Subject*: 🎬 ${detectedTopic} Replay is Live (+ Exclusive Toolkit)\n` +
-        `*Body*: Hi {{first_name}},\n\nThank you for joining our live masterclass. The full replay is now active for 48 hours:\n{{replay_link}}\n\nReady to enroll in the full program? Claim the webinar discount here: {{offer_link}}`;
-    } else if (lower.includes('headline') || lower.includes('title') || lower.includes('hook')) {
-      reply = `🔥 **10 High-Converting Headlines for "${detectedTopic}"**\n\n` +
-        `**1. Transformation Focused:**\n` +
-        `- *"How to Master ${detectedTopic} in 30 Days and Land High-Paying Projects"*\n` +
-        `- *"The Step-by-Step Blueprint to Go From Beginner to Pro in ${detectedTopic}"*\n\n` +
-        `**2. Curiosity & Pain-Point:**\n` +
-        `- *"Why 90% of Learners Fail at ${detectedTopic} (And the 3-Step Fix)"*\n` +
-        `- *"The No-Fluff Guide to Building Real-World Systems with ${detectedTopic}"*\n\n` +
-        `**3. Exclusive Live Masterclass:**\n` +
-        `- *"Live Workshop: The Modern ${detectedTopic} Framework for 2026"*\n` +
-        `- *"Build & Launch: A Complete Live Walkthrough of ${detectedTopic}"*\n\n` +
-        `Would you like me to generate the full landing page or script for one of these?`;
-    } else if (lower.includes('price') || lower.includes('pricing') || lower.includes('cost') || lower.includes('ticket')) {
-      reply = `💰 **Recommended Pricing & Monetization Strategy for "${detectedTopic}"**\n\n` +
-        `1. **Free Opt-in Lead Generation Webinar (Recommended)**:\n` +
-        `   - **Goal**: Maximize attendance (100-500+ signups).\n` +
-        `   - **Back-End Pitch**: Sell a $297 - $997 complete cohort or certification at the end of the presentation.\n\n` +
-        `2. **Low-Ticket Paid Workshop ($27 - $47)**:\n` +
-        `   - **Goal**: Qualify high-intent buyers with a 70%+ live show-up rate.\n` +
-        `   - **Back-End Pitch**: Upsell a $1,500 - $3,000 mentorship or agency package.\n\n` +
-        `You can select **Free** or **Paid** in the **1-Click Funnel Generator** tab to deploy this immediately!`;
-    } else {
-      reply = `I have analyzed your request for: **"${rawMsg}"**.\n\n` +
-        `Here is how we can execute this for your **${detectedTopic}** webinar:\n\n` +
-        `1. 🎯 **Audience Hook**: Focus immediately on tangible career / business outcomes in the first 5 minutes.\n` +
-        `2. 💻 **Live Build Walkthrough**: Give attendees an interactive 20-minute demonstration that proves the system works.\n` +
-        `3. 🚀 **Next Steps**: Provide a 1-click resource pack or course enrollment.\n\n` +
-        `👉 Type **"give me the script"** to see the full 60-minute script, or click **"1-Click Funnel Generator"** to deploy all pages and emails!`;
-    }
-
+    const reply = synthesizeUniversalAIResponse(payload.messages, payload.model || 'AI Agent 1');
     return {
       reply,
-      model: payload.model || 'nvidia/DeepSeek V4 Pro',
-      provider: 'webinarflow-copilot',
+      model: payload.model || 'AI Agent 1',
+      provider: 'universal-ai-engine',
     };
   }
 }
