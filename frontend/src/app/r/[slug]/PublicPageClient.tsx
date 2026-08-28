@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Script from 'next/script';
 import LandingPageRenderer from '@/components/landing-page/LandingPageRenderer';
 
@@ -19,6 +20,43 @@ function getApiUrl(): string {
 }
 
 export default function PublicPageClient({ content, webinarId, slug, isPaid, priceCents, currency, paymentGateway }: Props) {
+  const hasTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (hasTrackedRef.current || !slug) return;
+    hasTrackedRef.current = true;
+
+    // Session guard to prevent React StrictMode or multiple re-renders from recording duplicates
+    const sessionKey = `wf_v_${slug}`;
+    if (typeof window !== 'undefined') {
+      if (sessionStorage.getItem(sessionKey)) return;
+      sessionStorage.setItem(sessionKey, '1');
+    }
+
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const utm_source = urlParams?.get('utm_source') || undefined;
+    const utm_medium = urlParams?.get('utm_medium') || undefined;
+    const utm_campaign = urlParams?.get('utm_campaign') || undefined;
+    const utm_content = urlParams?.get('utm_content') || undefined;
+    const utm_term = urlParams?.get('utm_term') || undefined;
+    const referrer = typeof document !== 'undefined' ? document.referrer || undefined : undefined;
+
+    const apiUrl = getApiUrl();
+    fetch(`${apiUrl}/landing-pages/public/${encodeURIComponent(slug)}/visit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        referrer,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        utm_content,
+        utm_term,
+      }),
+    }).catch(() => {
+      // Non-blocking visit tracking
+    });
+  }, [slug]);
   const handleRegister = async (email: string, fullName?: string): Promise<any> => {
     try {
       const apiUrl = getApiUrl();

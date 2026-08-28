@@ -17,7 +17,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_active_user, get_current_membership, get_db
-from app.models import Registrant, RegistrantStatus, User, Webinar, WebinarStatus
+from app.models import Payment, PaymentStatus, Registrant, RegistrantStatus, User, Webinar, WebinarStatus
 from app.schemas.webinar import WebinarDetail
 from app.services import registration_service
 
@@ -35,10 +35,27 @@ async def list_org_registrants(
     db: AsyncSession = Depends(get_db),
 ):
     """List all registrants/customers for the organizer's active organization."""
+    org_id = membership.organization_id
+
+    # 1. Fetch completed payments for this organization to accurately compute spent & buyer status
+    payments_res = (
+        await db.execute(
+            select(Payment).where(
+                Payment.organization_id == org_id,
+                Payment.status == PaymentStatus.completed,
+            )
+        )
+    ).scalars().all()
+
+    payments_by_registrant: dict[uuid.UUID, float] = {}
+    for p in payments_res:
+        payments_by_registrant[p.registrant_id] = payments_by_registrant.get(p.registrant_id, 0.0) + float(p.amount)
+
+    # 2. Query registrants joined with webinars
     query = (
         select(Registrant, Webinar)
         .join(Webinar, Registrant.webinar_id == Webinar.id)
-        .where(Webinar.organization_id == membership.organization_id)
+        .where(Webinar.organization_id == org_id)
         .order_by(Registrant.created_at.desc())
     )
 
@@ -60,11 +77,12 @@ async def list_org_registrants(
     active_buyers = 0
 
     for reg, web in results:
-        is_buyer = reg.status in (RegistrantStatus.converted, "purchased", "converted")
-        spent = (web.price_cents / 100.0) if (web.is_paid and is_buyer) else 0.0
+        actual_spent = payments_by_registrant.get(reg.id, 0.0)
+        is_buyer = actual_spent > 0 or reg.status in (RegistrantStatus.converted, "purchased", "converted")
+        
         if is_buyer:
             active_buyers += 1
-            total_revenue += spent
+            total_revenue += actual_spent
 
         st_label = "Purchased" if is_buyer else ("Attended" if reg.status in (RegistrantStatus.attended, "attended") else "Registered")
         if status and status.lower() != "all" and st_label.lower() != status.strip().lower():
@@ -76,7 +94,7 @@ async def list_org_registrants(
             "email": reg.email,
             "webinarTitle": web.title,
             "status": st_label,
-            "totalSpent": spent,
+            "totalSpent": actual_spent,
             "dateJoined": reg.created_at.strftime("%Y-%m-%d") if reg.created_at else "",
         })
 

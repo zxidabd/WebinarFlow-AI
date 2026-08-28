@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response, status
+from datetime import datetime, timezone
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy import func, or_, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -323,6 +324,90 @@ async def get_public_landing_page(
         import traceback
         traceback.print_exc()
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Error loading landing page: {exc}")
+
+
+class PublicVisitPayload(BaseModel):
+    referrer: str | None = None
+    utm_source: str | None = None
+    utm_medium: str | None = None
+    utm_campaign: str | None = None
+    utm_content: str | None = None
+    utm_term: str | None = None
+
+
+@router.post("/public/{slug}/visit")
+async def record_public_page_visit(
+    slug: str,
+    request: Request,
+    payload: PublicVisitPayload | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Record a visitor viewing a published landing page."""
+    resolved = await _resolve_public_landing_page(db, slug)
+    if resolved is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
+    lp, webinar = resolved
+
+    # Extract client IP
+    client_ip = None
+    if request:
+        for header in ("x-forwarded-for", "x-real-ip", "cf-connecting-ip"):
+            if val := request.headers.get(header):
+                client_ip = val.split(",")[0].strip()
+                break
+        if not client_ip and request.client:
+            client_ip = request.client.host
+
+    user_agent = request.headers.get("user-agent") if request else None
+    ref = (payload.referrer if payload else None) or (request.headers.get("referer") if request else None)
+
+    visit = await landing_page_service.record_landing_page_visit(
+        db,
+        landing_page_id=lp.id,
+        ip_address=client_ip,
+        user_agent=user_agent,
+        referrer=ref,
+        utm_source=payload.utm_source if payload else None,
+        utm_medium=payload.utm_medium if payload else None,
+        utm_campaign=payload.utm_campaign if payload else None,
+        utm_content=payload.utm_content if payload else None,
+        utm_term=payload.utm_term if payload else None,
+    )
+    await db.commit()
+    return {"status": "ok", "visit_id": str(visit.id)}
+
+
+class PublicEventPayload(BaseModel):
+    event_type: str = "cta_clicked"
+    meta: dict | None = None
+
+
+@router.post("/public/{slug}/event")
+async def record_public_page_event(
+    slug: str,
+    payload: PublicEventPayload,
+    db: AsyncSession = Depends(get_db),
+):
+    """Record an interaction event (e.g. cta_clicked, offer_clicked) on a published landing page."""
+    resolved = await _resolve_public_landing_page(db, slug)
+    if resolved is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
+    lp, webinar = resolved
+
+    from app.models import WebinarActivity
+    activity = WebinarActivity(
+        webinar_id=webinar.id,
+        event_type=payload.event_type or "cta_clicked",
+        occurred_at=datetime.now(timezone.utc),
+        meta={
+            **(payload.meta or {}),
+            "landing_page_id": str(lp.id),
+            "slug": slug,
+        },
+    )
+    db.add(activity)
+    await db.commit()
+    return {"status": "ok", "event_id": str(activity.id)}
 
 
 class PublicRegisterPayload(BaseModel):
