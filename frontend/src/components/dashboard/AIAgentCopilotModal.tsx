@@ -306,36 +306,21 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
             </div>
           </div>
 
-          {/* Model Selector & Close */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-black/60 border border-[#5a1a23]/60 rounded-lg px-2.5 py-1 text-xs">
-              <Bot className="h-3.5 w-3.5 text-[#f8a5b2]" />
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="bg-transparent text-gray-200 focus:outline-none cursor-pointer text-xs"
-              >
-                {(models.length >= 3 ? models : [
-                  { id: 'llama-3.3-70b-versatile', name: 'AI Agent 1' },
-                  { id: 'deepseek-r1-distill-llama-70b', name: 'AI Agent 2' },
-                  { id: 'llama-3.1-8b-instant', name: 'AI Agent 3' },
-                  { id: 'mixtral-8x7b-32768', name: 'AI Agent 4' },
-                  { id: 'gemma2-9b-it', name: 'AI Agent 5' },
-                ]).slice(0, 5).map((m, idx) => (
-                  <option key={m.id || idx} value={m.id} className="bg-[#120406] text-white">
-                    {`AI Agent ${idx + 1}`}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Unified All-in-One Engine Badge & Close */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 bg-[#2a0c10] border border-[#a63344]/50 rounded-lg px-3 py-1 text-xs text-[#f8d7dc] shadow-sm">
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                <span className="font-semibold">All-in-One AI Agent</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+              </div>
 
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
         </div>
 
         {/* Mode Switcher Tabs */}
