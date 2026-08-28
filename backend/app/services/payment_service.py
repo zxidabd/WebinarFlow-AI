@@ -277,12 +277,12 @@ async def create_razorpay_order(
     """Create a Razorpay order for a registrant."""
     if getattr(webinar, 'is_paid', False) and getattr(webinar, 'price_cents', 0) > 0:
         amount_cents = webinar.price_cents
-        currency = (getattr(webinar, 'currency', 'inr') or 'inr').upper()
+        # Razorpay strictly requires INR currency to enable UPI (Google Pay, PhonePe, Paytm) and QR Code
+        currency = "INR"
     else:
         raise PaymentError("This webinar is free - no payment required", "NO_PAYMENT_NEEDED")
 
     # Razorpay amounts: for INR use paise (amount_cents already in cents = paise)
-    # For USD, Razorpay expects amount in smallest unit too
     razorpay_amount = amount_cents
 
     # Look up organization-level custom Razorpay keys first, fallback to environment
@@ -299,7 +299,7 @@ async def create_razorpay_order(
             code="RAZORPAY_NOT_CONFIGURED",
         )
 
-    # Prevent duplicate payment records for the same registrant
+    # Prevent duplicate payment records for the same registrant (only reuse if it's already in INR)
     existing_payment = (
         await db.execute(
             select(Payment).where(
@@ -309,13 +309,16 @@ async def create_razorpay_order(
             )
         )
     ).scalar_one_or_none()
-    if existing_payment:
+    if existing_payment and existing_payment.currency == 'inr':
         return RazorpayOrderResult(
             order_id=existing_payment.checkout_session_id,
             amount=razorpay_amount,
-            currency=currency,
+            currency="INR",
             key_id=razorpay_key_id,
         )
+    elif existing_payment:
+        await db.delete(existing_payment)
+        await db.flush()
 
     try:
         import razorpay as rzp_sdk
