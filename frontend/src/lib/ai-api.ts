@@ -15,6 +15,7 @@ export interface GenerateFunnelPayload {
   price_cents?: number;
   custom_instructions?: string;
   model?: string;
+  template?: string;
 }
 
 export interface GeneratedFunnel {
@@ -283,7 +284,7 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
       title,
       slug,
       meta_description: `Register now for '${title}'. Free live training for ${aud}.`,
-      template: 'modern-saas',
+      template: payload.template || 'modern-saas',
       hero_headline: hero_v2.headline,
       hero_subheadline: hero_v2.subtitle,
       cta_text: hero_v2.cta_text,
@@ -717,15 +718,16 @@ export async function applyFunnel(funnel: GeneratedFunnel): Promise<{
     });
 
     const lpSlug = slugify(funnel.landing_page.slug || webinar.slug);
+    const tplId = funnel.landing_page.template || 'modern-saas';
     const landingPage = await webinarApi.createLandingPage({
       webinar_id: webinar.id,
       title: funnel.landing_page.title,
       slug: lpSlug || `webinar-${Math.random().toString(36).substring(2, 6)}`,
       meta_description: funnel.landing_page.meta_description,
       is_published: true,
-      template_id: 'modern-saas',
+      template_id: tplId,
       content: {
-        template: 'modern-saas',
+        template: tplId,
         sections: funnel.landing_page.sections || {},
         outline: funnel.outline,
         emails: funnel.email_sequence,

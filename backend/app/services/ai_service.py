@@ -33,6 +33,7 @@ def _build_full_funnel_sections(
     is_paid: bool,
     price_cents: int,
     custom_instructions: str | None,
+    template: str = "modern-saas",
 ) -> dict[str, Any]:
     clean_topic = topic.strip() or "AI Automation Masterclass"
     aud = (audience or "").strip() or "Students, Creators & Professionals"
@@ -261,7 +262,7 @@ def _build_full_funnel_sections(
             "title": title,
             "slug": slug,
             "meta_description": f"Register now for '{title}'. Free live training for {aud}.",
-            "template": "modern-saas",
+            "template": template or "modern-saas",
             "hero_headline": hero_v2["headline"],
             "hero_subheadline": hero_v2["subtitle"],
             "cta_text": hero_v2["cta_text"],
@@ -316,8 +317,10 @@ async def generate_funnel(
     price_cents: int = 0,
     custom_instructions: str | None = None,
     model: str | None = None,
+    template: str | None = "modern-saas",
 ) -> dict[str, Any]:
     clean_topic = topic.strip()
+    target_template = template or "modern-saas"
     audience = (target_audience or "").strip() or "Students, creators, and business professionals"
     target_model = model or settings.OPENAI_MODEL or "gpt-4o"
     base_url = settings.OPENAI_BASE_URL.rstrip("/") if settings.OPENAI_BASE_URL else "http://localhost:20128/v1"
@@ -325,7 +328,7 @@ async def generate_funnel(
 
     system_prompt = (
         "You are an expert Webinar Funnel Strategist inside WebinarFlow AI. "
-        "Generate a complete webinar funnel with all 11 landing page sections populated matching the user's specific description. "
+        f"Generate a complete webinar funnel for template '{target_template}' with all 11 landing page sections populated matching the user's specific description. "
         "Return ONLY a valid JSON object matching the full funnel schema."
     )
 
@@ -333,6 +336,7 @@ async def generate_funnel(
         f"Generate a webinar funnel for:\n"
         f"- Topic: {clean_topic}\n"
         f"- Target Audience: {audience}\n"
+        f"- Template Style: {target_template} ('modern-saas', 'corporate', or 'education')\n"
         f"- Primary Goal: {goal or 'High Lead Generation & Sales Conversion'}\n"
         f"- Pricing: {'Paid ($' + str(price_cents/100) + ')' if is_paid else 'Free Opt-in'}\n"
         f"- Extra Custom Instructions: {custom_instructions or 'None'}"
@@ -370,11 +374,12 @@ async def generate_funnel(
                     clean_json = re.sub(r"\s*```$", "", clean_json)
                     parsed = json.loads(clean_json)
                     if "landing_page" in parsed and "sections" in parsed["landing_page"]:
+                        parsed["landing_page"]["template"] = target_template
                         return parsed
         except Exception as exc:
             logger.warning(f"LLM API call with model '{try_model}' failed: {exc}")
 
-    return _build_full_funnel_sections(clean_topic, audience, goal, is_paid, price_cents, custom_instructions)
+    return _build_full_funnel_sections(clean_topic, audience, goal, is_paid, price_cents, custom_instructions, template=target_template)
 
 
 async def _fetch_live_web_search(query: str) -> str:
@@ -540,8 +545,9 @@ async def apply_funnel(
             "faq": {"items": lp_data.get("faqs") or []},
         }
 
+    tpl_id = lp_data.get("template") or "modern-saas"
     content = {
-        "template": "modern-saas",
+        "template": tpl_id,
         "sections": sections,
         "outline": funnel.get("outline") or {},
         "emails": funnel.get("email_sequence") or [],
@@ -558,7 +564,7 @@ async def apply_funnel(
         meta_description=lp_data.get("meta_description") or webinar.description,
         is_published=True,
         status=LandingPageStatus.published,
-        template_id="modern-saas",
+        template_id=tpl_id,
         content=content,
     )
     landing_page = await landing_page_service.create_landing_page(

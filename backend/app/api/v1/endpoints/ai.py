@@ -23,6 +23,7 @@ class GenerateFunnelRequest(BaseModel):
     price_cents: int = 0
     custom_instructions: str | None = None
     model: str | None = None
+    template: str | None = "modern-saas"
 
 
 class ApplyFunnelRequest(BaseModel):
@@ -107,6 +108,7 @@ async def generate_funnel_endpoint(
         price_cents=payload.price_cents,
         custom_instructions=payload.custom_instructions,
         model=payload.model,
+        template=payload.template or "modern-saas",
     )
     return funnel
 

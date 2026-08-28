@@ -304,6 +304,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
   // Funnel Builder State
   const [topic, setTopic] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState<'modern-saas' | 'corporate' | 'education'>('modern-saas');
   const [goal, setGoal] = useState('High Lead Generation & Sales Conversion');
   const [isPaid, setIsPaid] = useState(false);
   const [priceDollars, setPriceDollars] = useState('47');
@@ -360,6 +361,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
         price_cents: priceCents,
         custom_instructions: customInstructions,
         model: selectedModel,
+        template: selectedTemplate,
       });
 
       setGeneratedFunnel(res);
@@ -547,6 +549,57 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                           />
                         </div>
                       )}
+                    </div>
+
+                    {/* 3-Option Template Style Selector */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center justify-between">
+                        <span>Landing Page Template</span>
+                        <span className="text-[10px] text-[#f8a5b2] font-normal">Select 1 of 3 designs</span>
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTemplate('modern-saas')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all ${
+                            selectedTemplate === 'modern-saas'
+                              ? 'border-[#f87171] bg-[#45141B]/70 text-white shadow-md ring-1 ring-[#f87171]/50'
+                              : 'border-[#5a1a23]/60 bg-black/40 text-gray-400 hover:border-[#a63344] hover:text-gray-200'
+                          }`}
+                        >
+                          <span className="text-sm mb-0.5">🚀</span>
+                          <span className="text-[11px] font-semibold text-white">Modern SaaS</span>
+                          <span className="text-[9px] text-[#f8d7dc]/70">Stripe / Linear</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTemplate('corporate')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all ${
+                            selectedTemplate === 'corporate'
+                              ? 'border-[#f87171] bg-[#45141B]/70 text-white shadow-md ring-1 ring-[#f87171]/50'
+                              : 'border-[#5a1a23]/60 bg-black/40 text-gray-400 hover:border-[#a63344] hover:text-gray-200'
+                          }`}
+                        >
+                          <span className="text-sm mb-0.5">🏢</span>
+                          <span className="text-[11px] font-semibold text-white">Corporate</span>
+                          <span className="text-[9px] text-[#f8d7dc]/70">Executive B2B</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTemplate('education')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all ${
+                            selectedTemplate === 'education'
+                              ? 'border-[#f87171] bg-[#45141B]/70 text-white shadow-md ring-1 ring-[#f87171]/50'
+                              : 'border-[#5a1a23]/60 bg-black/40 text-gray-400 hover:border-[#a63344] hover:text-gray-200'
+                          }`}
+                        >
+                          <span className="text-sm mb-0.5">🎓</span>
+                          <span className="text-[11px] font-semibold text-white">Education</span>
+                          <span className="text-[9px] text-[#f8d7dc]/70">Course & Academy</span>
+                        </button>
+                      </div>
                     </div>
 
                     <div>
