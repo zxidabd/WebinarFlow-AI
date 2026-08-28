@@ -34,7 +34,21 @@ export default function SettingsPage() {
     setMounted(true);
     async function loadOrgKeys() {
       try {
-        const keysRes = await api.get('/organizations/payment-keys');
+        let orgId = activeOrgId;
+        if (!orgId) {
+          try {
+            const meRes = await api.get('/users/me');
+            const orgs = meRes.data?.organizations || [];
+            const current = orgs.find((o: any) => o.is_default) || orgs[0];
+            if (current?.id) {
+              orgId = current.id;
+              setActiveOrgId(current.id);
+            }
+          } catch {}
+        }
+
+        const endpoint = orgId ? `/organizations/${orgId}/payment-keys` : '/organizations/payment-keys';
+        const keysRes = await api.get(endpoint);
         const k = keysRes.data || {};
         if (k.stripe_publishable_key) setStripePublishableKey(k.stripe_publishable_key);
         if (k.stripe_secret_key) setStripeSecretKey(k.stripe_secret_key);
@@ -98,8 +112,22 @@ export default function SettingsPage() {
       localStorage.setItem('wf_rzp_secret', razorpayKeySecret);
       localStorage.setItem('wf_rzp_enabled', String(razorpayEnabled));
 
+      let orgId = activeOrgId;
+      if (!orgId) {
+        try {
+          const meRes = await api.get('/users/me');
+          const orgs = meRes.data?.organizations || [];
+          const current = orgs.find((o: any) => o.is_default) || orgs[0];
+          if (current?.id) {
+            orgId = current.id;
+            setActiveOrgId(current.id);
+          }
+        } catch {}
+      }
+
       // 2. Persist to Backend Organization database
-      await api.patch('/organizations/payment-keys', {
+      const endpoint = orgId ? `/organizations/${orgId}/payment-keys` : '/organizations/payment-keys';
+      await api.patch(endpoint, {
         stripe_enabled: stripeEnabled,
         stripe_publishable_key: stripePublishableKey,
         stripe_secret_key: stripeSecretKey,
