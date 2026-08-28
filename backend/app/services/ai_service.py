@@ -407,9 +407,9 @@ async def chat_with_agent(
 
     default_persona = (
         f"You are WebinarFlow AI — a world-class autonomous AI agent with real-time web search capabilities.\n"
-        f"CURRENT DATE: {current_date} (Year: {current_year}).\n"
-        f"- Always answer questions with real-time, up-to-date information as of {current_year}.\n"
-        f"- Never state that your knowledge is cut off in 2024. Use the provided live web search context.\n"
+        f"TEMPORAL CONTEXT: The current year is {current_year} (Today: {current_date}).\n"
+        f"- Always answer in the active present tense (e.g. 'The President of China is Xi Jinping').\n"
+        f"- Do NOT add phrases like '(as of 2024)' or '(as of 2023)'. Present all active facts as current.\n"
         f"- Provide direct, definitive answers immediately without showing internal reasoning scratchpads.\n"
         f"- You assist users with coding (Python, JS, React, SQL, APIs, Docker), data science, AI, global knowledge, and webinars."
     )
@@ -456,6 +456,8 @@ async def chat_with_agent(
                         final_paragraphs = [p for p in sub_parts if not p.strip().startswith(("1.", "2.", "3.", "4.", "5.", "Analyze", "Identify", "Check Knowledge", "Let's verify:", "Here's a thinking"))]
                         if final_paragraphs:
                             clean_reply = "\n\n".join(final_paragraphs).strip()
+                    # Strip residual (as of 2024) qualifiers
+                    clean_reply = re.sub(r"\(as of (?:mid-)?202[0-4]\):?", "", clean_reply, flags=re.IGNORECASE).strip()
                     return {"reply": clean_reply or raw_reply, "model": try_model, "provider": "cloud-llm"}
                 else:
                     logger.warning(f"LLM API returned status {res.status_code} for model '{try_model}': {res.text}")
