@@ -23,24 +23,15 @@ export default function LoginPage() {
   const [resent, setResent] = useState(false);
 
   useEffect(() => {
-    // If user is already logged in, redirect directly to dashboard
     if (typeof window !== 'undefined') {
       try {
-        const raw = localStorage.getItem('webinarflow-auth');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed?.state?.accessToken) {
-            router.replace('/dashboard');
-            return;
-          }
-        }
         const remembered = localStorage.getItem('wf_remember_me');
         if (remembered !== null) {
           setRememberMe(remembered === 'true');
         }
       } catch {}
     }
-  }, [router]);
+  }, []);
 
   const {
     register,

@@ -84,7 +84,12 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${next}`;
         return api(original);
       }
-      if (typeof window !== 'undefined') window.location.href = '/login';
+      try {
+        localStorage.removeItem('webinarflow-auth');
+      } catch {}
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   },
