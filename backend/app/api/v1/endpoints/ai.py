@@ -48,28 +48,25 @@ async def get_ai_status():
 
 @router.get("/models")
 async def list_ai_models():
-    """List available AI models from OmniRoute / OpenAI."""
+    """List available AI models mapped to clean AI Agent 1..5."""
     base_url = settings.OPENAI_BASE_URL.rstrip("/") if settings.OPENAI_BASE_URL else "http://localhost:20128/v1"
-    api_key = settings.OPENAI_API_KEY or "omniroute"
-
-    models_list = [
-        {"id": "nvidia/DeepSeek V4 Pro", "name": "AI Agent 1", "provider": "nvidia"},
-        {"id": "nvidia/Mistral Large 3 675B", "name": "AI Agent 2", "provider": "nvidia"},
-        {"id": "nvidia/Dracarys Llama 3.1 70B Instruct", "name": "AI Agent 3", "provider": "nvidia"},
-        {"id": "gpt-4o", "name": "AI Agent 4", "provider": "openai"},
-        {"id": "claude-3-5-sonnet-latest", "name": "AI Agent 5", "provider": "anthropic"},
-    ]
-
-    try:
-        async with httpx.AsyncClient(timeout=4.0) as client:
-            res = await client.get(f"{base_url}/models", headers={"Authorization": f"Bearer {api_key}"})
-            if res.status_code == 200:
-                data = res.json()
-                live_models = data.get("data", [])
-                if live_models:
-                    return {"models": live_models}
-    except Exception:
-        pass
+    
+    if "groq.com" in base_url:
+        models_list = [
+            {"id": "llama-3.3-70b-versatile", "name": "AI Agent 1", "provider": "groq"},
+            {"id": "deepseek-r1-distill-llama-70b", "name": "AI Agent 2", "provider": "groq"},
+            {"id": "llama-3.1-8b-instant", "name": "AI Agent 3", "provider": "groq"},
+            {"id": "mixtral-8x7b-32768", "name": "AI Agent 4", "provider": "groq"},
+            {"id": "gemma2-9b-it", "name": "AI Agent 5", "provider": "groq"},
+        ]
+    else:
+        models_list = [
+            {"id": settings.OPENAI_MODEL or "gpt-4o", "name": "AI Agent 1", "provider": "openai"},
+            {"id": "deepseek/deepseek-chat", "name": "AI Agent 2", "provider": "deepseek"},
+            {"id": "claude-3-5-sonnet-latest", "name": "AI Agent 3", "provider": "anthropic"},
+            {"id": "gpt-4o-mini", "name": "AI Agent 4", "provider": "openai"},
+            {"id": "meta-llama/llama-3.3-70b-instruct", "name": "AI Agent 5", "provider": "meta"},
+        ]
 
     return {"models": models_list}
 

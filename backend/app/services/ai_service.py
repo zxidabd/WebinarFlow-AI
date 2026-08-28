@@ -388,9 +388,12 @@ async def chat_with_agent(
     sys_prompt = system_persona or default_persona
     convo = [{"role": "system", "content": sys_prompt}] + messages
 
-    for try_model in [target_model, settings.OPENAI_MODEL or "gpt-4o"]:
-        if not try_model:
-            continue
+    candidate_models = [target_model, "llama-3.3-70b-versatile", "deepseek-r1-distill-llama-70b", settings.OPENAI_MODEL or "gpt-4o"]
+    # Remove duplicates preserving order
+    seen = set()
+    models_to_try = [m for m in candidate_models if m and not (m in seen or seen.add(m))]
+
+    for try_model in models_to_try:
         try:
             async with httpx.AsyncClient(timeout=45.0) as client:
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
@@ -404,6 +407,8 @@ async def chat_with_agent(
                     data = res.json()
                     reply = data["choices"][0]["message"]["content"]
                     return {"reply": reply, "model": try_model, "provider": "cloud-llm"}
+                else:
+                    logger.warning(f"LLM API returned status {res.status_code} for model '{try_model}': {res.text}")
         except Exception as exc:
             logger.warning(f"Chat API call with model '{try_model}' failed: {exc}")
 
