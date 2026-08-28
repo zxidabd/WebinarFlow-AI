@@ -315,21 +315,17 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                 onChange={(e) => setSelectedModel(e.target.value)}
                 className="bg-transparent text-gray-200 focus:outline-none cursor-pointer text-xs"
               >
-                {models.length > 0 ? (
-                  models.map((m) => (
-                    <option key={m.id} value={m.id} className="bg-[#120406] text-white">
-                      {m.name || m.id}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="nvidia/DeepSeek V4 Pro" className="bg-[#120406] text-white">AI Agent 1</option>
-                    <option value="nvidia/Mistral Large 3 675B" className="bg-[#120406] text-white">AI Agent 2</option>
-                    <option value="nvidia/Dracarys Llama 3.1 70B Instruct" className="bg-[#120406] text-white">AI Agent 3</option>
-                    <option value="gpt-4o" className="bg-[#120406] text-white">AI Agent 4</option>
-                    <option value="claude-3-5-sonnet-latest" className="bg-[#120406] text-white">AI Agent 5</option>
-                  </>
-                )}
+                {(models.length >= 3 ? models : [
+                  { id: 'llama-3.3-70b-versatile', name: 'AI Agent 1' },
+                  { id: 'deepseek-r1-distill-llama-70b', name: 'AI Agent 2' },
+                  { id: 'llama-3.1-8b-instant', name: 'AI Agent 3' },
+                  { id: 'mixtral-8x7b-32768', name: 'AI Agent 4' },
+                  { id: 'gemma2-9b-it', name: 'AI Agent 5' },
+                ]).slice(0, 5).map((m, idx) => (
+                  <option key={m.id || idx} value={m.id} className="bg-[#120406] text-white">
+                    {`AI Agent ${idx + 1}`}
+                  </option>
+                ))}
               </select>
             </div>
 

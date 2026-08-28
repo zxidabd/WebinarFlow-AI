@@ -341,18 +341,34 @@ export async function getAiStatus() {
 export async function getAiModels(): Promise<{ models: AIModel[] }> {
   try {
     const res = await api.get('/ai/models');
-    return res.data;
+    const rawList = res.data?.models || [];
+    if (rawList.length > 0) {
+      // Filter out non-chat / guardrail models
+      const chatModels = rawList.filter((m: any) => {
+        const id = (m.id || '').toLowerCase();
+        return !id.includes('whisper') && !id.includes('guard') && !id.includes('orpheus') && !id.includes('safety') && !id.includes('allam');
+      });
+      const candidates = chatModels.length >= 3 ? chatModels : rawList;
+      return {
+        models: candidates.slice(0, 5).map((m: any, idx: number) => ({
+          id: m.id,
+          name: `AI Agent ${idx + 1}`,
+          provider: m.provider || 'cloud',
+        })),
+      };
+    }
   } catch {
-    return {
-      models: [
-        { id: 'nvidia/DeepSeek V4 Pro', name: 'AI Agent 1', provider: 'nvidia' },
-        { id: 'nvidia/Mistral Large 3 675B', name: 'AI Agent 2', provider: 'nvidia' },
-        { id: 'nvidia/Dracarys Llama 3.1 70B Instruct', name: 'AI Agent 3', provider: 'nvidia' },
-        { id: 'gpt-4o', name: 'AI Agent 4', provider: 'openai' },
-        { id: 'claude-3-5-sonnet-latest', name: 'AI Agent 5', provider: 'anthropic' },
-      ],
-    };
+    // Fallback
   }
+  return {
+    models: [
+      { id: 'llama-3.3-70b-versatile', name: 'AI Agent 1', provider: 'groq' },
+      { id: 'deepseek-r1-distill-llama-70b', name: 'AI Agent 2', provider: 'groq' },
+      { id: 'llama-3.1-8b-instant', name: 'AI Agent 3', provider: 'groq' },
+      { id: 'mixtral-8x7b-32768', name: 'AI Agent 4', provider: 'groq' },
+      { id: 'gemma2-9b-it', name: 'AI Agent 5', provider: 'groq' },
+    ],
+  };
 }
 
 // -------------------------------------------------------------
