@@ -338,28 +338,31 @@ async def generate_funnel(
         f"- Extra Custom Instructions: {custom_instructions or 'None'}"
     )
 
-    try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-            payload = {
-                "model": target_model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                "temperature": 0.7,
-            }
-            res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
-            if res.status_code == 200:
-                data = res.json()
-                content = data["choices"][0]["message"]["content"]
-                clean_json = re.sub(r"^```(?:json)?\s*", "", content.strip())
-                clean_json = re.sub(r"\s*```$", "", clean_json)
-                parsed = json.loads(clean_json)
-                if "landing_page" in parsed and "sections" in parsed["landing_page"]:
-                    return parsed
-    except Exception as exc:
-        logger.warning(f"LLM API call failed, using comprehensive structured builder: {exc}")
+    for try_model in [target_model, settings.OPENAI_MODEL or "gpt-4o"]:
+        if not try_model:
+            continue
+        try:
+            async with httpx.AsyncClient(timeout=45.0) as client:
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                payload = {
+                    "model": try_model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "temperature": 0.7,
+                }
+                res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    content = data["choices"][0]["message"]["content"]
+                    clean_json = re.sub(r"^```(?:json)?\s*", "", content.strip())
+                    clean_json = re.sub(r"\s*```$", "", clean_json)
+                    parsed = json.loads(clean_json)
+                    if "landing_page" in parsed and "sections" in parsed["landing_page"]:
+                        return parsed
+        except Exception as exc:
+            logger.warning(f"LLM API call with model '{try_model}' failed: {exc}")
 
     return _build_full_funnel_sections(clean_topic, audience, goal, is_paid, price_cents, custom_instructions)
 
@@ -385,21 +388,24 @@ async def chat_with_agent(
     sys_prompt = system_persona or default_persona
     convo = [{"role": "system", "content": sys_prompt}] + messages
 
-    try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-            payload = {
-                "model": target_model,
-                "messages": convo,
-                "temperature": 0.7,
-            }
-            res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
-            if res.status_code == 200:
-                data = res.json()
-                reply = data["choices"][0]["message"]["content"]
-                return {"reply": reply, "model": target_model, "provider": "omniroute"}
-    except Exception:
-        pass
+    for try_model in [target_model, settings.OPENAI_MODEL or "gpt-4o"]:
+        if not try_model:
+            continue
+        try:
+            async with httpx.AsyncClient(timeout=45.0) as client:
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                payload = {
+                    "model": try_model,
+                    "messages": convo,
+                    "temperature": 0.7,
+                }
+                res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    reply = data["choices"][0]["message"]["content"]
+                    return {"reply": reply, "model": try_model, "provider": "cloud-llm"}
+        except Exception as exc:
+            logger.warning(f"Chat API call with model '{try_model}' failed: {exc}")
 
     last_msg = messages[-1]["content"] if messages else ""
     return {
