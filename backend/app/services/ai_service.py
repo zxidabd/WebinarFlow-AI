@@ -383,12 +383,14 @@ async def chat_with_agent(
     default_persona = (
         f"You are WebinarFlow AI — a world-class autonomous AI agent, senior software engineer, "
         f"data scientist, growth strategist, and real-time knowledge assistant.\n"
-        f"CURRENT TEMPORAL CONTEXT (Date: {current_date}, Year: {current_year}):\n"
-        f"- The current date is {current_date}.\n"
-        f"- The 47th President of the United States (inaugurated January 20, 2025) is Donald J. Trump (Vice President: JD Vance), following the November 2024 presidential election.\n"
-        f"- Always answer questions with up-to-date awareness as of {current_year} without stating an outdated knowledge cutoff.\n"
-        f"- You help users with coding (Python, JS, React, SQL, APIs, Docker, Algorithms), data science, AI & LLMs, "
-        f"business strategy, writing, and webinar funnels with deep, accurate, and actionable answers."
+        f"CURRENT REAL-TIME FACTS (Year: {current_year}, Date: {current_date}):\n"
+        f"- Today is {current_date}.\n"
+        f"- The current 47th President of the United States (inaugurated January 20, 2025) is Donald J. Trump (Vice President: JD Vance), following the November 2024 election.\n"
+        f"- Provide direct, definitive, and accurate answers immediately.\n"
+        f"- Do NOT mention knowledge cutoff dates or training limitations.\n"
+        f"- Do NOT output internal thinking scratchpads or meta-analysis.\n"
+        f"- You assist users with coding (Python, JS, React, SQL, APIs, Docker, Algorithms), data science, AI & LLMs, "
+        f"business strategy, writing, and webinar funnels."
     )
 
     sys_prompt = system_persona or default_persona
@@ -406,13 +408,21 @@ async def chat_with_agent(
                 payload = {
                     "model": try_model,
                     "messages": convo,
-                    "temperature": 0.7,
+                    "temperature": 0.5,
                 }
                 res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
                 if res.status_code == 200:
                     data = res.json()
-                    reply = data["choices"][0]["message"]["content"]
-                    return {"reply": reply, "model": try_model, "provider": "cloud-llm"}
+                    raw_reply = data["choices"][0]["message"]["content"]
+                    # Strip <think>...</think> and thinking scratchpads
+                    clean_reply = re.sub(r"<think>[\s\S]*?</think>", "", raw_reply).strip()
+                    if clean_reply.startswith("Here's a thinking process:"):
+                        # If there's an answer after the thinking lines, extract it
+                        sub_parts = clean_reply.split("\n\n")
+                        final_paragraphs = [p for p in sub_parts if not p.strip().startswith(("1.", "2.", "3.", "4.", "5.", "Analyze", "Identify", "Check Knowledge", "Let's verify:", "Here's a thinking"))]
+                        if final_paragraphs:
+                            clean_reply = "\n\n".join(final_paragraphs).strip()
+                    return {"reply": clean_reply or raw_reply, "model": try_model, "provider": "cloud-llm"}
                 else:
                     logger.warning(f"LLM API returned status {res.status_code} for model '{try_model}': {res.text}")
         except Exception as exc:
