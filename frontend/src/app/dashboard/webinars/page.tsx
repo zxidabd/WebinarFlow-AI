@@ -25,16 +25,7 @@ const webinarFormSchema = z.object({
   capacity: z.preprocess((val) => (val === '' || val === null || val === undefined ? null : Number(val)), z.number().int().positive().nullable().optional()),
   is_published: z.boolean().default(false),
   status: z.enum(['draft', 'scheduled', 'live', 'completed', 'cancelled']).default('draft'),
-  is_paid: z.boolean().default(false),
-  price_amount: z.coerce.number().min(0).default(0),
-  currency: z.string().default('usd'),
-  payment_gateway: z.string().default('stripe'),
-}).refine((data) => {
-  if (data.is_paid && (!data.price_amount || data.price_amount <= 0)) {
-    return false;
-  }
-  return true;
-}, { message: 'Ticket price must be greater than 0 for paid webinars', path: ['price_amount'] });
+});
 type WebinarFormValues = z.infer<typeof webinarFormSchema>;
 
 // ── Color map for status badges ─────────────────────────────────────────
@@ -83,10 +74,6 @@ export default function WebinarsPage() {
       capacity: null,
       is_published: false,
       status: 'draft',
-      is_paid: false,
-      price_amount: 0,
-      currency: 'usd',
-      payment_gateway: 'stripe',
     },
   });
 
@@ -104,17 +91,12 @@ export default function WebinarsPage() {
 
   const createMut = useMutation({
     mutationFn: (values: WebinarFormValues) => {
-      const priceCents = values.is_paid && values.price_amount ? Math.round(Number(values.price_amount) * 100) : 0;
       return api.createWebinar({
         title: values.title,
         description: values.description || null,
         capacity: values.capacity ?? null,
         is_published: values.is_published,
         status: values.status,
-        is_paid: values.is_paid,
-        price_cents: priceCents,
-        currency: values.currency || 'usd',
-        payment_gateway: values.payment_gateway || 'stripe',
       });
     },
     onSuccess: (newWebinar) => {
@@ -131,17 +113,12 @@ export default function WebinarsPage() {
   const updateMut = useMutation({
     mutationFn: (values: WebinarFormValues) => {
       if (!editingWebinar) throw new Error('No webinar to edit');
-      const priceCents = values.is_paid && values.price_amount ? Math.round(Number(values.price_amount) * 100) : 0;
       return api.updateWebinar(editingWebinar.id, {
         title: values.title,
         description: values.description || null,
         capacity: values.capacity ?? null,
         is_published: values.is_published,
         status: values.status,
-        is_paid: values.is_paid,
-        price_cents: priceCents,
-        currency: values.currency || 'usd',
-        payment_gateway: values.payment_gateway || 'stripe',
       });
     },
     onSuccess: () => {
@@ -177,10 +154,6 @@ export default function WebinarsPage() {
       capacity: null,
       is_published: false,
       status: 'draft',
-      is_paid: false,
-      price_amount: 0,
-      currency: 'usd',
-      payment_gateway: 'stripe',
     });
     setEditingWebinar(null);
     setModalMode('create');
@@ -193,10 +166,6 @@ export default function WebinarsPage() {
       capacity: w.capacity,
       is_published: w.is_published,
       status: w.status,
-      is_paid: w.is_paid || false,
-      price_amount: w.price_cents ? (w.price_cents / 100) : 0,
-      currency: w.currency || 'usd',
-      payment_gateway: w.payment_gateway || 'stripe',
     });
     setEditingWebinar(w);
     setModalMode('edit');
@@ -367,118 +336,6 @@ export default function WebinarsPage() {
             <input type="checkbox" {...form.register('is_published')} className="rounded border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-indigo-600 focus:ring-0 h-4 w-4" />
             Publish immediately
           </label>
-
-          {/* ── Free / Paid Webinar Selection ─────────────────────────── */}
-          <div className="rounded-xl border border-gray-200 dark:border-neutral-700 p-4 space-y-3 bg-gray-50/70 dark:bg-neutral-800/40">
-            <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Pricing Option</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  form.setValue('is_paid', false);
-                  form.setValue('price_amount', 0);
-                }}
-                className={`flex items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all ${
-                  !form.watch('is_paid')
-                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm'
-                    : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-300 hover:bg-gray-50'
-                }`}
-              >
-                <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                Free Webinar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  form.setValue('is_paid', true);
-                  if (!form.getValues('price_amount')) form.setValue('price_amount', 19.99);
-                }}
-                className={`flex items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-all ${
-                  form.watch('is_paid')
-                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold shadow-sm'
-                    : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-300 hover:bg-gray-50'
-                }`}
-              >
-                <DollarSign className="h-4 w-4 text-amber-500" />
-                Paid Webinar
-              </button>
-            </div>
-
-            {/* Price, Currency, and Payment Gateway fields shown ONLY if Paid Webinar is selected */}
-            {form.watch('is_paid') && (
-              <div className="space-y-3 pt-2">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label htmlFor="price_amount" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Ticket Price</label>
-                    <input
-                      id="price_amount"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      placeholder="e.g. 19.99 or 999"
-                      className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-all"
-                      {...form.register('price_amount')}
-                    />
-                    <p className="text-[11px] text-gray-500 dark:text-neutral-400">Enter ticket amount (e.g. 19.99)</p>
-                    {form.formState.errors.price_amount && (
-                      <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{form.formState.errors.price_amount.message}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <label htmlFor="currency" className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Currency</label>
-                    <select
-                      id="currency"
-                      className="w-full rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
-                      {...form.register('currency')}
-                    >
-                      <option value="usd">USD ($)</option>
-                      <option value="inr">INR (₹)</option>
-                      <option value="eur">EUR (€)</option>
-                      <option value="gbp">GBP (£)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Payment Gateway</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => form.setValue('payment_gateway', 'stripe')}
-                      className={`flex items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-all ${
-                        form.watch('payment_gateway') !== 'razorpay'
-                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
-                          : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span>💳</span> Stripe Checkout
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        form.setValue('payment_gateway', 'razorpay');
-                        if (form.getValues('currency') === 'usd') {
-                          form.setValue('currency', 'inr');
-                        }
-                      }}
-                      className={`flex items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-all ${
-                        form.watch('payment_gateway') === 'razorpay'
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold shadow-sm'
-                          : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span>⚡</span> Razorpay (UPI + QR)
-                    </button>
-                  </div>
-                  {form.watch('payment_gateway') === 'razorpay' ? (
-                    <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">⚡ Razorpay enables instant UPI (Google Pay, PhonePe, Paytm, BHIM) and QR Code in INR (₹)</p>
-                  ) : (
-                    <p className="text-[11px] text-gray-500 dark:text-neutral-400">Select gateway to process attendee ticket payments</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
             <Button type="submit">{modalMode === 'create' ? 'Create' : 'Save'}</Button>

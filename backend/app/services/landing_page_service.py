@@ -123,6 +123,153 @@ async def get_landing_page(
     return res.scalar_one_or_none()
 
 
+def _build_default_template_content(
+    template_id: str,
+    title: str,
+    description: str | None = None,
+    is_paid: bool = False,
+    price_cents: int = 0,
+    currency: str = "usd",
+) -> dict:
+    curr_upper = (currency or "usd").upper()
+    curr_sym = "₹" if curr_upper == "INR" else ("€" if curr_upper == "EUR" else ("£" if curr_upper == "GBP" else "$"))
+    price_str = f"{curr_sym}{price_cents / 100:.2f}" if is_paid and price_cents > 0 else "Free"
+
+    desc = description or "Join this exclusive session to master actionable strategies, workflows, and insights."
+    tpl = (template_id or "modern-saas").strip().lower()
+
+    if tpl == "corporate":
+        return {
+            "template": "corporate",
+            "sections": {
+                "navbar": {
+                    "logo_text": "Executive Briefing",
+                    "links": "Overview, Speakers, Agenda, Register",
+                    "cta_text": "Secure Seat",
+                    "cta_link": "#register",
+                },
+                "hero": {
+                    "headline": title,
+                    "subtitle": desc,
+                    "badge": f"Executive Roundtable · {price_str}",
+                    "date": "Upcoming Executive Session",
+                    "time": "Live Online",
+                    "cta_text": f"Reserve Executive Pass ({price_str})" if is_paid else "Register For Briefing",
+                    "cta_link": "#register",
+                },
+                "features": {
+                    "title": "Strategic Focus Areas",
+                    "subtitle": "Key organizational and executive leadership outcomes",
+                    "items": [
+                        {"title": "Industry Landscape & Trends", "description": "High-level analysis of market shifts and competitive advantages."},
+                        {"title": "Operational Excellence", "description": "Frameworks for scaling efficiency and optimizing team execution."},
+                        {"title": "Risk Mitigation & Governance", "description": "Compliance, security, and strategic risk management practices."},
+                    ],
+                },
+                "register": {
+                    "title": f"Executive Registration — {price_str}",
+                    "cta_text": f"Confirm Registration ({price_str})" if is_paid else "Register Free Now",
+                    "collect_name": "true",
+                    "success_message": "Registration confirmed. Executive briefing package will be sent to your inbox.",
+                },
+                "footer": {
+                    "text": "© 2026 Enterprise Briefings. All rights reserved.",
+                    "links": "Privacy, Governance, Terms",
+                },
+            },
+        }
+    elif tpl == "education":
+        return {
+            "template": "education",
+            "sections": {
+                "navbar": {
+                    "logo_text": "Academy Workshop",
+                    "links": "Curriculum, Outcomes, Enrollment",
+                    "cta_text": "Enroll Now",
+                    "cta_link": "#register",
+                },
+                "hero": {
+                    "headline": title,
+                    "subtitle": desc,
+                    "badge": f"Masterclass Workshop · {price_str}",
+                    "date": "Live Interactive Training",
+                    "time": "Online Masterclass",
+                    "cta_text": f"Enroll in Course ({price_str})" if is_paid else "Join Free Masterclass",
+                    "cta_link": "#register",
+                },
+                "curriculum": {
+                    "title": "Workshop Modules & Curriculum",
+                    "subtitle": "Comprehensive syllabus designed for practical skill acquisition",
+                    "modules": [
+                        {"number": "01", "title": "Foundational Principles", "description": "Core mental models and essential technical prerequisites."},
+                        {"number": "02", "title": "Advanced Execution Systems", "description": "Step-by-step implementation of real-world workflows."},
+                        {"number": "03", "title": "Live Project & Case Studies", "description": "Building and deploying end-to-end practical solutions."},
+                    ],
+                },
+                "register": {
+                    "title": f"Course Enrollment — {price_str}",
+                    "cta_text": f"Complete Enrollment ({price_str})" if is_paid else "Claim Free Student Spot",
+                    "collect_name": "true",
+                    "success_message": "Enrollment successful! Access your student dashboard via the link in your email.",
+                },
+                "footer": {
+                    "text": "© 2026 Academy Online. All rights reserved.",
+                    "links": "Student Portal, Privacy, Terms",
+                },
+            },
+        }
+    else:  # modern-saas default
+        return {
+            "template": "modern-saas",
+            "sections": {
+                "navbar": {
+                    "logo_text": "WebinarFlow",
+                    "links": "About, Agenda, Register",
+                    "cta_text": "Register",
+                    "cta_link": "#register",
+                },
+                "hero_v2": {
+                    "headline": title,
+                    "subtitle": desc,
+                    "badge": f"Live Masterclass · {price_str}",
+                    "date": "Live Interactive Session",
+                    "time": "Online Event",
+                    "registrations": "Limited Seats",
+                    "cta_text": f"Complete Registration ({price_str})" if is_paid else "Register Free Now",
+                    "cta_link": "#register",
+                },
+                "benefits": {
+                    "title": "What You Will Learn",
+                    "subtitle": "Practical takeaways and key outcomes from this session",
+                    "benefits": [
+                        {"icon": "Zap", "title": "Step-by-Step Mastery", "description": "Learn proven frameworks and strategies that get real results."},
+                        {"icon": "BarChart3", "title": "Live Demos & Breakdown", "description": "Real-world walkthroughs and tactical execution live on stream."},
+                        {"icon": "MessageSquare", "title": "Live Interactive Q&A", "description": "Ask your questions directly and get expert answers in real-time."},
+                        {"icon": "Award", "title": "Exclusive Resources", "description": "Gain access to downloadable templates and bonus materials."},
+                    ],
+                },
+                "agenda": {
+                    "title": "Event Agenda",
+                    "items": [
+                        {"time": "00:00", "title": "Welcome & Overview", "description": "Introduction and key session goals."},
+                        {"time": "15:00", "title": "Core Strategy & Walkthrough", "description": "Deep dive into actionable systems and live demonstration."},
+                        {"time": "45:00", "title": "Live Q&A & Next Steps", "description": "Answering attendee questions and sharing resources."},
+                    ],
+                },
+                "register": {
+                    "title": f"Reserve Your Spot — {price_str}",
+                    "cta_text": f"Complete Registration ({price_str})" if is_paid else "Register Free Now",
+                    "collect_name": "true",
+                    "success_message": "You're registered! Check your email for access details.",
+                },
+                "footer": {
+                    "text": "© 2026 WebinarFlow AI. All rights reserved.",
+                    "links": "Privacy Policy, Terms",
+                },
+            },
+        }
+
+
 async def create_landing_page(
     db: AsyncSession,
     *,
@@ -136,24 +283,46 @@ async def create_landing_page(
     slug = payload.slug or _slugify(payload.title) or "landing-page"
     slug = await _unique_lp_slug(db, webinar_id, slug, exclude_id=None)
 
+    tpl_id = payload.template_id or "modern-saas"
+    content = payload.content
+    if not content or not isinstance(content, dict) or not content.get("sections"):
+        content = _build_default_template_content(
+            tpl_id,
+            payload.title,
+            payload.meta_description,
+            is_paid=payload.is_paid,
+            price_cents=payload.price_cents,
+            currency=payload.currency,
+        )
+
     landing_page = LandingPage(
         webinar_id=webinar_id,
         organization_id=organization_id,
         created_by=created_by,
         title=payload.title,
         slug=slug,
-        status=payload.status,
+        status=LandingPageStatus.draft,
         page_type=payload.page_type,
-        content=payload.content,
-        meta_title=payload.meta_title,
+        content=content,
+        meta_title=payload.meta_title or payload.title,
         meta_description=payload.meta_description,
         meta_image=payload.meta_image,
         custom_head_html=payload.custom_head_html,
         custom_body_html=payload.custom_body_html,
-        is_published=payload.is_published,
-        template_id=payload.template_id,
+        is_published=False,
+        template_id=tpl_id,
     )
     db.add(landing_page)
+
+    # Synchronize pricing with parent webinar
+    from app.models.webinar import Webinar
+    parent_webinar = (await db.execute(select(Webinar).where(Webinar.id == webinar_id))).scalar_one_or_none()
+    if parent_webinar is not None:
+        parent_webinar.is_paid = payload.is_paid
+        parent_webinar.price_cents = payload.price_cents if payload.is_paid else 0
+        parent_webinar.currency = payload.currency or "usd"
+        parent_webinar.payment_gateway = payload.payment_gateway or "stripe"
+
     await db.flush()
     return landing_page
 
@@ -190,6 +359,25 @@ async def update_landing_page(
         else:
             data["status"] = LandingPageStatus.draft
             data["published_at"] = None
+
+    # Pop pricing fields so we don't setattr on LandingPage model
+    pricing_fields = {}
+    for fld in ["is_paid", "price_cents", "currency", "payment_gateway"]:
+        if fld in data:
+            pricing_fields[fld] = data.pop(fld)
+
+    if pricing_fields:
+        from app.models.webinar import Webinar
+        parent_webinar = (await db.execute(select(Webinar).where(Webinar.id == webinar_id))).scalar_one_or_none()
+        if parent_webinar is not None:
+            if "is_paid" in pricing_fields:
+                parent_webinar.is_paid = bool(pricing_fields["is_paid"])
+            if "price_cents" in pricing_fields and pricing_fields["price_cents"] is not None:
+                parent_webinar.price_cents = pricing_fields["price_cents"]
+            if "currency" in pricing_fields and pricing_fields["currency"]:
+                parent_webinar.currency = pricing_fields["currency"]
+            if "payment_gateway" in pricing_fields and pricing_fields["payment_gateway"]:
+                parent_webinar.payment_gateway = pricing_fields["payment_gateway"]
 
     for key, value in data.items():
         setattr(landing_page, key, value)

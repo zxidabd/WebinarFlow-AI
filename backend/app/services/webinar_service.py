@@ -197,7 +197,7 @@ async def create_webinar(
     organization_id: uuid.UUID,
     created_by: uuid.UUID,
     payload: WebinarCreate,
-    create_default_landing_page: bool = True,
+    create_default_landing_page: bool = False,
 ) -> Webinar:
     slug = await _unique_slug(session, organization_id, _slugify(payload.title))
     webinar = Webinar(

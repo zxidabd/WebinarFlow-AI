@@ -34,7 +34,11 @@ class LandingPageBase(BaseModel):
     custom_head_html: str | None = Field(default=None)
     custom_body_html: str | None = Field(default=None)
     is_published: bool = False
-    template_id: str | None = Field(default=None, max_length=64)
+    template_id: str | None = Field(default="modern-saas", max_length=64)
+    is_paid: bool = False
+    price_cents: int = 0
+    currency: str = "usd"
+    payment_gateway: str = "stripe"
 
 
 class LandingPageCreate(LandingPageBase):
@@ -55,6 +59,10 @@ class LandingPageUpdate(BaseModel):
     custom_body_html: str | None = Field(default=None)
     is_published: bool | None = None
     template_id: str | None = Field(default=None, max_length=64)
+    is_paid: bool | None = None
+    price_cents: int | None = None
+    currency: str | None = None
+    payment_gateway: str | None = None
 
 
 class LandingPageItem(BaseModel):

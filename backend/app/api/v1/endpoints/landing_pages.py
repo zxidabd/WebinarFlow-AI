@@ -53,6 +53,37 @@ async def _get_lp_org_scoped(
     return lp
 
 
+async def _to_detail(db: AsyncSession, lp: LandingPage) -> LandingPageDetail:
+    webinar = (
+        await db.execute(select(Webinar).where(Webinar.id == lp.webinar_id))
+    ).scalar_one_or_none()
+    detail_data = {
+        "id": lp.id,
+        "webinar_id": lp.webinar_id,
+        "organization_id": lp.organization_id,
+        "created_by": lp.created_by,
+        "title": lp.title,
+        "slug": lp.slug,
+        "status": lp.status,
+        "page_type": lp.page_type,
+        "content": lp.content,
+        "meta_title": lp.meta_title,
+        "meta_description": lp.meta_description,
+        "meta_image": lp.meta_image,
+        "custom_head_html": lp.custom_head_html,
+        "custom_body_html": lp.custom_body_html,
+        "is_published": lp.is_published,
+        "template_id": lp.template_id,
+        "created_at": lp.created_at,
+        "updated_at": lp.updated_at,
+        "is_paid": bool(getattr(webinar, "is_paid", False)) if webinar else False,
+        "price_cents": int(getattr(webinar, "price_cents", 0) or 0) if webinar else 0,
+        "currency": str(getattr(webinar, "currency", "usd") or "usd") if webinar else "usd",
+        "payment_gateway": str(getattr(webinar, "payment_gateway", "stripe") or "stripe") if webinar else "stripe",
+    }
+    return LandingPageDetail(**detail_data)
+
+
 # ── Endpoints ───────────────────────────────────────────────────────────────
 
 
@@ -113,7 +144,7 @@ async def create_landing_page(
         payload=payload,
     )
     await db.flush()
-    return LandingPageDetail.model_validate(lp)
+    return await _to_detail(db, lp)
 
 
 @router.get("/{landing_page_id}", response_model=LandingPageDetail)
@@ -125,7 +156,7 @@ async def get_landing_page(
 ):
     """Get a single landing page (org-scoped by landing page ID)."""
     lp = await _get_lp_org_scoped(db, landing_page_id, membership.organization_id)
-    return LandingPageDetail.model_validate(lp)
+    return await _to_detail(db, lp)
 
 
 @router.patch("/{landing_page_id}", response_model=LandingPageDetail)
@@ -146,7 +177,7 @@ async def update_landing_page(
         payload=payload,
     )
     await db.flush()
-    return LandingPageDetail.model_validate(updated)
+    return await _to_detail(db, updated)
 
 
 @router.delete("/{landing_page_id}", status_code=status.HTTP_204_NO_CONTENT)
