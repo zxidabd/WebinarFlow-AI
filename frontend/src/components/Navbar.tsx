@@ -135,20 +135,35 @@ export default function Navbar() {
                   {link.label}
                 </a>
               ))}
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-2.5 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setOpen(false)}
-                className="mt-2 inline-flex h-10 items-center justify-center rounded-xl border border-white/20 bg-white/[0.04] px-5 text-sm font-medium text-white shadow-sm transition-all hover:border-white/40"
-              >
-                Get Started
-              </Link>
+
+              <div className="pt-2 border-t border-white/10 mt-1 flex flex-col space-y-2">
+                {isLoggedIn ? (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setOpen(false)}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#a63344]/50 bg-[#45141B]/70 px-5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#852533]/80"
+                  >
+                    Dashboard →
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setOpen(false)}
+                      className="rounded-lg px-3 py-2.5 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white text-center"
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setOpen(false)}
+                      className="inline-flex h-10 items-center justify-center rounded-xl border border-white/20 bg-white/[0.04] px-5 text-sm font-medium text-white shadow-sm transition-all hover:border-white/40"
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           </motion.nav>
         )}
