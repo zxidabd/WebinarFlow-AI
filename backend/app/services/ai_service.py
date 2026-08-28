@@ -367,6 +367,31 @@ async def generate_funnel(
     return _build_full_funnel_sections(clean_topic, audience, goal, is_paid, price_cents, custom_instructions)
 
 
+async def _fetch_live_web_search(query: str) -> str:
+    """Fetch live web search snippets for real-time grounding."""
+    try:
+        clean_q = re.sub(r"[^\w\s-]", " ", query).strip()[:100]
+        if not clean_q or len(clean_q) < 3:
+            return ""
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as client:
+            res = await client.post(
+                "https://html.duckduckgo.com/html/",
+                data={"q": clean_q},
+                headers=headers,
+            )
+            if res.status_code == 200:
+                snippets = re.findall(r'<a class="result__snippet[^"]*"[^>]*>(.*?)</a>', res.text, re.DOTALL)
+                clean = [re.sub(r"<[^>]+>", "", s).strip() for s in snippets[:4]]
+                if clean:
+                    return "\n".join(f"- {s}" for s in clean if len(s) > 15)
+    except Exception:
+        pass
+    return ""
+
+
 async def chat_with_agent(
     *,
     messages: list[dict[str, str]],
@@ -376,25 +401,34 @@ async def chat_with_agent(
     target_model = model or settings.OPENAI_MODEL or "gpt-4o"
     base_url = settings.OPENAI_BASE_URL.rstrip("/") if settings.OPENAI_BASE_URL else "http://localhost:20128/v1"
     api_key = settings.OPENAI_API_KEY or "omniroute"
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.now(timezone.utc)
     current_date = now.strftime("%B %d, %Y")
     current_year = now.year
 
     default_persona = (
-        f"You are WebinarFlow AI — a world-class autonomous AI agent, senior software engineer, "
-        f"data scientist, growth strategist, and real-time knowledge assistant.\n"
-        f"CURRENT REAL-TIME FACTS (Year: {current_year}, Date: {current_date}):\n"
-        f"- Today is {current_date}.\n"
-        f"- The current 47th President of the United States (inaugurated January 20, 2025) is Donald J. Trump (Vice President: JD Vance), following the November 2024 election.\n"
-        f"- Provide direct, definitive, and accurate answers immediately.\n"
-        f"- Do NOT mention knowledge cutoff dates or training limitations.\n"
-        f"- Do NOT output internal thinking scratchpads or meta-analysis.\n"
-        f"- You assist users with coding (Python, JS, React, SQL, APIs, Docker, Algorithms), data science, AI & LLMs, "
-        f"business strategy, writing, and webinar funnels."
+        f"You are WebinarFlow AI — a world-class autonomous AI agent with real-time web search capabilities.\n"
+        f"CURRENT DATE: {current_date} (Year: {current_year}).\n"
+        f"- Always answer questions with real-time, up-to-date information as of {current_year}.\n"
+        f"- Never state that your knowledge is cut off in 2024. Use the provided live web search context.\n"
+        f"- Provide direct, definitive answers immediately without showing internal reasoning scratchpads.\n"
+        f"- You assist users with coding (Python, JS, React, SQL, APIs, Docker), data science, AI, global knowledge, and webinars."
     )
 
     sys_prompt = system_persona or default_persona
-    convo = [{"role": "system", "content": sys_prompt}] + messages
+    
+    # Retrieve live web search grounding for the latest message
+    last_user_msg = messages[-1]["content"] if messages else ""
+    live_context = await _fetch_live_web_search(last_user_msg)
+    
+    convo = [{"role": "system", "content": sys_prompt}]
+    for idx, m in enumerate(messages):
+        if idx == len(messages) - 1 and m.get("role") == "user" and live_context:
+            convo.append({
+                "role": "user",
+                "content": f"{m['content']}\n\n[Verified Real-Time Search Results as of {current_date}]:\n{live_context}"
+            })
+        else:
+            convo.append(m)
 
     candidate_models = [target_model, "llama-3.3-70b-versatile", "deepseek-r1-distill-llama-70b", settings.OPENAI_MODEL or "gpt-4o"]
     # Remove duplicates preserving order
