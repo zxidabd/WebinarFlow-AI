@@ -430,7 +430,16 @@ async def chat_with_agent(
         else:
             convo.append(m)
 
-    candidate_models = [target_model, "llama-3.3-70b-versatile", "deepseek-r1-distill-llama-70b", settings.OPENAI_MODEL or "gpt-4o"]
+    candidate_models = [
+        target_model,
+        "openai/gpt-oss-120b",
+        "qwen/qwen3.6-27b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.8-27b",
+        "groq/compound",
+        "llama-3.3-70b-versatile",
+        settings.OPENAI_MODEL or "gpt-4o",
+    ]
     # Remove duplicates preserving order
     seen = set()
     models_to_try = [m for m in candidate_models if m and not (m in seen or seen.add(m))]

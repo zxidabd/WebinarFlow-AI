@@ -362,11 +362,11 @@ export async function getAiModels(): Promise<{ models: AIModel[] }> {
   }
   return {
     models: [
-      { id: 'llama-3.3-70b-versatile', name: 'AI Agent 1', provider: 'groq' },
-      { id: 'deepseek-r1-distill-llama-70b', name: 'AI Agent 2', provider: 'groq' },
-      { id: 'llama-3.1-8b-instant', name: 'AI Agent 3', provider: 'groq' },
-      { id: 'mixtral-8x7b-32768', name: 'AI Agent 4', provider: 'groq' },
-      { id: 'gemma2-9b-it', name: 'AI Agent 5', provider: 'groq' },
+      { id: 'openai/gpt-oss-120b', name: 'AI Agent 1', provider: 'groq' },
+      { id: 'qwen/qwen3.6-27b', name: 'AI Agent 2', provider: 'groq' },
+      { id: 'openai/gpt-oss-20b', name: 'AI Agent 3', provider: 'groq' },
+      { id: 'qwen/qwen3.8-27b', name: 'AI Agent 4', provider: 'groq' },
+      { id: 'groq/compound', name: 'AI Agent 5', provider: 'groq' },
     ],
   };
 }
