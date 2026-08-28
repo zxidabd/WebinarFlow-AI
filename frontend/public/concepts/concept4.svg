@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <radialGradient id="bg4" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1c1917" />
+      <stop offset="100%" stop-color="#0c0a09" />
+    </radialGradient>
+    <linearGradient id="pulseG" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="40%" stop-color="#ef4444" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+  </defs>
+  <rect width="500" height="500" rx="100" fill="url(#bg4)" stroke="#292524" stroke-width="4" />
+  <rect x="110" y="220" width="22" height="90" rx="11" fill="url(#pulseG)" opacity="0.6" />
+  <rect x="150" y="160" width="22" height="180" rx="11" fill="url(#pulseG)" opacity="0.8" />
+  <rect x="190" y="240" width="22" height="80" rx="11" fill="url(#pulseG)" opacity="0.7" />
+  <rect x="230" y="130" width="22" height="220" rx="11" fill="url(#pulseG)" />
+  <rect x="270" y="220" width="22" height="110" rx="11" fill="url(#pulseG)" opacity="0.8" />
+  <rect x="310" y="150" width="22" height="200" rx="11" fill="url(#pulseG)" opacity="0.9" />
+  <path d="M350 220 L400 170 M400 170 L360 170 M400 170 L400 210" stroke="#a855f7" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" filter="drop-shadow(0 0 16px #a855f7)" />
+</svg>

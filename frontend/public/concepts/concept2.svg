@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <radialGradient id="bg2" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#220e1a" />
+      <stop offset="100%" stop-color="#0a0307" />
+    </radialGradient>
+    <linearGradient id="beamA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3366" />
+      <stop offset="50%" stop-color="#c026d3" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+    <linearGradient id="beamB" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="50%" stop-color="#ff6b8b" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+  </defs>
+  <rect width="500" height="500" rx="100" fill="url(#bg2)" stroke="#421832" stroke-width="4" />
+  <path d="M120 160 C180 130, 320 130, 380 160 C340 290, 280 360, 250 380 C220 360, 160 290, 120 160 Z" fill="none" stroke="url(#beamA)" stroke-width="18" stroke-linecap="round" opacity="0.4" />
+  <path d="M140 180 L200 320 L250 220 L300 320 L360 180" fill="none" stroke="url(#beamB)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" filter="drop-shadow(0 0 24px rgba(255,51,102,0.8))" />
+  <circle cx="250" cy="220" r="14" fill="#ffffff" filter="drop-shadow(0 0 16px #ffffff)" />
+</svg>

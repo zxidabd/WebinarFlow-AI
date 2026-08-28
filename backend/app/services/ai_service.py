@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import logging
@@ -27,10 +27,8 @@ def _slugify(text: str) -> str:
 
 
 def _build_fallback_funnel(topic: str, audience: str | None, is_paid: bool, price_cents: int) -> dict[str, Any]:
-    """Fallback generator in case the LLM provider is unreachable."""
     clean_topic = topic.strip() or "High-Converting Webinar Masterclass"
     aud = audience.strip() if audience else "Ambitious Professionals & Founders"
-    
     title = f"{clean_topic}: The Complete Step-by-Step Blueprint"
     slug = f"{_slugify(clean_topic)}-{uuid.uuid4().hex[:6]}"
     
@@ -122,7 +120,6 @@ async def generate_funnel(
     custom_instructions: str | None = None,
     model: str | None = None,
 ) -> dict[str, Any]:
-    """Generate a complete webinar funnel (Webinar + Landing Page + Email Sequence + Outline) via LLM."""
     clean_topic = topic.strip()
     audience = (target_audience or "").strip() or "Entrepreneurs, creators, and business professionals"
     target_model = model or settings.OPENAI_MODEL or "gpt-4o"
@@ -130,7 +127,7 @@ async def generate_funnel(
     api_key = settings.OPENAI_API_KEY or "omniroute"
 
     system_prompt = (
-        "You are an expert Webinar Funnel Strategist and Copywriter. "
+        "You are an expert Webinar Funnel Strategist and Copywriter inside WebinarFlow AI. "
         "Your task is to generate a comprehensive, highly persuasive, conversion-optimized webinar funnel. "
         "Return ONLY a valid JSON object matching this exact schema (no markdown code blocks, just raw JSON):\n"
         "{\n"
@@ -197,7 +194,6 @@ async def generate_funnel(
             if res.status_code == 200:
                 data = res.json()
                 content = data["choices"][0]["message"]["content"]
-                # Clean any markdown codefence wrapping if present
                 clean_json = re.sub(r"^```(?:json)?\s*", "", content.strip())
                 clean_json = re.sub(r"\s*```$", "", clean_json)
                 parsed = json.loads(clean_json)
@@ -209,8 +205,53 @@ async def generate_funnel(
     except Exception as exc:
         logger.exception(f"AI funnel generation LLM call failed, using intelligent template engine: {exc}")
 
-    # Fallback to structured generator
     return _build_fallback_funnel(clean_topic, audience, is_paid, price_cents)
+
+
+async def chat_with_agent(
+    *,
+    messages: list[dict[str, str]],
+    model: str | None = None,
+    system_persona: str | None = None,
+) -> dict[str, Any]:
+    target_model = model or settings.OPENAI_MODEL or "gpt-4o"
+    base_url = settings.OPENAI_BASE_URL.rstrip("/") if settings.OPENAI_BASE_URL else "http://localhost:20128/v1"
+    api_key = settings.OPENAI_API_KEY or "omniroute"
+
+    default_persona = (
+        "You are WebinarFlow AI Agent — an autonomous webinar co-pilot and growth architect. "
+        "You help creators and businesses design high-converting webinar funnels, craft persuasive copy, "
+        "generate email sequences, optimize landing pages, and scale registrations. "
+        "Be proactive, strategic, concise, and highly actionable. "
+        "If the user asks you to create or generate a webinar or funnel, provide a clear structured breakdown "
+        "and indicate that they can launch it directly in 1-click."
+    )
+
+    sys_prompt = system_persona or default_persona
+    convo = [{"role": "system", "content": sys_prompt}] + messages
+
+    try:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            payload = {
+                "model": target_model,
+                "messages": convo,
+                "temperature": 0.7,
+            }
+            res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
+            if res.status_code == 200:
+                data = res.json()
+                reply = data["choices"][0]["message"]["content"]
+                return {"reply": reply, "model": target_model, "provider": "omniroute"}
+    except Exception as exc:
+        logger.warning(f"AI chat API call failed: {exc}")
+
+    last_msg = messages[-1]["content"] if messages else ""
+    return {
+        "reply": f"I am ready to build your webinar funnel for: '{last_msg}'. You can use the Funnel Generator to automatically generate your landing page, 5-email sequence, and presentation outline in seconds!",
+        "model": target_model,
+        "provider": "webinarflow-fallback",
+    }
 
 
 async def apply_funnel(
@@ -220,13 +261,11 @@ async def apply_funnel(
     user_id: uuid.UUID,
     funnel: dict[str, Any],
 ) -> tuple[Webinar, LandingPage]:
-    """Persist generated funnel as live Webinar and Landing Page records."""
     w_data = funnel.get("webinar", {})
     lp_data = funnel.get("landing_page", {})
 
     starts_at = datetime.now(timezone.utc) + timedelta(days=3)
 
-    # 1. Create Webinar
     webinar_create = WebinarCreate(
         title=w_data.get("title") or "AI Generated Webinar",
         description=w_data.get("description") or "",
@@ -243,7 +282,6 @@ async def apply_funnel(
     )
     await db.flush()
 
-    # 2. Structure Landing Page Content
     content = {
         "hero": {
             "headline": lp_data.get("hero_headline") or w_data.get("title"),

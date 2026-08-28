@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Sparkles, Wand2, FileText, Video, ClipboardList, CreditCard, Mail, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AIAgentCopilotModal } from './AIAgentCopilotModal';
 
 const GENERATE_ITEMS = [
   { label: 'Landing Pages', icon: FileText },
@@ -13,10 +15,10 @@ const GENERATE_ITEMS = [
 ];
 
 export function AIAgentHero() {
+  const [modalOpen, setModalOpen] = useState(false);
+
   const openWizard = () => {
-    if (typeof window !== 'undefined') {
-      console.info('[WebinarFlow AI] Generate Webinar Funnel — wizard lands in Phase 3');
-    }
+    setModalOpen(true);
   };
 
   return (
@@ -88,6 +90,8 @@ export function AIAgentHero() {
           </Button>
         </div>
       </div>
+
+      <AIAgentCopilotModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </section>
   );
 }

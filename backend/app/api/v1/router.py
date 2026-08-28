@@ -43,3 +43,4 @@ _try_include("app.api.v1.endpoints.landing_pages", "/landing-pages", tags=["land
 _try_include("app.api.v1.endpoints.registrations", "/registrations", tags=["registrations"])
 _try_include("app.api.v1.endpoints.payments", "/payments", tags=["payments"])
 _try_include("app.api.v1.endpoints.analytics", "/analytics", tags=["analytics"])
+_try_include("app.api.v1.endpoints.ai", "/ai", tags=["ai"])
