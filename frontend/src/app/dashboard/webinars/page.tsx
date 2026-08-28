@@ -246,11 +246,16 @@ export default function WebinarsPage() {
       {!isLoading && items.length > 0 && (
         <div className="space-y-3">
           {items.map((w) => (
-            <Card key={w.id} className="hover:border-foreground/20 shadow-sm hover:shadow-md transition-all">
+            <Card key={w.id} className="hover:border-indigo-500/40 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-start gap-4 p-4">
-                <div className="flex-1 min-w-0">
+                <div
+                  className="flex-1 min-w-0 cursor-pointer"
+                  onClick={() => router.push(`/dashboard/webinars/${w.id}/landing-pages`)}
+                >
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h3 className="font-semibold text-foreground truncate text-base">{w.title}</h3>
+                    <h3 className="font-semibold text-foreground truncate text-base hover:text-indigo-600 transition-colors">
+                      {w.title}
+                    </h3>
                     <Badge variant="outline" className={STATUS_STYLES[w.status]}>{w.status}</Badge>
                     {w.is_paid ? (
                       <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/30">
@@ -260,7 +265,7 @@ export default function WebinarsPage() {
                     ) : (
                       <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/30">Free</Badge>
                     )}
-                    {w.is_published && <Badge variant="default">Published</Badge>}
+                    {w.is_published && <Badge variant="default" className="bg-emerald-600">Published</Badge>}
                   </div>
                   {w.description && <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{w.description}</p>}
                   <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
@@ -270,10 +275,11 @@ export default function WebinarsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => window.open(`/r/${w.slug}`, '_blank')} title="View Live Landing Page"><Globe className="h-4 w-4 text-indigo-500" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => router.push(`/dashboard/webinars/${w.id}`)} title="View Details"><Eye className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs px-2 text-muted-foreground hover:text-foreground" onClick={() => router.push(`/dashboard/webinars/${w.id}/landing-pages`)} title="Manage Landing Pages">LP</Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(w)} title="Edit"><Pencil className="h-4 w-4" /></Button>
+                  {w.is_published && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700" onClick={() => window.open(`/r/${w.slug}`, '_blank')} title="View Live Landing Page"><Globe className="h-4 w-4" /></Button>
+                  )}
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40" onClick={() => router.push(`/dashboard/webinars/${w.id}/landing-pages`)} title="Manage Landing Pages">LP</Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(w)} title="Edit Webinar Settings"><Pencil className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => duplicateMut.mutate(w.id)} title="Duplicate"><Copy className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => { if (confirm('Delete this webinar?')) deleteMut.mutate(w.id); }} title="Delete"><Trash2 className="h-4 w-4" /></Button>
                 </div>

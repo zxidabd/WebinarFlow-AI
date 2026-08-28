@@ -223,28 +223,6 @@ async def create_webinar(
     session.add(webinar)
     await session.flush()
     await session.refresh(webinar)
-
-    # Optionally create a default draft landing page for wizard-created webinars
-    if create_default_landing_page:
-        from app.models.landing_page import LandingPage, LandingPageStatus, LandingPageType
-        lp = LandingPage(
-            webinar_id=webinar.id,
-            organization_id=organization_id,
-            created_by=created_by,
-            title=f"{webinar.title} — Registration",
-            slug=webinar.slug,
-            status=LandingPageStatus.draft,
-            page_type=LandingPageType.opt_in,
-            template_id="modern-saas",
-            content=_build_default_lp_content(webinar),
-            meta_title=webinar.title,
-            meta_description=webinar.description,
-            is_published=False,
-            published_at=None,
-        )
-        session.add(lp)
-        await session.flush()
-
     return webinar
 
 
