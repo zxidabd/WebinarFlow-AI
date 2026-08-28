@@ -179,6 +179,18 @@ async def update_landing_page(
         base_slug = _slugify(data["title"]) or "landing-page"
         data["slug"] = await _unique_lp_slug(db, webinar_id, base_slug, exclude_id=landing_page.id)
 
+    # Sync is_published with status and published_at
+    if "is_published" in data:
+        is_pub = bool(data["is_published"])
+        data["is_published"] = is_pub
+        if is_pub:
+            data["status"] = LandingPageStatus.published
+            if not landing_page.published_at:
+                data["published_at"] = datetime.now(timezone.utc)
+        else:
+            data["status"] = LandingPageStatus.draft
+            data["published_at"] = None
+
     for key, value in data.items():
         setattr(landing_page, key, value)
 

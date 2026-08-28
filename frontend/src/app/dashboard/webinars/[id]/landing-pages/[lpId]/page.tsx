@@ -74,6 +74,8 @@ export default function LandingPageDetailPage() {
     });
   };
 
+  const effectiveTemplate = lp.template_id || (typeof content?.template === 'string' ? content.template : '') || 'modern-saas';
+
   // If editing, show the template editor instead of preview
   if (editing) {
     return (
@@ -92,7 +94,7 @@ export default function LandingPageDetailPage() {
         <div className="flex-1 p-3 sm:p-6 min-h-screen lg:h-[calc(100vh-120px)] overflow-y-auto">
           <TemplateEditor
             initialState={{
-              template: (typeof content?.template === 'string' ? content.template : lp.template_id) || 'modern-saas',
+              template: effectiveTemplate,
               sections: (content?.sections as Record<string, any>) || (typeof content === 'object' && !content?.template ? content : {}),
             }}
             onSave={handleSaveEditor}
@@ -195,7 +197,10 @@ export default function LandingPageDetailPage() {
               Preview
             </div>
             <LandingPageRenderer
-              content={content?.template ? content : { template: lp.template_id || 'modern-saas', sections: content?.sections || content || {} }}
+              content={{
+                template: effectiveTemplate,
+                sections: (content?.sections as Record<string, any>) || (typeof content === 'object' && !content?.template ? content : {}),
+              }}
               webinarId={params.id}
               preview
               isPaid={webinar?.is_paid}

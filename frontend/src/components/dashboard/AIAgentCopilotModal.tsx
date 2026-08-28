@@ -393,12 +393,12 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
         },
       };
       const res = await aiApi.applyFunnel(funnelToDeploy);
-      toast.success(`Funnel deployed! Published slug: ${res.landing_page_slug}`);
+      toast.success(`Funnel saved as Draft! Opening in editor...`);
       setTimeout(() => {
         window.location.href = `/dashboard/webinars/${res.webinar_id}/landing-pages/${res.landing_page_id}`;
       }, 1200);
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Failed to deploy funnel to workspace.');
+      toast.error(err?.response?.data?.detail || 'Failed to save funnel to workspace.');
     } finally {
       setIsDeploying(false);
     }
@@ -694,7 +694,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg px-4 py-2 shadow-md shrink-0 flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
                       >
                         {isDeploying ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="mr-1 h-3.5 w-3.5" />}
-                        Deploy to Workspace →
+                        Save Funnel (Draft) →
                       </Button>
                     </div>
 
@@ -949,7 +949,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                   Campaign Ready: {generatedFunnel.webinar.title}
                 </div>
                 <div className="text-[10px] text-[#f8d7dc]/70">
-                  Template: <span className="font-semibold text-emerald-400 uppercase">{selectedTemplate}</span> · 11 Sections & 5 Emails Generated
+                  Template: <span className="font-semibold text-emerald-400 uppercase">{selectedTemplate}</span> · Saved as Draft · 11 Sections & 5 Emails
                 </div>
               </div>
             </div>
@@ -960,7 +960,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
               className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-950/50 shrink-0 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
             >
               {isDeploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-amber-300" />}
-              <span>Deploy to Workspace →</span>
+              <span>Save & Open in Editor →</span>
             </Button>
           </div>
         )}

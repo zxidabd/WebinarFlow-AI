@@ -197,6 +197,7 @@ async def create_webinar(
     organization_id: uuid.UUID,
     created_by: uuid.UUID,
     payload: WebinarCreate,
+    create_default_landing_page: bool = True,
 ) -> Webinar:
     slug = await _unique_slug(session, organization_id, _slugify(payload.title))
     webinar = Webinar(
@@ -223,25 +224,26 @@ async def create_webinar(
     await session.flush()
     await session.refresh(webinar)
 
-    # Automatically create a default published landing page for this webinar
-    from app.models.landing_page import LandingPage, LandingPageStatus, LandingPageType
-    lp = LandingPage(
-        webinar_id=webinar.id,
-        organization_id=organization_id,
-        created_by=created_by,
-        title=f"{webinar.title} — Registration",
-        slug=webinar.slug,
-        status=LandingPageStatus.published,
-        page_type=LandingPageType.opt_in,
-        template_id="modern-saas",
-        content=_build_default_lp_content(webinar),
-        meta_title=webinar.title,
-        meta_description=webinar.description,
-        is_published=True,
-        published_at=datetime.now(timezone.utc),
-    )
-    session.add(lp)
-    await session.flush()
+    # Optionally create a default draft landing page for wizard-created webinars
+    if create_default_landing_page:
+        from app.models.landing_page import LandingPage, LandingPageStatus, LandingPageType
+        lp = LandingPage(
+            webinar_id=webinar.id,
+            organization_id=organization_id,
+            created_by=created_by,
+            title=f"{webinar.title} — Registration",
+            slug=webinar.slug,
+            status=LandingPageStatus.draft,
+            page_type=LandingPageType.opt_in,
+            template_id="modern-saas",
+            content=_build_default_lp_content(webinar),
+            meta_title=webinar.title,
+            meta_description=webinar.description,
+            is_published=False,
+            published_at=None,
+        )
+        session.add(lp)
+        await session.flush()
 
     return webinar
 

@@ -148,7 +148,27 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
     const defaults = extractTemplateDefaults(tpl);
     const merged: Record<string, any> = {};
     for (const s of tpl.sections) {
-      merged[s.id] = { ...(defaults[s.id] || {}), ...(initial[s.id] || {}) };
+      let rawSection = initial[s.id];
+      if (!rawSection || (typeof rawSection === 'object' && Object.keys(rawSection).length === 0)) {
+        if (s.id === 'hero') rawSection = initial['hero_v2'];
+        else if (s.id === 'hero_v2') rawSection = initial['hero'];
+        else if (s.id === 'instructor') {
+          const sp = initial['speakers']?.speakers?.[0] || initial['speakers_v2']?.speakers?.[0];
+          if (sp) rawSection = { name: sp.name, title_role: sp.title, bio: sp.bio, avatar: sp.avatar };
+        } else if (s.id === 'outcomes') {
+          const bens = initial['benefits']?.benefits;
+          if (bens) rawSection = { outcomes: bens.map((b: any) => ({ text: typeof b === 'string' ? b : `${b.title} — ${b.description}` })) };
+        } else if (s.id === 'curriculum') {
+          const items = initial['agenda']?.items;
+          if (items) rawSection = { modules: items.map((a: any) => ({ title: a.title, duration: a.time, description: a.description || '' })) };
+        } else if (s.id === 'schedule') {
+          const items = initial['agenda']?.items;
+          if (items) rawSection = { items };
+        } else if (s.id === 'case_study' || s.id === 'case_studies') {
+          rawSection = initial['case_study'] || initial['case_studies'];
+        }
+      }
+      merged[s.id] = { ...(defaults[s.id] || {}), ...(rawSection || {}) };
     }
     return merged;
   });
@@ -282,7 +302,7 @@ export default function TemplateEditor({ initialState, onSave, onCancel, webinar
           {/* Actions */}
           <div className="flex gap-2 pt-4 sticky bottom-0 bg-white/95 backdrop-blur py-3 border-t border-gray-100 lg:border-none lg:static">
             <button
-              onClick={() => onSave({ template: templateId, sections })}
+              onClick={() => onSave({ template: templateId, sections: { ...(initialState?.sections || {}), ...sections } })}
               className="flex-1 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-colors"
             >
               Save Changes

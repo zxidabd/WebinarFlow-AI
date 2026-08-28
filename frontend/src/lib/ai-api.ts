@@ -711,7 +711,7 @@ export async function applyFunnel(funnel: GeneratedFunnel): Promise<{
       title: funnel.webinar.title,
       description: funnel.webinar.description,
       starts_at: startsAt,
-      status: 'scheduled',
+      status: 'draft',
       is_paid: funnel.webinar.is_paid,
       price_cents: funnel.webinar.price_cents,
       currency: 'usd',
@@ -724,7 +724,7 @@ export async function applyFunnel(funnel: GeneratedFunnel): Promise<{
       title: funnel.landing_page.title,
       slug: lpSlug || `webinar-${Math.random().toString(36).substring(2, 6)}`,
       meta_description: funnel.landing_page.meta_description,
-      is_published: true,
+      is_published: false,
       template_id: tplId,
       content: {
         template: tplId,

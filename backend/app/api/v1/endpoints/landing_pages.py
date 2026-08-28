@@ -10,7 +10,7 @@ import uuid
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_active_user, get_current_membership, get_db
@@ -214,7 +214,7 @@ async def get_landing_page_stats(
 async def _resolve_public_landing_page(
     db: AsyncSession, slug: str
 ) -> tuple[LandingPage, Webinar] | None:
-    """Find a published landing page and its parent webinar by LandingPage.slug, LandingPage.id, or Webinar.slug."""
+    """Find an active published landing page and its parent webinar by LandingPage.slug, LandingPage.id, or Webinar.slug."""
     clean_slug = (slug or "").strip().lower()
     if not clean_slug:
         return None
@@ -226,16 +226,19 @@ async def _resolve_public_landing_page(
     except (ValueError, AttributeError):
         pass
 
+    # Strictly require is_published=True AND status=published
+    pub_conditions = and_(
+        LandingPage.is_published.is_(True),
+        or_(
+            LandingPage.status == LandingPageStatus.published,
+            LandingPage.status == "published",
+        ),
+    )
+
     # 1. Match LandingPage directly by slug (case-insensitive) or UUID
     conditions = [func.lower(LandingPage.slug) == clean_slug]
     if parsed_uuid is not None:
         conditions.append(LandingPage.id == parsed_uuid)
-
-    pub_conditions = or_(
-        LandingPage.is_published.is_(True),
-        LandingPage.status == LandingPageStatus.published,
-        LandingPage.status == "published",
-    )
 
     query = (
         select(LandingPage)
@@ -247,16 +250,6 @@ async def _resolve_public_landing_page(
     )
     lp = (await db.execute(query)).scalars().first()
 
-    # If no published LP found by exact slug, check if any LP exists with this slug
-    if lp is None:
-        lp = (
-            await db.execute(
-                select(LandingPage)
-                .where(or_(*conditions))
-                .order_by(LandingPage.created_at.desc())
-            )
-        ).scalars().first()
-
     if lp is not None:
         webinar = (
             await db.execute(select(Webinar).where(Webinar.id == lp.webinar_id))
@@ -264,7 +257,7 @@ async def _resolve_public_landing_page(
         if webinar is not None:
             return lp, webinar
 
-    # 2. Fallback: match by Webinar.slug (case-insensitive) or Webinar UUID
+    # 2. Fallback: match by Webinar.slug (case-insensitive) or Webinar UUID if published LP exists
     w_conditions = [func.lower(Webinar.slug) == clean_slug]
     if parsed_uuid is not None:
         w_conditions.append(Webinar.id == parsed_uuid)
@@ -272,7 +265,6 @@ async def _resolve_public_landing_page(
     webinar_query = select(Webinar).where(or_(*w_conditions))
     webinar = (await db.execute(webinar_query)).scalars().first()
     if webinar is not None:
-        # Check published LP for this webinar
         lp = (
             await db.execute(
                 select(LandingPage)
@@ -285,37 +277,6 @@ async def _resolve_public_landing_page(
         ).scalars().first()
         if lp is not None:
             return lp, webinar
-
-        # Fallback to any landing page for this webinar
-        lp_any = (
-            await db.execute(
-                select(LandingPage)
-                .where(LandingPage.webinar_id == webinar.id)
-                .order_by(LandingPage.created_at.desc())
-            )
-        ).scalars().first()
-        if lp_any is not None:
-            return lp_any, webinar
-
-    # 3. Partial / substring match fallback
-    partial_lp = (
-        await db.execute(
-            select(LandingPage)
-            .where(
-                or_(
-                    func.lower(LandingPage.slug).like(f"%{clean_slug}%"),
-                    func.lower(LandingPage.title).like(f"%{clean_slug}%"),
-                )
-            )
-            .order_by(LandingPage.created_at.desc())
-        )
-    ).scalars().first()
-    if partial_lp is not None:
-        webinar = (
-            await db.execute(select(Webinar).where(Webinar.id == partial_lp.webinar_id))
-        ).scalar_one_or_none()
-        if webinar is not None:
-            return partial_lp, webinar
 
     return None
 

@@ -631,13 +631,14 @@ async def apply_funnel(
         slug=_slugify(w_data.get("title") or "ai-webinar") + "-" + uuid.uuid4().hex[:4],
         starts_at=starts_at,
         duration_minutes=int(w_data.get("duration_minutes") or 60),
-        status=WebinarStatus.scheduled,
+        status=WebinarStatus.draft,
+        is_published=False,
         is_paid=bool(w_data.get("is_paid", False)),
         price_cents=int(w_data.get("price_cents", 0) or 0),
         currency="usd",
     )
     webinar = await webinar_service.create_webinar(
-        db, organization_id=organization_id, created_by=user_id, payload=webinar_create
+        db, organization_id=organization_id, created_by=user_id, payload=webinar_create, create_default_landing_page=False
     )
     await db.flush()
 
@@ -672,8 +673,8 @@ async def apply_funnel(
         title=lp_data.get("title") or webinar.title,
         slug=lp_slug,
         meta_description=lp_data.get("meta_description") or webinar.description,
-        is_published=True,
-        status=LandingPageStatus.published,
+        is_published=False,
+        status=LandingPageStatus.draft,
         template_id=tpl_id,
         content=content,
     )
