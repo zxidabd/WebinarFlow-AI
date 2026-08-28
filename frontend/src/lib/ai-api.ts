@@ -368,6 +368,72 @@ export async function getAiModels(): Promise<{ models: AIModel[] }> {
   }
 }
 
+function extractTopicFromHistory(messages: Array<{ role: string; content: string }>): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const text = messages[i].content;
+    const match = text.match(/(?:for|on|about|topic|course|masterclass|webinar)\s+([a-zA-Z0-9\s-]{3,40})/i);
+    if (match && match[1]) {
+      const candidate = match[1].replace(/webinar|script|give me|write|a |an |the /gi, '').trim();
+      if (candidate.length > 2) return candidate;
+    }
+  }
+  return 'Data Science & AI Career';
+}
+
+function generateWebinarScript(topic: string): string {
+  return `🎙️ **Complete 60-Minute Live Webinar Script for "${topic}"**
+
+---
+
+### ⏱️ [00:00 - 05:00] Part 1: The Hook & Big Promise
+**[Slide 1: Title Slide & Welcome]**
+> *"Welcome everyone! If you're here today, it's because you want to master ${topic} and build a future-proof, high-income career in 2026 without spending years in outdated theory.*
+> 
+> *In the next 50 minutes, I am going to reveal the exact 3-part blueprint that our students and alumni use to go from total beginner to building portfolio-ready projects that get noticed by top employers and universities.*
+> 
+> *Housekeeping: Close all extra tabs, grab a notepad, and type 'READY' in the chat if you're committed to taking action today!"*
+
+---
+
+### ⏱️ [05:00 - 15:00] Part 2: The Origin Story & Why Old Methods Fail
+**[Slide 2-4: The Industry Problem]**
+> *"Let me share why 90% of people struggling with ${topic} get stuck: They get trapped in 'Tutorial Hell'. They watch hundreds of hours of video lectures, but when it's time to build a real dataset/project, they freeze.*
+> 
+> *The old way: Memorizing syntax, complex formulas, and dry academic papers.*
+> *The new way: Project-First Execution. You build real-world systems, create verified proof-of-work, and let your portfolio do the selling."*
+
+---
+
+### ⏱️ [15:00 - 40:00] Part 3: The 3 Core Pillars (The Meat)
+**[Slide 5-8: Pillar 1 — The Core Foundation]**
+> *"Pillar #1: Rapid Workflow Setup. Here is how we set up Python, modern analytics pipelines, and eliminate 80% of unnecessary friction..."*
+
+**[Slide 9-13: Pillar 2 — The Live Build]**
+> *"Pillar #2: Live Build Demonstration. Watch my screen as we take a raw dataset and construct a production-grade predictive model in under 20 minutes..."*
+
+**[Slide 14-17: Pillar 3 — The Portfolio & Placement Framework]**
+> *"Pillar #3: The Proof-of-Work Showcase. How to document your code, host interactive web demos, and present your work to hiring managers and recruiters."*
+
+---
+
+### ⏱️ [40:00 - 52:00] Part 4: The Offer & Program Pitch
+**[Slide 18-22: The Fast-Track Program]**
+> *"You have two choices today: You can try to figure all this out by trial and error over the next 12 months, or you can take the fast track with our complete ${topic} Accelerator.*
+> 
+> *Here is everything included in the program:*
+> - *Full Step-by-Step Curriculum & Code Repositories*
+> - *Weekly Live Mentorship & Code Reviews*
+> - *Direct Access to Verified Project Templates*
+> - *Employer & University Portfolio Review*
+> 
+> *Special Webinar Bonus: The first 10 students who enroll today also get 1-on-1 career strategy onboarding. Click the button on your screen now to claim your seat!"*
+
+---
+
+### ⏱️ [52:00 - 60:00] Part 5: Live Q&A & Objection Handling
+> *"Let's open the floor to your questions! I'm here until every question about ${topic} and the accelerator is answered. Let's start with the chat..."*`;
+}
+
 export async function chatWithAgent(payload: {
   messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
   model?: string;
@@ -379,15 +445,66 @@ export async function chatWithAgent(payload: {
   } catch {
     const rawMsg = payload.messages[payload.messages.length - 1]?.content || '';
     const lower = rawMsg.toLowerCase().trim();
+    const detectedTopic = extractTopicFromHistory(payload.messages);
 
-    let reply = `I have analyzed your request for: "${rawMsg}".\n\nHere are 3 high-converting recommendations for your webinar funnel:\n1. **Punchy Headline**: Focus on the #1 transformation your audience desires.\n2. **Live Value Demo**: Include a 15-minute live actionable walkthrough.\n3. **Clear Next Step**: Present your offer with an exclusive limited-time bonus.\n\nYou can switch to the **1-Click Funnel Generator** tab above to automatically build the full campaign in 5 seconds!`;
+    let reply = '';
 
     if (['hi', 'hello', 'hey', 'greetings', 'yo'].includes(lower)) {
-      reply = `👋 Hello! I am your **WebinarFlow AI Agent**.\n\nI can help you:\n- ⚡ **Build complete webinar funnels** across all 11 sections (Navbar, Hero, Speakers, Stats, Logos, Benefits, Agenda, Testimonials, FAQ, Countdown, Form, Footer)\n- ✍️ **Write high-converting headlines & copy**\n- 📧 **Draft automated reminder email sequences**\n- 🎯 **Optimize attendee registration & show-up rates**\n\nWhat webinar topic would you like to build today?`;
-    } else if (lower.includes('headline') || lower.includes('title')) {
-      reply = `🔥 Here are 3 high-converting headline frameworks for your topic:\n\n1. *"How to Master [Topic] in 2026 Without [Common Frustration]"*\n2. *"The 3-Step Blueprint to Scale [Topic] with High Conversion"*\n3. *"Live Workshop: The Exact Framework We Used to Achieve 10x Results"*\n\nWould you like me to generate the full landing page for one of these?`;
-    } else if (lower.includes('email') || lower.includes('sequence')) {
-      reply = `✉️ Here is a 5-part email framework proven to get 45%+ show-up rates:\n\n1. **Confirmation & Calendar Invite** (Immediate)\n2. **24-Hour Countdown & Worksheet** (24h before)\n3. **1-Hour Prep & Notebook Reminder** (1h before)\n4. **Starting Now: Room Open** (Live broadcast)\n5. **Replay Access & Limited Offer** (Post-webinar)\n\nSwitch to the **1-Click Funnel Generator** tab to get the full copy written for you!`;
+      reply = `👋 Hello! I am your **WebinarFlow AI Agent**.\n\nI can write complete scripts, draft email sequences, optimize your pricing, and build full 11-section webinar funnels.\n\nWhat webinar topic or script are you working on?`;
+    } else if (
+      lower.includes('script') ||
+      lower.includes('outline') ||
+      lower.includes('presentation') ||
+      lower.includes('speech') ||
+      lower.includes('give me the') ||
+      lower.includes('give the script')
+    ) {
+      reply = generateWebinarScript(detectedTopic);
+    } else if (lower.includes('email') || lower.includes('sequence') || lower.includes('invitation')) {
+      reply = `✉️ **Full 5-Part High-Converting Email Sequence for "${detectedTopic}"**\n\n` +
+        `**Email 1: Invitation & Seat Reservation**\n` +
+        `*Subject*: 🔥 Live Workshop: How to Master ${detectedTopic} in 2026\n` +
+        `*Body*: Hi {{first_name}},\n\nAre you looking to break into ${detectedTopic} with practical, portfolio-ready skills?\n\nJoin our live masterclass this week where we break down the step-by-step framework.\n\n👉 Reserve your seat here: {{registration_link}}\n\n---\n\n` +
+        `**Email 2: 24-Hour Reminder**\n` +
+        `*Subject*: ⏰ 24 Hours Left: We go live tomorrow!\n` +
+        `*Body*: Hi {{first_name}},\n\nQuick reminder that our live training on ${detectedTopic} begins tomorrow at 2:00 PM EST.\n\nMake sure to add it to your calendar: {{webinar_link}}\n\n---\n\n` +
+        `**Email 3: 1-Hour Warning**\n` +
+        `*Subject*: 🚀 Going Live in 60 Minutes (Room link inside)\n` +
+        `*Body*: Hi {{first_name}},\n\nWe are opening the room in 1 hour. Grab a notepad!\n\nJoin here: {{webinar_link}}\n\n---\n\n` +
+        `**Email 4: Starting Now**\n` +
+        `*Subject*: 🔴 WE ARE LIVE! Join the room now\n` +
+        `*Body*: Hi {{first_name}},\n\nWe just hit broadcast! Click below to join before seats fill up:\n{{webinar_link}}\n\n---\n\n` +
+        `**Email 5: Replay & Special Offer**\n` +
+        `*Subject*: 🎬 ${detectedTopic} Replay is Live (+ Exclusive Toolkit)\n` +
+        `*Body*: Hi {{first_name}},\n\nThank you for joining our live masterclass. The full replay is now active for 48 hours:\n{{replay_link}}\n\nReady to enroll in the full program? Claim the webinar discount here: {{offer_link}}`;
+    } else if (lower.includes('headline') || lower.includes('title') || lower.includes('hook')) {
+      reply = `🔥 **10 High-Converting Headlines for "${detectedTopic}"**\n\n` +
+        `**1. Transformation Focused:**\n` +
+        `- *"How to Master ${detectedTopic} in 30 Days and Land High-Paying Projects"*\n` +
+        `- *"The Step-by-Step Blueprint to Go From Beginner to Pro in ${detectedTopic}"*\n\n` +
+        `**2. Curiosity & Pain-Point:**\n` +
+        `- *"Why 90% of Learners Fail at ${detectedTopic} (And the 3-Step Fix)"*\n` +
+        `- *"The No-Fluff Guide to Building Real-World Systems with ${detectedTopic}"*\n\n` +
+        `**3. Exclusive Live Masterclass:**\n` +
+        `- *"Live Workshop: The Modern ${detectedTopic} Framework for 2026"*\n` +
+        `- *"Build & Launch: A Complete Live Walkthrough of ${detectedTopic}"*\n\n` +
+        `Would you like me to generate the full landing page or script for one of these?`;
+    } else if (lower.includes('price') || lower.includes('pricing') || lower.includes('cost') || lower.includes('ticket')) {
+      reply = `💰 **Recommended Pricing & Monetization Strategy for "${detectedTopic}"**\n\n` +
+        `1. **Free Opt-in Lead Generation Webinar (Recommended)**:\n` +
+        `   - **Goal**: Maximize attendance (100-500+ signups).\n` +
+        `   - **Back-End Pitch**: Sell a $297 - $997 complete cohort or certification at the end of the presentation.\n\n` +
+        `2. **Low-Ticket Paid Workshop ($27 - $47)**:\n` +
+        `   - **Goal**: Qualify high-intent buyers with a 70%+ live show-up rate.\n` +
+        `   - **Back-End Pitch**: Upsell a $1,500 - $3,000 mentorship or agency package.\n\n` +
+        `You can select **Free** or **Paid** in the **1-Click Funnel Generator** tab to deploy this immediately!`;
+    } else {
+      reply = `I have analyzed your request for: **"${rawMsg}"**.\n\n` +
+        `Here is how we can execute this for your **${detectedTopic}** webinar:\n\n` +
+        `1. 🎯 **Audience Hook**: Focus immediately on tangible career / business outcomes in the first 5 minutes.\n` +
+        `2. 💻 **Live Build Walkthrough**: Give attendees an interactive 20-minute demonstration that proves the system works.\n` +
+        `3. 🚀 **Next Steps**: Provide a 1-click resource pack or course enrollment.\n\n` +
+        `👉 Type **"give me the script"** to see the full 60-minute script, or click **"1-Click Funnel Generator"** to deploy all pages and emails!`;
     }
 
     return {
