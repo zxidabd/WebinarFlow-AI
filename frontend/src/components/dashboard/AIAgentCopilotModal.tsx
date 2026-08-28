@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles,
   Wand2,
@@ -313,6 +313,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
   const [generatedFunnel, setGeneratedFunnel] = useState<aiApi.GeneratedFunnel | null>(null);
   const [previewSection, setPreviewSection] = useState<'landing' | 'emails' | 'outline'>('landing');
   const [isDeploying, setIsDeploying] = useState(false);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Chat State
   const [chatInput, setChatInput] = useState('');
@@ -368,7 +369,10 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
         res.landing_page.template = selectedTemplate;
       }
       setGeneratedFunnel(res);
-      toast.success('Funnel created! Preview your landing page and emails on the right.');
+      toast.success('Funnel created! Preview your landing page and emails below.');
+      setTimeout(() => {
+        previewContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || 'Failed to generate funnel. Please try again.');
     } finally {
@@ -648,32 +652,35 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
               </div>
 
               {/* Right Column: Generated Output & 1-Click Launch */}
-              <div className="lg:col-span-7 flex flex-col bg-[#140507]/80 border border-[#5a1a23]/50 rounded-xl overflow-hidden shadow-lg">
+              <div ref={previewContainerRef} className="lg:col-span-7 flex flex-col bg-[#140507]/80 border border-[#5a1a23]/50 rounded-xl overflow-hidden shadow-lg min-h-[450px]">
                 {generatedFunnel ? (
                   <div className="flex flex-col h-full">
                     {/* Preview Sub-tabs */}
-                    <div className="flex items-center justify-between px-4 py-2.5 bg-black/60 border-b border-[#5a1a23]/40">
-                      <div className="flex gap-1.5">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 px-4 py-2.5 bg-black/60 border-b border-[#5a1a23]/40">
+                      <div className="flex flex-wrap gap-1.5">
                         <button
+                          type="button"
                           onClick={() => setPreviewSection('landing')}
-                          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                            previewSection === 'landing' ? 'bg-[#852533] text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                            previewSection === 'landing' ? 'bg-[#852533] text-white shadow-sm' : 'text-gray-400 hover:text-white bg-white/5'
                           }`}
                         >
                           🎨 Landing Page
                         </button>
                         <button
+                          type="button"
                           onClick={() => setPreviewSection('emails')}
-                          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                            previewSection === 'emails' ? 'bg-[#852533] text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                            previewSection === 'emails' ? 'bg-[#852533] text-white shadow-sm' : 'text-gray-400 hover:text-white bg-white/5'
                           }`}
                         >
                           ✉️ 5-Email Sequence
                         </button>
                         <button
+                          type="button"
                           onClick={() => setPreviewSection('outline')}
-                          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                            previewSection === 'outline' ? 'bg-[#852533] text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                            previewSection === 'outline' ? 'bg-[#852533] text-white shadow-sm' : 'text-gray-400 hover:text-white bg-white/5'
                           }`}
                         >
                           🎙️ Presentation Outline
@@ -684,10 +691,10 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                         size="sm"
                         onClick={handleDeployFunnel}
                         disabled={isDeploying}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg px-4 py-2 shadow-md shrink-0 flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
                       >
                         {isDeploying ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="mr-1 h-3.5 w-3.5" />}
-                        Deploy to Workspace
+                        Deploy to Workspace →
                       </Button>
                     </div>
 
@@ -929,6 +936,34 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
             </div>
           )}
         </div>
+
+        {/* Sticky Bottom Action Bar when Funnel is Generated */}
+        {activeTab === 'funnel' && generatedFunnel && (
+          <div className="sticky bottom-0 z-30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-3.5 bg-[#190609]/95 border-t border-[#a63344]/50 shadow-2xl backdrop-blur-xl">
+            <div className="flex items-center gap-2.5 truncate">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 shrink-0">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+              <div className="truncate">
+                <div className="text-xs font-bold text-white truncate">
+                  Campaign Ready: {generatedFunnel.webinar.title}
+                </div>
+                <div className="text-[10px] text-[#f8d7dc]/70">
+                  Template: <span className="font-semibold text-emerald-400 uppercase">{selectedTemplate}</span> · 11 Sections & 5 Emails Generated
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleDeployFunnel}
+              disabled={isDeploying}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-950/50 shrink-0 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+            >
+              {isDeploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-amber-300" />}
+              <span>Deploy to Workspace →</span>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
