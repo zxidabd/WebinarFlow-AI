@@ -35,13 +35,18 @@ async def list_org_registrants(
     db: AsyncSession = Depends(get_db),
 ):
     """List all registrants/customers for the organizer's active organization."""
-    org_id = membership.organization_id
+    user_memberships = (
+        await db.execute(
+            select(Membership.organization_id).where(Membership.user_id == current_user.id)
+        )
+    ).scalars().all()
+    user_org_ids = list(set(list(user_memberships) + ([org_id] if org_id else [])))
 
-    # 1. Fetch completed payments for this organization to accurately compute spent & buyer status
+    # 1. Fetch completed payments for this user's organizations to accurately compute spent & buyer status
     payments_res = (
         await db.execute(
             select(Payment).where(
-                Payment.organization_id == org_id,
+                Payment.organization_id.in_(user_org_ids),
                 Payment.status == PaymentStatus.completed,
             )
         )
@@ -60,8 +65,8 @@ async def list_org_registrants(
         .outerjoin(LandingPage, Registrant.landing_page_id == LandingPage.id)
         .where(
             or_(
-                Webinar.organization_id == org_id,
-                LandingPage.organization_id == org_id,
+                Webinar.organization_id.in_(user_org_ids),
+                LandingPage.organization_id.in_(user_org_ids),
             )
         )
         .order_by(Registrant.created_at.desc())

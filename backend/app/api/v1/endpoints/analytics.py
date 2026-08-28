@@ -46,17 +46,24 @@ async def get_analytics_overview(
     else:
         start_time = datetime.now(timezone.utc) - timedelta(days=30)
 
+    user_memberships = (
+        await db.execute(
+            select(Membership.organization_id).where(Membership.user_id == current_user.id)
+        )
+    ).scalars().all()
+    user_org_ids = list(set(list(user_memberships) + ([org_id] if org_id else [])))
+
     # 2. Get Organization Webinars & Landing Pages
     webinars = (
         await db.execute(
-            select(Webinar).where(Webinar.organization_id == org_id).order_by(Webinar.created_at.desc())
+            select(Webinar).where(Webinar.organization_id.in_(user_org_ids)).order_by(Webinar.created_at.desc())
         )
     ).scalars().all()
     webinar_ids = [w.id for w in webinars]
 
     lps = (
         await db.execute(
-            select(LandingPage).where(LandingPage.organization_id == org_id)
+            select(LandingPage).where(LandingPage.organization_id.in_(user_org_ids))
         )
     ).scalars().all()
     lp_ids = [lp.id for lp in lps]
@@ -129,7 +136,7 @@ async def get_analytics_overview(
 
     # 6. Real Completed Payments / Sales
     p_query = select(Payment).where(
-        Payment.organization_id == org_id,
+        Payment.organization_id.in_(user_org_ids),
         Payment.status == PaymentStatus.completed,
     )
     if start_time:

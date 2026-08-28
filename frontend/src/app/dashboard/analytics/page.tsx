@@ -22,7 +22,9 @@ export default function AnalyticsDashboard() {
   const { data, isLoading } = useQuery({
     queryKey: ['analytics-overview', dateRange],
     queryFn: () => getAnalyticsOverview(dateRange === 'Last 7 Days' ? '7d' : (dateRange === 'All Time' ? 'all' : '30d')),
-    refetchInterval: 10000, // Live poll every 10s
+    refetchInterval: 3000, // Live poll every 3s
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const totalViews = data?.total_views ?? 0;

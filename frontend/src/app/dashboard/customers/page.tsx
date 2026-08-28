@@ -26,12 +26,14 @@ export default function CustomersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['registrations', searchQuery, statusFilter],
+    queryKey: ['dashboard-customers', searchQuery, statusFilter],
     queryFn: () => listRegistrations({
       search: searchQuery || undefined,
       status: statusFilter !== 'All' ? statusFilter : undefined,
     }),
-    refetchInterval: 10000, // Live poll every 10s for new leads
+    refetchInterval: 3000, // Live poll every 3s for immediate updates
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const customers = data?.items || [];
