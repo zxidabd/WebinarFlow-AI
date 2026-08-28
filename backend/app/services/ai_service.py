@@ -338,9 +338,19 @@ async def generate_funnel(
         f"- Extra Custom Instructions: {custom_instructions or 'None'}"
     )
 
-    for try_model in [target_model, settings.OPENAI_MODEL or "gpt-4o"]:
-        if not try_model:
-            continue
+    funnel_models = [
+        target_model,
+        "openai/gpt-oss-120b",
+        "qwen/qwen3.6-27b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.8-27b",
+        "groq/compound",
+        settings.OPENAI_MODEL or "gpt-4o",
+    ]
+    seen_f = set()
+    models_to_try_f = [m for m in funnel_models if m and not (m in seen_f or seen_f.add(m))]
+
+    for try_model in models_to_try_f:
         try:
             async with httpx.AsyncClient(timeout=45.0) as client:
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
