@@ -386,33 +386,104 @@ export function AIAgentCopilotModal({ isOpen, onClose }: Props) {
                     {/* Preview Area */}
                     <div className="flex-1 overflow-y-auto p-5 space-y-4">
                       {previewSection === 'landing' && (
-                        <div className="space-y-4 text-xs">
+                        <div className="space-y-3.5 text-xs">
+                          {/* Hero */}
                           <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1">
-                            <span className="text-gray-400 uppercase font-semibold text-[10px]">Hero Headline</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-400 uppercase font-semibold text-[10px]">Hero Section</span>
+                              <Badge variant="outline" className="text-indigo-400 border-indigo-400/30 text-[10px]">
+                                {generatedFunnel.landing_page.sections?.navbar?.logo_text || 'WebinarFlow'}
+                              </Badge>
+                            </div>
                             <h4 className="text-base font-bold text-white">{generatedFunnel.landing_page.hero_headline}</h4>
-                            <p className="text-gray-300 text-xs">{generatedFunnel.landing_page.hero_subheadline}</p>
-                            <Badge className="mt-2 bg-indigo-600">{generatedFunnel.landing_page.cta_text}</Badge>
+                            <p className="text-gray-300 text-xs leading-relaxed">{generatedFunnel.landing_page.hero_subheadline}</p>
+                            <div className="pt-1 flex items-center gap-2">
+                              <Badge className="bg-indigo-600 hover:bg-indigo-600">{generatedFunnel.landing_page.cta_text}</Badge>
+                              {generatedFunnel.landing_page.sections?.countdown?.message && (
+                                <span className="text-[11px] text-amber-400 font-mono">
+                                  ⏳ {generatedFunnel.landing_page.sections.countdown.message}
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="space-y-2">
-                            <span className="text-gray-400 uppercase font-semibold text-[10px]">3 Key Benefits</span>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          {/* Stats Bar */}
+                          {generatedFunnel.landing_page.sections?.stats?.stats && (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {generatedFunnel.landing_page.sections.stats.stats.map((st: any, i: number) => (
+                                <div key={i} className="p-2 rounded-lg bg-black/30 border border-white/5 text-center">
+                                  <div className="font-bold text-indigo-300 text-xs">{st.value}</div>
+                                  <div className="text-[10px] text-gray-400">{st.label}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Speakers */}
+                          {generatedFunnel.landing_page.sections?.speakers?.speakers && (
+                            <div className="space-y-1.5">
+                              <span className="text-gray-400 uppercase font-semibold text-[10px]">Instructors & Mentors</span>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {generatedFunnel.landing_page.sections.speakers.speakers.map((sp: any, i: number) => (
+                                  <div key={i} className="p-2.5 rounded-lg bg-black/30 border border-white/5 space-y-0.5">
+                                    <div className="font-semibold text-white text-[11px]">{sp.name}</div>
+                                    <div className="text-[10px] text-indigo-300">{sp.title}</div>
+                                    <p className="text-[10px] text-gray-400 line-clamp-2">{sp.bio}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Benefits */}
+                          <div className="space-y-1.5">
+                            <span className="text-gray-400 uppercase font-semibold text-[10px]">Key Benefits</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {generatedFunnel.landing_page.benefits.map((b, i) => (
                                 <div key={i} className="p-2.5 rounded-lg bg-black/30 border border-white/5">
-                                  <h5 className="font-semibold text-indigo-300">{b.title}</h5>
-                                  <p className="text-[11px] text-gray-400 mt-1">{b.description}</p>
+                                  <h5 className="font-semibold text-indigo-300 text-[11px]">{b.title}</h5>
+                                  <p className="text-[10px] text-gray-400 mt-0.5 leading-relaxed">{b.description}</p>
                                 </div>
                               ))}
                             </div>
                           </div>
 
-                          <div className="space-y-2">
-                            <span className="text-gray-400 uppercase font-semibold text-[10px]">Agenda Schedule</span>
-                            <div className="space-y-1.5">
+                          {/* Agenda */}
+                          <div className="space-y-1.5">
+                            <span className="text-gray-400 uppercase font-semibold text-[10px]">Curriculum & Agenda</span>
+                            <div className="space-y-1">
                               {generatedFunnel.landing_page.agenda.map((a, i) => (
                                 <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5">
-                                  <span className="font-mono text-indigo-400 text-[11px]">{a.time}</span>
-                                  <span className="text-gray-200 text-[11px]">{a.topic}</span>
+                                  <span className="font-mono text-indigo-400 text-[11px] shrink-0 mr-2">{a.time}</span>
+                                  <span className="text-gray-200 text-[11px] truncate">{a.topic}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Testimonials */}
+                          {generatedFunnel.landing_page.sections?.testimonials?.testimonials && (
+                            <div className="space-y-1.5">
+                              <span className="text-gray-400 uppercase font-semibold text-[10px]">Testimonials</span>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {generatedFunnel.landing_page.sections.testimonials.testimonials.map((t: any, i: number) => (
+                                  <div key={i} className="p-2 rounded-lg bg-black/20 border border-white/5 italic text-gray-300 text-[10px]">
+                                    &ldquo;{t.quote}&rdquo;
+                                    <div className="not-italic text-[10px] font-semibold text-indigo-300 mt-1">— {t.name}, {t.title}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* FAQs */}
+                          <div className="space-y-1.5">
+                            <span className="text-gray-400 uppercase font-semibold text-[10px]">Frequently Asked Questions</span>
+                            <div className="space-y-1">
+                              {generatedFunnel.landing_page.faqs.map((f, i) => (
+                                <div key={i} className="p-2 rounded-lg bg-black/20 border border-white/5 space-y-0.5">
+                                  <div className="font-semibold text-gray-200 text-[11px]">Q: {f.question}</div>
+                                  <div className="text-gray-400 text-[10px]">A: {f.answer}</div>
                                 </div>
                               ))}
                             </div>

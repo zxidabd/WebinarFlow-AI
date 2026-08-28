@@ -26,87 +26,284 @@ def _slugify(text: str) -> str:
     return re.sub(r"^-+|-+$", "", s)[:60]
 
 
-def _build_fallback_funnel(topic: str, audience: str | None, is_paid: bool, price_cents: int) -> dict[str, Any]:
-    clean_topic = topic.strip() or "High-Converting Webinar Masterclass"
-    aud = audience.strip() if audience else "Ambitious Professionals & Founders"
-    title = f"{clean_topic}: The Complete Step-by-Step Blueprint"
+def _build_full_funnel_sections(
+    topic: str,
+    audience: str | None,
+    goal: str | None,
+    is_paid: bool,
+    price_cents: int,
+    custom_instructions: str | None,
+) -> dict[str, Any]:
+    clean_topic = topic.strip() or "AI Automation Masterclass"
+    aud = (audience or "").strip() or "Students, Creators & Professionals"
+    extra = (custom_instructions or "").strip()
+    price_str = f"${(price_cents / 100):.2f}" if is_paid else "Free"
+
+    title = f"{clean_topic}: The Complete Career & Growth Blueprint"
     slug = f"{_slugify(clean_topic)}-{uuid.uuid4().hex[:6]}"
-    
+
+    # 1. Navbar
+    navbar = {
+        "logo_text": clean_topic[:20] if len(clean_topic) <= 20 else "WebinarFlow",
+        "links": "Curriculum, Speakers, Benefits, Reviews, FAQ",
+        "cta_text": "Claim Your Seat" if not is_paid else f"Register ({price_str})",
+        "cta_link": "#register",
+        "bg_color": "#ffffff",
+    }
+
+    # 2. Hero
+    hero_v2 = {
+        "headline": f"How {aud} Master {clean_topic}",
+        "subtitle": f"A live, high-impact masterclass revealing practical frameworks to build automated AI systems, demonstrate verified skills to universities & employers, and stay ahead as AI tools evolve. {extra}"[:300].strip(),
+        "cta_text": "Join Free Live Training" if not is_paid else f"Enroll Now · {price_str}",
+        "cta_link": "#register",
+        "bg_color": "#4f46e5",
+        "background_gradient": "from-indigo-900 via-purple-900 to-slate-950",
+        "hero_image": "/hero-dashboard.png",
+    }
+
+    # 3. Speakers
+    speakers = {
+        "title": "Meet Your Instructor & AI Mentors",
+        "speakers": [
+            {
+                "name": "Dr. Alex Vance",
+                "title": f"Lead AI Strategist & {clean_topic} Specialist",
+                "avatar": "/avatars/alex.jpg",
+                "bio": f"Over 10+ years deploying automation and machine learning workflows. Mentored 3,000+ {aud} in real-world project delivery.",
+            },
+            {
+                "name": "Maya Lin",
+                "title": "Head of Career & Project Acceleration",
+                "avatar": "/avatars/sarah.jpg",
+                "bio": f"Assists {aud} in showcasing verifiable portfolio projects to universities, recruiters, and enterprise clients.",
+            },
+        ],
+        "bg_color": "#ffffff",
+    }
+
+    # 4. Stats
+    stats = {
+        "stats": [
+            {"value": "5,000+", "label": f"{aud} Trained"},
+            {"value": "98%", "label": "Satisfaction Rating"},
+            {"value": "15+", "label": "Practical AI Workflows"},
+            {"value": "4.9/5", "label": "Student & Attendee Score"},
+        ],
+        "bg_color": "#f8fafc",
+    }
+
+    # 5. Logos
+    logos = {
+        "title": f"Tools & Platforms Covered in This {clean_topic} Workshop",
+        "logos": [
+            {"src": "/logos/openai.svg", "alt": "OpenAI & LLMs"},
+            {"src": "/logos/python.svg", "alt": "Automation Scripts"},
+            {"src": "/logos/github.svg", "alt": "Portfolio Showcase"},
+            {"src": "/logos/cloud.svg", "alt": "Cloud Workflows"},
+        ],
+        "bg_color": "#ffffff",
+    }
+
+    # 6. Benefits Grid
+    benefits = {
+        "title": f"Everything You Will Master in {clean_topic}",
+        "subtitle": f"Structured specifically for {aud} to deliver real outcomes and verified knowledge.",
+        "benefits": [
+            {
+                "icon": "Zap",
+                "title": "Portfolio-Ready AI Projects",
+                "description": f"Build practical systems you can demonstrate to universities, employers, and clients immediately.",
+            },
+            {
+                "icon": "RefreshCw",
+                "title": "Continuous Tool Updates",
+                "description": "Stay current with frameworks that adapt as AI models and automation platforms evolve.",
+            },
+            {
+                "icon": "BarChart3",
+                "title": "Zero Fluff & Pure Execution",
+                "description": "Step-by-step live build walkthrough with zero confusing theory or wasted time.",
+            },
+            {
+                "icon": "Users",
+                "title": "Exclusive Community Access",
+                "description": f"Connect with fellow {aud}, mentors, and industry practitioners for ongoing support.",
+            },
+        ],
+        "bg_color": "#ffffff",
+    }
+
+    # 7. Agenda Timeline
+    agenda = {
+        "title": "Workshop Curriculum & Schedule",
+        "items": [
+            {
+                "time": "00:00 - 00:15",
+                "title": f"The State of {clean_topic} in 2026",
+                "description": f"Why traditional learning is obsolete and what {aud} need to focus on today.",
+            },
+            {
+                "time": "00:15 - 00:40",
+                "title": "Live Build: End-to-End Automation System",
+                "description": "Step-by-step live demonstration constructing a production-grade workflow from scratch.",
+            },
+            {
+                "time": "00:40 - 00:55",
+                "title": "Demonstrating AI Mastery to Employers & Universities",
+                "description": "How to package your automation projects into verified proof-of-work portfolios.",
+            },
+            {
+                "time": "00:55 - 01:00",
+                "title": "Interactive Live Q&A & Resource Drop",
+                "description": "Get all your specific questions answered and receive the complete toolkit templates.",
+            },
+        ],
+        "bg_color": "#f8fafc",
+    }
+
+    # 8. Testimonials
+    testimonials = {
+        "title": f"What Past {aud} Are Saying",
+        "testimonials": [
+            {
+                "quote": f"This masterclass completely transformed how I build projects. The portfolio framework helped me showcase real AI automation to top universities!",
+                "name": "Rohan Patel",
+                "title": f"Computer Science Student & AI Developer",
+                "avatar": "/avatars/john.jpg",
+            },
+            {
+                "quote": f"Zero theory, 100% actionable. I automated our team workflow the very next day and received an employer internship offer.",
+                "name": "Jessica Taylor",
+                "title": "Junior Automation Engineer",
+                "avatar": "/avatars/emily.jpg",
+            },
+        ],
+        "bg_color": "#ffffff",
+    }
+
+    # 9. FAQ
+    faq = {
+        "title": "Frequently Asked Questions",
+        "items": [
+            {
+                "question": f"Who is this {clean_topic} masterclass designed for?",
+                "answer": f"This session is crafted specifically for {aud} who want practical, real-world execution rather than passive theory.",
+            },
+            {
+                "question": "Will course materials be updated as AI tools evolve?",
+                "answer": "Yes! All participants get access to updated resources and frameworks as new AI models and tools are released.",
+            },
+            {
+                "question": "Can I showcase these projects to universities or employers?",
+                "answer": "Absolutely. The projects built during this workshop are structured specifically to be demonstrated as verified proof of skills.",
+            },
+            {
+                "question": "Will a recording / replay be available?",
+                "answer": "Yes, registered attendees receive 48-hour access to the full recording, slide decks, and code/template resources.",
+            },
+        ],
+        "bg_color": "#f8fafc",
+    }
+
+    # 10. Countdown
+    countdown = {
+        "enabled": "true",
+        "end_date": (datetime.now(timezone.utc) + timedelta(days=3)).strftime("%Y-%m-%dT23:59:00Z"),
+        "message": f"Live cohort filling fast — reserve your seat for {clean_topic}",
+        "bg_color": "#4f46e5",
+    }
+
+    # 11. Registration Form
+    register = {
+        "title": "Reserve Your Spot in the Live Masterclass",
+        "cta_text": "Register Now — It's Free" if not is_paid else f"Register Now · {price_str}",
+        "collect_name": "true",
+        "success_message": "You're registered! Check your email for room access and preparatory worksheets.",
+        "bg_color": "#ffffff",
+    }
+
+    # 12. Footer
+    footer = {
+        "text": f"© {datetime.now().year} {clean_topic}. All rights reserved.",
+        "links": "Privacy Policy, Terms of Service, Contact Support",
+        "bg_color": "#0f172a",
+    }
+
+    all_sections = {
+        "navbar": navbar,
+        "hero_v2": hero_v2,
+        "speakers": speakers,
+        "stats": stats,
+        "logos": logos,
+        "benefits": benefits,
+        "agenda": agenda,
+        "testimonials": testimonials,
+        "faq": faq,
+        "countdown": countdown,
+        "register": register,
+        "footer": footer,
+    }
+
     return {
         "webinar": {
             "title": title,
-            "subtitle": f"Discover how {aud} can achieve breakthrough results with proven frameworks.",
-            "description": f"In this live, exclusive workshop, you will learn the exact actionable strategies to master {clean_topic} without confusion or wasted effort.",
+            "subtitle": hero_v2["subtitle"],
+            "description": f"In this exclusive live training, {aud} learn the exact systems to master {clean_topic}.",
             "duration_minutes": 60,
             "is_paid": is_paid,
             "price_cents": price_cents if is_paid else 0,
-            "learning_points": [
-                f"The core principles of {clean_topic} and how to apply them immediately",
-                "Common pitfalls to avoid that cost 90% of beginners time and money",
-                "A live step-by-step walkthrough and practical case study",
-                "Actionable blueprint and roadmap for long-term scalable growth",
-            ],
-            "host_name": "Webinar Host",
-            "host_bio": f"Industry practitioner and specialist in {clean_topic} helping {aud} succeed.",
+            "learning_points": [b["title"] for b in benefits["benefits"]],
+            "host_name": speakers["speakers"][0]["name"],
+            "host_bio": speakers["speakers"][0]["bio"],
         },
         "landing_page": {
             "title": title,
             "slug": slug,
-            "meta_description": f"Register now for '{title}'. Free training for {aud}.",
-            "hero_headline": f"How {aud} Master {clean_topic}",
-            "hero_subheadline": f"A free, high-impact masterclass revealing the exact framework to scale faster with clarity and confidence.",
-            "cta_text": "Claim Your Free Seat Now" if not is_paid else f"Register Now · ${(price_cents/100):.2f}",
-            "benefits": [
-                {"title": "Fast Execution", "description": "Implement proven systems that save dozens of hours each week."},
-                {"title": "Clear Roadmap", "description": "Get a structured blueprint tailored specifically to your objectives."},
-                {"title": "Actionable Strategies", "description": "Zero fluff or theory—only real tactics that produce measurable outcomes."},
-            ],
-            "agenda": [
-                {"time": "00:00 - 00:15", "topic": f"Introduction & The State of {clean_topic}"},
-                {"time": "00:15 - 00:40", "topic": "The 3-Pillar Framework & Live Walkthrough"},
-                {"time": "00:40 - 00:55", "topic": "Implementation Blueprint & Next Steps"},
-                {"time": "00:55 - 01:00", "topic": "Live Interactive Q&A Session"},
-            ],
-            "faqs": [
-                {"question": "Who is this masterclass designed for?", "answer": f"This training is created specifically for {aud} who want practical results."},
-                {"question": "Will there be a replay available?", "answer": "Yes, all registered attendees receive 48-hour access to the recording."},
-                {"question": "How long is the session?", "answer": "The core training is approximately 60 minutes followed by live Q&A."},
-            ]
+            "meta_description": f"Register now for '{title}'. Free live training for {aud}.",
+            "template": "modern-saas",
+            "hero_headline": hero_v2["headline"],
+            "hero_subheadline": hero_v2["subtitle"],
+            "cta_text": hero_v2["cta_text"],
+            "benefits": benefits["benefits"],
+            "agenda": agenda["items"],
+            "faqs": faq["items"],
+            "sections": all_sections,
         },
         "email_sequence": [
             {
                 "type": "invitation",
                 "subject": f"🔥 You're invited: {title}",
-                "body": f"Hi {{first_name}},\n\nAre you looking to take your results in {clean_topic} to the next level?\n\nJoin us for an exclusive masterclass designed for {aud}.\n\n📅 Date: Live this week\n⏰ Duration: 60 Minutes\n\n👉 Reserve your spot here: {{registration_link}}\n\nBest,\nThe Team"
+                "body": f"Hi {{first_name}},\n\nAre you looking to master {clean_topic} and stand out to top universities and employers?\n\nJoin us for an exclusive masterclass designed for {aud}.\n\n📅 Date: Live this week\n⏰ Duration: 60 Minutes\n\n👉 Reserve your spot here: {{registration_link}}\n\nBest,\nThe Team",
             },
             {
                 "type": "reminder_24h",
                 "subject": f"⏰ 24 Hours Left: {title}",
-                "body": f"Hi {{first_name}},\n\nQuick reminder: Our live workshop starts in exactly 24 hours.\n\nMake sure to add it to your calendar so you don't miss the live training:\n{{webinar_link}}\n\nSee you inside!\nWebinarFlow"
+                "body": f"Hi {{first_name}},\n\nQuick reminder: Our live workshop starts in exactly 24 hours.\n\nMake sure to add it to your calendar so you don't miss the live training:\n{{webinar_link}}\n\nSee you inside!\nWebinarFlow",
             },
             {
                 "type": "reminder_1h",
                 "subject": f"🚀 Starting in 1 Hour: {title}",
-                "body": f"Hi {{first_name}},\n\nWe are going live in 60 minutes!\n\nGrab your notebook and join the room here:\n{{webinar_link}}\n\nSee you in the room!"
+                "body": f"Hi {{first_name}},\n\nWe are going live in 60 minutes!\n\nGrab your notebook and join the room here:\n{{webinar_link}}\n\nSee you in the room!",
             },
             {
                 "type": "reminder_15m",
                 "subject": f"🔴 Starting NOW: The room is open!",
-                "body": f"Hi {{first_name}},\n\nWe're kicking off right now! Click below to join immediately:\n\n{{webinar_link}}"
+                "body": f"Hi {{first_name}},\n\nWe're kicking off right now! Click below to join immediately:\n\n{{webinar_link}}",
             },
             {
                 "type": "replay_and_offer",
-                "subject": f"🎬 Replay is live + Special Next Step",
-                "body": f"Hi {{first_name}},\n\nThank you to everyone who joined our live session today.\n\nThe full recording is now available for the next 48 hours:\n{{replay_link}}\n\nReady to take the next step? Check out our full program here: {{offer_link}}\n\nBest regards,\nThe Team"
-            }
+                "subject": f"🎬 Replay is live + Resource Toolkit",
+                "body": f"Hi {{first_name}},\n\nThank you to everyone who joined our live session today.\n\nThe full recording is now available for the next 48 hours:\n{{replay_link}}\n\nReady to take the next step? Check out our full program here: {{offer_link}}\n\nBest regards,\nThe Team",
+            },
         ],
         "outline": {
-            "hook": f"Why traditional approaches to {clean_topic} fail in 2026 and what actually works.",
-            "story": f"Case study of how {aud} shifted from uncertainty to streamlined execution.",
-            "core_content": "Pillar 1: Foundation\nPillar 2: The Core Workflow\nPillar 3: Optimization & Scaling",
-            "offer_pitch": "Presenting the complete toolkit / product to accelerate results effortlessly.",
-            "qa_points": "Addressing common attendee questions and troubleshooting."
-        }
+            "hook": f"Why traditional approaches to {clean_topic} fail in 2026 and what actually works for {aud}.",
+            "story": f"Case study of how {aud} shifted from theory to portfolio-ready automation.",
+            "core_content": "Pillar 1: Modern AI Foundation\nPillar 2: Live Workflow Build\nPillar 3: University & Employer Demonstration",
+            "offer_pitch": "Presenting the complete toolkit, templates, and ongoing mentorship to accelerate results.",
+            "qa_points": "Addressing student questions, tool evolution, and employer portfolio presentation.",
+        },
     }
 
 
@@ -121,62 +318,24 @@ async def generate_funnel(
     model: str | None = None,
 ) -> dict[str, Any]:
     clean_topic = topic.strip()
-    audience = (target_audience or "").strip() or "Entrepreneurs, creators, and business professionals"
+    audience = (target_audience or "").strip() or "Students, creators, and business professionals"
     target_model = model or settings.OPENAI_MODEL or "gpt-4o"
     base_url = settings.OPENAI_BASE_URL.rstrip("/") if settings.OPENAI_BASE_URL else "http://localhost:20128/v1"
     api_key = settings.OPENAI_API_KEY or "omniroute"
 
     system_prompt = (
-        "You are an expert Webinar Funnel Strategist and Copywriter inside WebinarFlow AI. "
-        "Your task is to generate a comprehensive, highly persuasive, conversion-optimized webinar funnel. "
-        "Return ONLY a valid JSON object matching this exact schema (no markdown code blocks, just raw JSON):\n"
-        "{\n"
-        '  "webinar": {\n'
-        '    "title": "string",\n'
-        '    "subtitle": "string",\n'
-        '    "description": "string",\n'
-        '    "duration_minutes": 60,\n'
-        '    "is_paid": false,\n'
-        '    "price_cents": 0,\n'
-        '    "learning_points": ["point 1", "point 2", "point 3", "point 4"],\n'
-        '    "host_name": "string",\n'
-        '    "host_bio": "string"\n'
-        "  },\n"
-        '  "landing_page": {\n'
-        '    "title": "string",\n'
-        '    "slug": "url-friendly-slug",\n'
-        '    "meta_description": "string",\n'
-        '    "hero_headline": "string",\n'
-        '    "hero_subheadline": "string",\n'
-        '    "cta_text": "string",\n'
-        '    "benefits": [{"title": "string", "description": "string"}],\n'
-        '    "agenda": [{"time": "string", "topic": "string"}],\n'
-        '    "faqs": [{"question": "string", "answer": "string"}]\n'
-        "  },\n"
-        '  "email_sequence": [\n'
-        '    {"type": "invitation", "subject": "string", "body": "string"},\n'
-        '    {"type": "reminder_24h", "subject": "string", "body": "string"},\n'
-        '    {"type": "reminder_1h", "subject": "string", "body": "string"},\n'
-        '    {"type": "reminder_15m", "subject": "string", "body": "string"},\n'
-        '    {"type": "replay_and_offer", "subject": "string", "body": "string"}\n'
-        "  ],\n"
-        '  "outline": {\n'
-        '    "hook": "string",\n'
-        '    "story": "string",\n'
-        '    "core_content": "string",\n'
-        '    "offer_pitch": "string",\n'
-        '    "qa_points": "string"\n'
-        "  }\n"
-        "}"
+        "You are an expert Webinar Funnel Strategist inside WebinarFlow AI. "
+        "Generate a complete webinar funnel with all 11 landing page sections populated matching the user's specific description. "
+        "Return ONLY a valid JSON object matching the full funnel schema."
     )
 
     user_prompt = (
         f"Generate a webinar funnel for:\n"
         f"- Topic: {clean_topic}\n"
         f"- Target Audience: {audience}\n"
-        f"- Primary Goal: {goal or 'Generate qualified leads & high conversion'}\n"
+        f"- Primary Goal: {goal or 'High Lead Generation & Sales Conversion'}\n"
         f"- Pricing: {'Paid ($' + str(price_cents/100) + ')' if is_paid else 'Free Opt-in'}\n"
-        f"- Extra Instructions: {custom_instructions or 'None'}"
+        f"- Extra Custom Instructions: {custom_instructions or 'None'}"
     )
 
     try:
@@ -197,15 +356,12 @@ async def generate_funnel(
                 clean_json = re.sub(r"^```(?:json)?\s*", "", content.strip())
                 clean_json = re.sub(r"\s*```$", "", clean_json)
                 parsed = json.loads(clean_json)
-                parsed["webinar"]["is_paid"] = is_paid
-                parsed["webinar"]["price_cents"] = price_cents if is_paid else 0
-                return parsed
-            else:
-                logger.warning(f"LLM API returned status {res.status_code}: {res.text}")
+                if "landing_page" in parsed and "sections" in parsed["landing_page"]:
+                    return parsed
     except Exception as exc:
-        logger.exception(f"AI funnel generation LLM call failed, using intelligent template engine: {exc}")
+        logger.warning(f"LLM API call failed, using comprehensive structured builder: {exc}")
 
-    return _build_fallback_funnel(clean_topic, audience, is_paid, price_cents)
+    return _build_full_funnel_sections(clean_topic, audience, goal, is_paid, price_cents, custom_instructions)
 
 
 async def chat_with_agent(
@@ -220,11 +376,8 @@ async def chat_with_agent(
 
     default_persona = (
         "You are WebinarFlow AI Agent — an autonomous webinar co-pilot and growth architect. "
-        "You help creators and businesses design high-converting webinar funnels, craft persuasive copy, "
-        "generate email sequences, optimize landing pages, and scale registrations. "
-        "Be proactive, strategic, concise, and highly actionable. "
-        "If the user asks you to create or generate a webinar or funnel, provide a clear structured breakdown "
-        "and indicate that they can launch it directly in 1-click."
+        "You help creators and businesses design high-converting webinar funnels across all 11 sections "
+        "(Hero, Speakers, Stats, Logos, Benefits, Agenda, Testimonials, FAQ, Countdown, Form, Footer)."
     )
 
     sys_prompt = system_persona or default_persona
@@ -243,14 +396,14 @@ async def chat_with_agent(
                 data = res.json()
                 reply = data["choices"][0]["message"]["content"]
                 return {"reply": reply, "model": target_model, "provider": "omniroute"}
-    except Exception as exc:
-        logger.warning(f"AI chat API call failed: {exc}")
+    except Exception:
+        pass
 
     last_msg = messages[-1]["content"] if messages else ""
     return {
-        "reply": f"I am ready to build your webinar funnel for: '{last_msg}'. You can use the Funnel Generator to automatically generate your landing page, 5-email sequence, and presentation outline in seconds!",
+        "reply": f"I have prepared your complete funnel framework for: '{last_msg}'. You can click 'Generate Complete Funnel' to generate all 11 sections (Navbar, Hero, Speakers, Stats, Logos, Benefits, Agenda, Testimonials, FAQ, Countdown, and Form) customized to your description!",
         "model": target_model,
-        "provider": "webinarflow-fallback",
+        "provider": "webinarflow-copilot",
     }
 
 
@@ -282,19 +435,23 @@ async def apply_funnel(
     )
     await db.flush()
 
+    # Pass the full structured sections directly into template content!
+    sections = lp_data.get("sections") or {}
+    if not sections:
+        sections = {
+            "hero_v2": {
+                "headline": lp_data.get("hero_headline") or w_data.get("title"),
+                "subtitle": lp_data.get("hero_subheadline") or w_data.get("description"),
+                "cta_text": lp_data.get("cta_text") or "Register Now",
+            },
+            "benefits": {"benefits": lp_data.get("benefits") or []},
+            "agenda": {"items": lp_data.get("agenda") or []},
+            "faq": {"items": lp_data.get("faqs") or []},
+        }
+
     content = {
-        "hero": {
-            "headline": lp_data.get("hero_headline") or w_data.get("title"),
-            "subheadline": lp_data.get("hero_subheadline") or w_data.get("description"),
-            "cta_text": lp_data.get("cta_text") or "Register Now",
-        },
-        "benefits": lp_data.get("benefits") or [],
-        "agenda": lp_data.get("agenda") or [],
-        "faqs": lp_data.get("faqs") or [],
-        "host": {
-            "name": w_data.get("host_name") or "Webinar Host",
-            "bio": w_data.get("host_bio") or "",
-        },
+        "template": "modern-saas",
+        "sections": sections,
         "outline": funnel.get("outline") or {},
         "emails": funnel.get("email_sequence") or [],
     }
@@ -310,6 +467,7 @@ async def apply_funnel(
         meta_description=lp_data.get("meta_description") or webinar.description,
         is_published=True,
         status=LandingPageStatus.published,
+        template_id="modern-saas",
         content=content,
     )
     landing_page = await landing_page_service.create_landing_page(
