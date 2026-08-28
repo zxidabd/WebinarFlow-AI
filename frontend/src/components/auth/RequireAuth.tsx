@@ -14,9 +14,27 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const accessToken = useAuthStore((s) => s.accessToken);
 
-  // Once zustand has rehydrated from localStorage, mark as ready.
-  // The state selector picks up the token as soon as it's available.
   useEffect(() => {
+    // Check if token exists in localStorage immediately
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('webinarflow-auth');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.state?.accessToken) {
+            useAuthStore.setState({
+              accessToken: parsed.state.accessToken,
+              user: parsed.state.user || null,
+              organization: parsed.state.organization || null,
+            });
+            setHydrated(true);
+            return;
+          }
+        }
+      } catch {}
+    }
+
+    // Rehydrate store
     useAuthStore.persist.rehydrate();
     setHydrated(true);
   }, []);
@@ -29,8 +47,21 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Redirect to login after hydration if no token was found.
-  if (!accessToken) {
+  // Check token in state or direct in localStorage
+  let hasValidToken = Boolean(accessToken);
+  if (!hasValidToken && typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('webinarflow-auth');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.state?.accessToken) {
+          hasValidToken = true;
+        }
+      }
+    } catch {}
+  }
+
+  if (!hasValidToken) {
     router.replace('/login');
     return null;
   }

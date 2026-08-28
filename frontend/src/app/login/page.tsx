@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -17,10 +17,30 @@ export default function LoginPage() {
   const { login, beginGoogleSignIn, beginLinkedInSignIn } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true); // Default to true for persistent sessions
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+
+  useEffect(() => {
+    // If user is already logged in, redirect directly to dashboard
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('webinarflow-auth');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.state?.accessToken) {
+            router.replace('/dashboard');
+            return;
+          }
+        }
+        const remembered = localStorage.getItem('wf_remember_me');
+        if (remembered !== null) {
+          setRememberMe(remembered === 'true');
+        }
+      } catch {}
+    }
+  }, [router]);
 
   const {
     register,
@@ -33,6 +53,9 @@ export default function LoginPage() {
     setUnverifiedEmail(null);
     setResent(false);
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('wf_remember_me', rememberMe ? 'true' : 'false');
+      }
       await login(values);
       toast.success('Welcome back');
       router.push('/dashboard');

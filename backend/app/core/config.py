@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     # --- Auth / JWT ---
     JWT_SECRET_KEY: str = "change-me-in-production-please-use-a-long-random-string"
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 30  # 30 days persistent session
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS: int = 24
     PASSWORD_RESET_TOKEN_EXPIRE_HOURS: int = 2

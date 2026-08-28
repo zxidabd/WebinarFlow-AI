@@ -17,6 +17,19 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('webinarflow-auth');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.state?.accessToken) {
+          setIsLoggedIn(true);
+        }
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -66,18 +79,29 @@ export default function Navbar() {
 
         {/* Desktop actions */}
         <div className="hidden items-center gap-6 md:flex">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-white/80 transition-colors duration-200 hover:text-white"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/register"
-            className="group relative inline-flex h-9 items-center justify-center overflow-hidden rounded-xl border border-white/20 bg-white/[0.04] px-5 text-sm font-medium text-white shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-white/40 hover:bg-white/[0.08]"
-          >
-            <span className="relative z-10">Get Started</span>
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className="group relative inline-flex h-9 items-center justify-center gap-2 overflow-hidden rounded-xl border border-[#a63344]/40 bg-[#45141B]/40 px-5 text-sm font-medium text-white shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-[#f87171]/60 hover:bg-[#852533]/60"
+            >
+              <span className="relative z-10 font-semibold">Dashboard →</span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm font-medium text-white/80 transition-colors duration-200 hover:text-white"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className="group relative inline-flex h-9 items-center justify-center overflow-hidden rounded-xl border border-white/20 bg-white/[0.04] px-5 text-sm font-medium text-white shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-white/40 hover:bg-white/[0.08]"
+              >
+                <span className="relative z-10">Get Started</span>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}

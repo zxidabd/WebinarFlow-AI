@@ -65,7 +65,6 @@ async function refresh(): Promise<string | null> {
       }
       return next;
     } catch {
-      localStorage.removeItem('webinarflow-auth');
       return null;
     } finally {
       refreshing = null;
