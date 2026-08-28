@@ -53,11 +53,11 @@ async def list_ai_models():
     api_key = settings.OPENAI_API_KEY or "omniroute"
 
     models_list = [
-        {"id": "nvidia/DeepSeek V4 Pro", "name": "AI Agent 1 (DeepSeek V4 Pro · Free)", "provider": "nvidia"},
-        {"id": "nvidia/Mistral Large 3 675B", "name": "AI Agent 2 (Mistral Large 3 · Free)", "provider": "nvidia"},
-        {"id": "nvidia/Dracarys Llama 3.1 70B Instruct", "name": "AI Agent 3 (Llama 3.1 70B · Free)", "provider": "nvidia"},
-        {"id": "gpt-4o", "name": "AI Agent 4 (GPT-4o)", "provider": "openai"},
-        {"id": "claude-3-5-sonnet-latest", "name": "AI Agent 5 (Claude 3.5 Sonnet)", "provider": "anthropic"},
+        {"id": "nvidia/DeepSeek V4 Pro", "name": "AI Agent 1", "provider": "nvidia"},
+        {"id": "nvidia/Mistral Large 3 675B", "name": "AI Agent 2", "provider": "nvidia"},
+        {"id": "nvidia/Dracarys Llama 3.1 70B Instruct", "name": "AI Agent 3", "provider": "nvidia"},
+        {"id": "gpt-4o", "name": "AI Agent 4", "provider": "openai"},
+        {"id": "claude-3-5-sonnet-latest", "name": "AI Agent 5", "provider": "anthropic"},
     ]
 
     try:
