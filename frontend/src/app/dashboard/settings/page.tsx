@@ -117,7 +117,16 @@ export default function SettingsPage() {
       toast.success('Payment gateway credentials saved successfully to your workspace!');
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.detail || 'Failed to save payment keys');
+      const detail = err?.response?.data?.detail;
+      let errorMsg = 'Failed to save payment keys';
+      if (typeof detail === 'string') {
+        errorMsg = detail;
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        errorMsg = detail.map((d: any) => d?.msg || JSON.stringify(d)).join(', ');
+      } else if (err?.message) {
+        errorMsg = err.message;
+      }
+      toast.error(errorMsg);
     } finally {
       setSaving(false);
     }
