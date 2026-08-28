@@ -19,7 +19,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_active_user, get_current_membership, get_db
-from app.models import Payment, PaymentStatus, Registrant, Webinar
+from app.models import Membership, Payment, PaymentStatus, Registrant, Webinar
+from app.api.v1.endpoints.organizations import (
+    PaymentKeysPayload,
+    _format_payment_keys,
+    _update_payment_keys_data,
+)
 from app.schemas.payments import (
     CheckoutSessionResponse,
     CreateCheckoutRequest,
@@ -30,6 +35,42 @@ from app.schemas.payments import (
 from app.services import payment_service
 
 router = APIRouter()
+
+
+# ── Payment Gateway Credentials ────────────────────────────────────────────
+
+
+@router.get("/keys")
+async def get_org_payment_keys(
+    membership: Membership = Depends(get_current_membership),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve payment gateway configuration for the active organization."""
+    return _format_payment_keys(membership.organization)
+
+
+@router.patch("/keys")
+async def update_org_payment_keys(
+    payload: PaymentKeysPayload,
+    membership: Membership = Depends(get_current_membership),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update payment gateway configuration for the active organization."""
+    _update_payment_keys_data(membership.organization, payload)
+    await db.flush()
+    return {"status": "ok", "message": "Payment gateway credentials saved"}
+
+
+@router.post("/keys")
+async def save_org_payment_keys(
+    payload: PaymentKeysPayload,
+    membership: Membership = Depends(get_current_membership),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update payment gateway configuration (POST alias)."""
+    _update_payment_keys_data(membership.organization, payload)
+    await db.flush()
+    return {"status": "ok", "message": "Payment gateway credentials saved"}
 
 
 # ── Webhook: Stripe ────────────────────────────────────────────────────────

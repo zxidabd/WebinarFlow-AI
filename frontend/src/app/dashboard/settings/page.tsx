@@ -34,35 +34,43 @@ export default function SettingsPage() {
     setMounted(true);
     async function loadOrgKeys() {
       try {
-        let orgId = activeOrgId;
-        if (!orgId) {
-          try {
-            const meRes = await api.get('/users/me');
-            const orgs = meRes.data?.organizations || [];
-            const current = orgs.find((o: any) => o.is_default) || orgs[0];
-            if (current?.id) {
-              orgId = current.id;
-              setActiveOrgId(current.id);
-            }
-          } catch {}
+        let k: any = null;
+        try {
+          const res = await api.get('/payments/keys');
+          k = res.data;
+        } catch {
+          let orgId = activeOrgId;
+          if (!orgId) {
+            try {
+              const meRes = await api.get('/users/me');
+              const orgs = meRes.data?.organizations || [];
+              const current = orgs.find((o: any) => o.is_default) || orgs[0];
+              if (current?.id) {
+                orgId = current.id;
+                setActiveOrgId(current.id);
+              }
+            } catch {}
+          }
+          const endpoint = orgId ? `/organizations/${orgId}/payment-keys` : '/organizations/payment-keys';
+          const keysRes = await api.get(endpoint);
+          k = keysRes.data;
         }
 
-        const endpoint = orgId ? `/organizations/${orgId}/payment-keys` : '/organizations/payment-keys';
-        const keysRes = await api.get(endpoint);
-        const k = keysRes.data || {};
-        if (k.stripe_publishable_key) setStripePublishableKey(k.stripe_publishable_key);
-        if (k.stripe_secret_key) setStripeSecretKey(k.stripe_secret_key);
-        if (k.stripe_webhook_secret && !k.stripe_webhook_secret.includes('webinarflow') && !k.stripe_webhook_secret.startsWith('http')) {
-          setStripeWebhookSecret(k.stripe_webhook_secret);
-        } else {
-          setStripeWebhookSecret('');
-        }
-        if (k.stripe_enabled !== undefined) setStripeEnabled(k.stripe_enabled);
+        if (k) {
+          if (k.stripe_publishable_key) setStripePublishableKey(k.stripe_publishable_key);
+          if (k.stripe_secret_key) setStripeSecretKey(k.stripe_secret_key);
+          if (k.stripe_webhook_secret && !k.stripe_webhook_secret.includes('webinarflow') && !k.stripe_webhook_secret.startsWith('http')) {
+            setStripeWebhookSecret(k.stripe_webhook_secret);
+          } else {
+            setStripeWebhookSecret('');
+          }
+          if (k.stripe_enabled !== undefined) setStripeEnabled(k.stripe_enabled);
 
-        if (k.razorpay_key_id) setRazorpayKeyId(k.razorpay_key_id);
-        if (k.razorpay_key_secret) setRazorpayKeySecret(k.razorpay_key_secret);
-        if (k.razorpay_enabled !== undefined) setRazorpayEnabled(k.razorpay_enabled);
-        return;
+          if (k.razorpay_key_id) setRazorpayKeyId(k.razorpay_key_id);
+          if (k.razorpay_key_secret) setRazorpayKeySecret(k.razorpay_key_secret);
+          if (k.razorpay_enabled !== undefined) setRazorpayEnabled(k.razorpay_enabled);
+          return;
+        }
       } catch (err) {
         console.error('Error fetching org payment keys:', err);
       }
@@ -112,22 +120,7 @@ export default function SettingsPage() {
       localStorage.setItem('wf_rzp_secret', razorpayKeySecret);
       localStorage.setItem('wf_rzp_enabled', String(razorpayEnabled));
 
-      let orgId = activeOrgId;
-      if (!orgId) {
-        try {
-          const meRes = await api.get('/users/me');
-          const orgs = meRes.data?.organizations || [];
-          const current = orgs.find((o: any) => o.is_default) || orgs[0];
-          if (current?.id) {
-            orgId = current.id;
-            setActiveOrgId(current.id);
-          }
-        } catch {}
-      }
-
-      // 2. Persist to Backend Organization database
-      const endpoint = orgId ? `/organizations/${orgId}/payment-keys` : '/organizations/payment-keys';
-      await api.patch(endpoint, {
+      const payload = {
         stripe_enabled: stripeEnabled,
         stripe_publishable_key: stripePublishableKey,
         stripe_secret_key: stripeSecretKey,
@@ -135,7 +128,27 @@ export default function SettingsPage() {
         razorpay_enabled: razorpayEnabled,
         razorpay_key_id: razorpayKeyId,
         razorpay_key_secret: razorpayKeySecret,
-      });
+      };
+
+      // 2. Persist to Backend Organization database
+      try {
+        await api.patch('/payments/keys', payload);
+      } catch {
+        let orgId = activeOrgId;
+        if (!orgId) {
+          try {
+            const meRes = await api.get('/users/me');
+            const orgs = meRes.data?.organizations || [];
+            const current = orgs.find((o: any) => o.is_default) || orgs[0];
+            if (current?.id) {
+              orgId = current.id;
+              setActiveOrgId(current.id);
+            }
+          } catch {}
+        }
+        const endpoint = orgId ? `/organizations/${orgId}/payment-keys` : '/organizations/payment-keys';
+        await api.patch(endpoint, payload);
+      }
 
       if (cleanWebhookSecret && cleanWebhookSecret !== finalWebhookSecret) {
         setStripeWebhookSecret('');
