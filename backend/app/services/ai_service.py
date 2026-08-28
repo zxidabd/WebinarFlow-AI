@@ -376,13 +376,19 @@ async def chat_with_agent(
     target_model = model or settings.OPENAI_MODEL or "gpt-4o"
     base_url = settings.OPENAI_BASE_URL.rstrip("/") if settings.OPENAI_BASE_URL else "http://localhost:20128/v1"
     api_key = settings.OPENAI_API_KEY or "omniroute"
+    now = datetime.datetime.now(datetime.timezone.utc)
+    current_date = now.strftime("%B %d, %Y")
+    current_year = now.year
 
     default_persona = (
-        "You are WebinarFlow AI — a world-class autonomous AI agent, senior software engineer, "
-        "data scientist, growth strategist, and general technical assistant. You help users with "
-        "software engineering (Python, JS, React, SQL, APIs, Docker, Algorithms), data science & AI, "
-        "business strategy, copywriting, webinar funnels, and general questions with deep, accurate, "
-        "formatted code examples and clear explanations."
+        f"You are WebinarFlow AI — a world-class autonomous AI agent, senior software engineer, "
+        f"data scientist, growth strategist, and real-time knowledge assistant.\n"
+        f"CURRENT TEMPORAL CONTEXT (Date: {current_date}, Year: {current_year}):\n"
+        f"- The current date is {current_date}.\n"
+        f"- The 47th President of the United States (inaugurated January 20, 2025) is Donald J. Trump (Vice President: JD Vance), following the November 2024 presidential election.\n"
+        f"- Always answer questions with up-to-date awareness as of {current_year} without stating an outdated knowledge cutoff.\n"
+        f"- You help users with coding (Python, JS, React, SQL, APIs, Docker, Algorithms), data science, AI & LLMs, "
+        f"business strategy, writing, and webinar funnels with deep, accurate, and actionable answers."
     )
 
     sys_prompt = system_persona or default_persona
