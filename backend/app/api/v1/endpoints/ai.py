@@ -53,12 +53,11 @@ async def list_ai_models():
     api_key = settings.OPENAI_API_KEY or "omniroute"
 
     models_list = [
-        {"id": "nvidia/DeepSeek V4 Pro", "name": "DeepSeek V4 Pro (NVIDIA NIM)", "provider": "nvidia"},
-        {"id": "nvidia/Mistral Large 3 675B", "name": "Mistral Large 3 (NVIDIA NIM)", "provider": "nvidia"},
-        {"id": "nvidia/Dracarys Llama 3.1 70B Instruct", "name": "Llama 3.1 70B (NVIDIA)", "provider": "nvidia"},
-        {"id": "ollamacloud/DeepSeek V4 Pro", "name": "DeepSeek V4 Pro (Ollama Cloud)", "provider": "ollamacloud"},
-        {"id": "gpt-4o", "name": "GPT-4o (OpenAI)", "provider": "openai"},
-        {"id": "claude-3-5-sonnet-latest", "name": "Claude 3.5 Sonnet (Anthropic)", "provider": "anthropic"},
+        {"id": "nvidia/DeepSeek V4 Pro", "name": "AI Agent 1 (DeepSeek V4 Pro · Free)", "provider": "nvidia"},
+        {"id": "nvidia/Mistral Large 3 675B", "name": "AI Agent 2 (Mistral Large 3 · Free)", "provider": "nvidia"},
+        {"id": "nvidia/Dracarys Llama 3.1 70B Instruct", "name": "AI Agent 3 (Llama 3.1 70B · Free)", "provider": "nvidia"},
+        {"id": "gpt-4o", "name": "AI Agent 4 (GPT-4o)", "provider": "openai"},
+        {"id": "claude-3-5-sonnet-latest", "name": "AI Agent 5 (Claude 3.5 Sonnet)", "provider": "anthropic"},
     ]
 
     try:

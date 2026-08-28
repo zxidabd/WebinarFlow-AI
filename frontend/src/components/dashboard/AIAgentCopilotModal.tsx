@@ -191,10 +191,11 @@ export function AIAgentCopilotModal({ isOpen, onClose }: Props) {
                   ))
                 ) : (
                   <>
-                    <option value="nvidia/DeepSeek V4 Pro" className="bg-[#121420] text-white">DeepSeek V4 Pro (NVIDIA)</option>
-                    <option value="nvidia/Mistral Large 3 675B" className="bg-[#121420] text-white">Mistral Large 3 (NVIDIA)</option>
-                    <option value="gpt-4o" className="bg-[#121420] text-white">GPT-4o</option>
-                    <option value="claude-3-5-sonnet-latest" className="bg-[#121420] text-white">Claude 3.5 Sonnet</option>
+                    <option value="nvidia/DeepSeek V4 Pro" className="bg-[#121420] text-white">AI Agent 1 (DeepSeek V4 Pro · Free)</option>
+                    <option value="nvidia/Mistral Large 3 675B" className="bg-[#121420] text-white">AI Agent 2 (Mistral Large 3 · Free)</option>
+                    <option value="nvidia/Dracarys Llama 3.1 70B Instruct" className="bg-[#121420] text-white">AI Agent 3 (Llama 3.1 70B · Free)</option>
+                    <option value="gpt-4o" className="bg-[#121420] text-white">AI Agent 4 (GPT-4o)</option>
+                    <option value="claude-3-5-sonnet-latest" className="bg-[#121420] text-white">AI Agent 5 (Claude 3.5 Sonnet)</option>
                   </>
                 )}
               </select>
