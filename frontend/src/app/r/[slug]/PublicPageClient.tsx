@@ -100,18 +100,44 @@ export default function PublicPageClient({ content, webinarId, slug, isPaid, pri
             name: 'Webinar Registration',
             description: `Registration for ${content?.headline || 'Webinar'}`,
             order_id: regData.razorpay.order_id,
-            method: {
-              upi: true,
-              card: true,
-              netbanking: true,
-              wallet: true,
-            },
             prefill: {
               name: fullName || '',
               email: email || '',
             },
             theme: {
               color: '#4f46e5',
+            },
+            config: {
+              display: {
+                blocks: {
+                  upi: {
+                    name: 'Pay via UPI / QR',
+                    instruments: [
+                      {
+                        method: 'upi',
+                      },
+                    ],
+                  },
+                  other: {
+                    name: 'Cards & NetBanking',
+                    instruments: [
+                      {
+                        method: 'card',
+                      },
+                      {
+                        method: 'netbanking',
+                      },
+                      {
+                        method: 'wallet',
+                      },
+                    ],
+                  },
+                },
+                sequence: ['block.upi', 'block.other'],
+                preferences: {
+                  show_default_blocks: true,
+                },
+              },
             },
             handler: async function (response: any) {
               try {

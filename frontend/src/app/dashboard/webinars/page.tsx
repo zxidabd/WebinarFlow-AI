@@ -455,17 +455,26 @@ export default function WebinarsPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => form.setValue('payment_gateway', 'razorpay')}
+                      onClick={() => {
+                        form.setValue('payment_gateway', 'razorpay');
+                        if (form.getValues('currency') === 'usd') {
+                          form.setValue('currency', 'inr');
+                        }
+                      }}
                       className={`flex items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-all ${
                         form.watch('payment_gateway') === 'razorpay'
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold shadow-sm'
                           : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-300 hover:bg-gray-50'
                       }`}
                     >
-                      <span>⚡</span> Razorpay
+                      <span>⚡</span> Razorpay (UPI + QR)
                     </button>
                   </div>
-                  <p className="text-[11px] text-gray-500 dark:text-neutral-400">Select gateway to process attendee ticket payments</p>
+                  {form.watch('payment_gateway') === 'razorpay' ? (
+                    <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">⚡ Razorpay enables instant UPI (Google Pay, PhonePe, Paytm, BHIM) and QR Code in INR (₹)</p>
+                  ) : (
+                    <p className="text-[11px] text-gray-500 dark:text-neutral-400">Select gateway to process attendee ticket payments</p>
+                  )}
                 </div>
               </div>
             )}
