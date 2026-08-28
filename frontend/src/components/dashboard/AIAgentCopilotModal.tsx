@@ -364,6 +364,9 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
         template: selectedTemplate,
       });
 
+      if (res && res.landing_page) {
+        res.landing_page.template = selectedTemplate;
+      }
       setGeneratedFunnel(res);
       toast.success('Funnel created! Preview your landing page and emails on the right.');
     } catch (err: any) {
@@ -377,7 +380,15 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
     if (!generatedFunnel) return;
     setIsDeploying(true);
     try {
-      const res = await aiApi.applyFunnel(generatedFunnel);
+      const templateToDeploy = selectedTemplate || generatedFunnel.landing_page?.template || 'modern-saas';
+      const funnelToDeploy = {
+        ...generatedFunnel,
+        landing_page: {
+          ...generatedFunnel.landing_page,
+          template: templateToDeploy,
+        },
+      };
+      const res = await aiApi.applyFunnel(funnelToDeploy);
       toast.success(`Funnel deployed! Published slug: ${res.landing_page_slug}`);
       setTimeout(() => {
         window.location.href = `/dashboard/webinars/${res.webinar_id}/landing-pages/${res.landing_page_id}`;

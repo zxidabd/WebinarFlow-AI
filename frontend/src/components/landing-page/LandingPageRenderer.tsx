@@ -42,7 +42,29 @@ export default function LandingPageRenderer({ content, webinarId, onRegister, pr
 
   const getMergedSectionData = (sectionId: string) => {
     const defaults = allDefaults[sectionId] || {};
-    const rawUserOverrides = sections[sectionId];
+    let rawUserOverrides = sections[sectionId];
+
+    // Fallbacks across template aliases
+    if (!rawUserOverrides) {
+      if (sectionId === 'hero') rawUserOverrides = sections['hero_v2'];
+      else if (sectionId === 'hero_v2') rawUserOverrides = sections['hero'];
+      else if (sectionId === 'instructor') {
+        const sp = sections['speakers']?.speakers?.[0] || sections['speakers_v2']?.speakers?.[0];
+        if (sp) rawUserOverrides = { name: sp.name, title_role: sp.title, bio: sp.bio, avatar: sp.avatar };
+      } else if (sectionId === 'outcomes') {
+        const bens = sections['benefits']?.benefits;
+        if (bens) rawUserOverrides = { outcomes: bens.map((b: any) => ({ text: `${b.title} — ${b.description}` })) };
+      } else if (sectionId === 'curriculum') {
+        const items = sections['agenda']?.items;
+        if (items) rawUserOverrides = { modules: items.map((a: any) => ({ title: a.title, duration: a.time, description: a.description || '' })) };
+      } else if (sectionId === 'schedule') {
+        const items = sections['agenda']?.items;
+        if (items) rawUserOverrides = { items };
+      } else if (sectionId === 'case_study' || sectionId === 'case_studies') {
+        rawUserOverrides = sections['case_study'] || sections['case_studies'];
+      }
+    }
+
     const userOverrides = (typeof rawUserOverrides === 'object' && rawUserOverrides !== null && !Array.isArray(rawUserOverrides))
       ? rawUserOverrides
       : {};
@@ -73,6 +95,7 @@ export default function LandingPageRenderer({ content, webinarId, onRegister, pr
     curriculum: CurriculumSection,
     certificate: CertificateSection,
     schedule: ScheduleSection,
+    case_study: CaseStudySection,
     case_studies: CaseStudySection,
     contact: ContactSection,
     register: (p: { data: any }) => <RegisterSection {...p} webinarId={webinarId} onRegister={onRegister} isPaid={isPaid} priceCents={priceCents} currency={currency} paymentGateway={paymentGateway} />,

@@ -231,8 +231,108 @@ def _build_full_funnel_sections(
         "bg_color": "#0f172a",
     }
 
+    # Standard Hero for Corporate / Education
+    hero = {
+        "headline": hero_v2["headline"],
+        "subtitle": hero_v2["subtitle"],
+        "cta_text": hero_v2["cta_text"],
+        "cta_link": "#register",
+        "price": price_str,
+        "bg_color": "#0f172a" if template == "education" else "#1e293b",
+        "background_color": "#1e293b",
+        "hero_image": "/hero-dashboard.png",
+        "course_image": "/hero-dashboard.png",
+        "logo_url": "/logo.png",
+    }
+
+    # Education: Instructor Profile
+    instructor = {
+        "title": "Meet Your Lead Instructor",
+        "name": speakers["speakers"][0]["name"],
+        "title_role": speakers["speakers"][0]["title"],
+        "avatar": speakers["speakers"][0]["avatar"],
+        "bio": speakers["speakers"][0]["bio"],
+        "credentials": f"10+ Years Experience, Mentored 3,000+ {aud}",
+        "bg_color": "#ffffff",
+    }
+
+    # Education: Learning Outcomes
+    outcomes = {
+        "title": "What You'll Master & Take Away",
+        "outcomes": [{"text": f"{b['title']} — {b['description']}"} for b in benefits["benefits"]],
+        "bg_color": "#f8fafc",
+    }
+
+    # Education: Complete Curriculum
+    curriculum = {
+        "title": f"Course Curriculum & Modules",
+        "modules": [
+            {
+                "title": item["title"],
+                "duration": item["time"],
+                "description": item["description"],
+                "topics": ["Practical hands-on implementation", "Real-world project build", "Verifiable portfolio packaging"],
+            }
+            for item in agenda["items"]
+        ],
+        "bg_color": "#ffffff",
+    }
+
+    # Education: Certificate
+    certificate = {
+        "title": "Official Certificate of Completion",
+        "description": f"Earn a verifiable credential in {clean_topic} to showcase on your LinkedIn, resume, and portfolio.",
+        "bullet_points": [
+            "Verifiable digital certificate for universities & employers",
+            f"Demonstrates hands-on proficiency in {clean_topic}",
+            "Included free with live attendance",
+        ],
+        "badge_text": "VERIFIED CREDENTIAL",
+        "bg_color": "#f8fafc",
+    }
+
+    # Corporate: Schedule
+    schedule = {
+        "title": "Event Schedule & Session Breakdown",
+        "date": "Live This Week",
+        "items": [
+            {
+                "time": item["time"],
+                "title": item["title"],
+                "speaker": speakers["speakers"][0]["name"],
+            }
+            for item in agenda["items"]
+        ],
+        "bg_color": "#ffffff",
+    }
+
+    # Corporate: Case Study
+    case_study = {
+        "title": "Real-World Impact & Case Study",
+        "headline": f"How Modern Teams Scaled {clean_topic} by 10x",
+        "metrics": [
+            {"value": "10x", "label": "Faster Execution"},
+            {"value": "95%", "label": "Cost Efficiency"},
+            {"value": "5,000+", "label": "Projects Delivered"},
+        ],
+        "quote": f"Implementing this exact blueprint accelerated our delivery and gave our team a competitive edge.",
+        "quote_author": "David Chen",
+        "quote_role": "VP of Technology & Operations",
+        "bg_color": "#ffffff",
+    }
+
+    # Corporate: Contact
+    contact = {
+        "title": "Questions? Contact Our Team",
+        "email": "support@webinarflow.in",
+        "phone": "+1 (800) 555-0199",
+        "address": "San Francisco, CA",
+        "bg_color": "#f8fafc",
+    }
+
     all_sections = {
         "navbar": navbar,
+        "hero": hero,
         "hero_v2": hero_v2,
         "speakers": speakers,
         "stats": stats,
@@ -244,6 +344,16 @@ def _build_full_funnel_sections(
         "countdown": countdown,
         "register": register,
         "footer": footer,
+        # Education Template Sections
+        "instructor": instructor,
+        "outcomes": outcomes,
+        "curriculum": curriculum,
+        "certificate": certificate,
+        # Corporate Template Sections
+        "schedule": schedule,
+        "case_study": case_study,
+        "case_studies": case_study,
+        "contact": contact,
     }
 
     return {
