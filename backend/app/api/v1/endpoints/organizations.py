@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_active_user, get_db, require_org_permissions
+from app.api.deps import get_current_active_user, get_current_membership, get_db, require_org_permissions
 from app.models import Membership, Organization, Role, User
 from app.schemas import (
     AddMemberRequest,

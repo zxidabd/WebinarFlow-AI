@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     SQLITE_FALLBACK: bool = True
 
     # --- CORS ---
-    BACKEND_CORS_ORIGINS: list[AnyHttpUrl] | str = []
+    BACKEND_CORS_ORIGINS: list[str] | str = []
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
-    SMTP_FROM_EMAIL: EmailStr | None = None  # type: ignore[assignment]
+    SMTP_FROM_EMAIL: str | None = None
     SMTP_FROM_NAME: str = "WebinarFlow-AI"
 
     # --- Google OAuth ---
@@ -107,7 +107,7 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
 
     # --- Frontend ---
-    FRONTEND_URL: AnyHttpUrl = "http://localhost:3000"  # type: ignore[assignment]
+    FRONTEND_URL: str = "http://localhost:3000"
 
     @property
     def cors_origins_list(self) -> list[str]:
