@@ -52,26 +52,31 @@ async def _get_lp_org_scoped(
 
 
 async def _to_detail(db: AsyncSession, lp: LandingPage) -> LandingPageDetail:
-    webinar = (
-        await db.execute(select(Webinar).where(Webinar.id == lp.webinar_id))
-    ).scalar_one_or_none()
+    webinar = None
+    if getattr(lp, "webinar_id", None):
+        webinar = (
+            await db.execute(select(Webinar).where(Webinar.id == lp.webinar_id))
+        ).scalar_one_or_none()
+
+    org_id = lp.organization_id or (webinar.organization_id if webinar else None)
+
     detail_data = {
         "id": lp.id,
         "webinar_id": lp.webinar_id,
-        "organization_id": lp.organization_id,
+        "organization_id": org_id,
         "created_by": lp.created_by,
-        "title": lp.title,
-        "slug": lp.slug,
-        "status": lp.status,
-        "page_type": lp.page_type,
-        "content": lp.content,
-        "meta_title": lp.meta_title,
+        "title": lp.title or "Untitled Page",
+        "slug": lp.slug or "",
+        "status": lp.status or "draft",
+        "page_type": lp.page_type or "opt_in",
+        "content": lp.content or {},
+        "meta_title": lp.meta_title or lp.title,
         "meta_description": lp.meta_description,
         "meta_image": lp.meta_image,
         "custom_head_html": lp.custom_head_html,
         "custom_body_html": lp.custom_body_html,
-        "is_published": lp.is_published,
-        "template_id": lp.template_id,
+        "is_published": bool(lp.is_published),
+        "template_id": lp.template_id or "modern-saas",
         "created_at": lp.created_at,
         "updated_at": lp.updated_at,
         "is_paid": bool(getattr(webinar, "is_paid", False)) if webinar else False,

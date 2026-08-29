@@ -89,7 +89,7 @@ class LandingPageDetail(LandingPageBase):
 
     id: uuid.UUID
     webinar_id: uuid.UUID
-    organization_id: uuid.UUID
+    organization_id: uuid.UUID | None = None
     created_by: uuid.UUID | None = None
     is_paid: bool = False
     price_cents: int = 0
