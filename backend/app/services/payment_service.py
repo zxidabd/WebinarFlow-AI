@@ -107,7 +107,6 @@ async def create_stripe_checkout_session(
 
     try:
         session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
             mode="payment",
             line_items=[
                 {
