@@ -130,8 +130,21 @@ export default function LandingPagesPage() {
     onSuccess: () => {
       toast.success('Published live!');
       qc.invalidateQueries({ queryKey: ['landing-pages'] });
+      qc.invalidateQueries({ queryKey: ['webinar', params.id] });
+      qc.invalidateQueries({ queryKey: ['webinars'] });
     },
-    onError: (e: any) => toast.error(apiErrorMessage(e)),
+    onError: (e: any) => toast.error(apiErrorMessage(e, 'Failed to publish landing page')),
+  });
+
+  const unpublishMut = useMutation({
+    mutationFn: (id: string) => api.updateLandingPage(id, { is_published: false }),
+    onSuccess: () => {
+      toast.success('Unpublished');
+      qc.invalidateQueries({ queryKey: ['landing-pages'] });
+      qc.invalidateQueries({ queryKey: ['webinar', params.id] });
+      qc.invalidateQueries({ queryKey: ['webinars'] });
+    },
+    onError: (e: any) => toast.error(apiErrorMessage(e, 'Failed to unpublish landing page')),
   });
 
   const form = useForm<FormValues>({
@@ -328,11 +341,29 @@ export default function LandingPagesPage() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                   {lp.is_published ? (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 dark:text-emerald-400" onClick={() => window.open(`/r/${lp.slug}`, '_blank')} title="View live page">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 dark:text-emerald-400" onClick={() => window.open(`/r/${lp.slug}`, '_blank')} title="View live page">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800 hover:bg-amber-50 h-7 px-2 font-medium"
+                        disabled={unpublishMut.isPending}
+                        onClick={() => unpublishMut.mutate(lp.id)}
+                      >
+                        {unpublishMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Unpublish'}
+                      </Button>
+                    </>
                   ) : (
-                    <Button variant="ghost" size="sm" className="text-xs text-indigo-600 font-semibold" onClick={() => publishMut.mutate(lp.id)}>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-7 px-2.5 shadow-sm"
+                      disabled={publishMut.isPending}
+                      onClick={() => publishMut.mutate(lp.id)}
+                    >
+                      {publishMut.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
                       Publish
                     </Button>
                   )}

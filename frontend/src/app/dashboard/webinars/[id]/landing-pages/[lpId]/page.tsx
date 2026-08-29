@@ -13,6 +13,7 @@ import LandingPageRenderer from '@/components/landing-page/LandingPageRenderer';
 import TemplateEditor from '@/components/landing-page/editor/TemplateEditor';
 import { getTemplate, getAllTemplates } from '@/components/landing-page/templates/registry';
 import * as api from '@/lib/webinar-api';
+import { apiErrorMessage } from '@/lib/auth-api';
 
 export default function LandingPageDetailPage() {
   const router = useRouter();
@@ -37,17 +38,24 @@ export default function LandingPageDetailPage() {
     onSuccess: () => {
       toast.success('Saved');
       qc.invalidateQueries({ queryKey: ['landing-page'] });
+      qc.invalidateQueries({ queryKey: ['landing-pages'] });
+      qc.invalidateQueries({ queryKey: ['webinar', params.id] });
+      qc.invalidateQueries({ queryKey: ['webinars'] });
       setEditing(false);
     },
-    onError: (e: any) => toast.error(e?.response?.data?.detail || 'Error saving'),
+    onError: (e: any) => toast.error(apiErrorMessage(e, 'Error saving')),
   });
 
   const togglePublish = useMutation({
     mutationFn: (publish: boolean) => api.updateLandingPage(params.lpId, { is_published: publish }),
     onSuccess: (_, publish) => {
-      toast.success(publish ? 'Published!' : 'Unpublished');
+      toast.success(publish ? 'Published live!' : 'Unpublished');
       qc.invalidateQueries({ queryKey: ['landing-page'] });
+      qc.invalidateQueries({ queryKey: ['landing-pages'] });
+      qc.invalidateQueries({ queryKey: ['webinar', params.id] });
+      qc.invalidateQueries({ queryKey: ['webinars'] });
     },
+    onError: (e: any) => toast.error(apiErrorMessage(e, 'Failed to update publish state')),
   });
 
   const duplicateMut = useMutation({
@@ -132,11 +140,25 @@ export default function LandingPageDetailPage() {
             </Button>
           )}
           {lp.is_published ? (
-            <Button variant="outline" size="sm" onClick={() => togglePublish.mutate(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800 hover:bg-amber-50"
+              disabled={togglePublish.isPending}
+              onClick={() => togglePublish.mutate(false)}
+            >
+              {togglePublish.isPending && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
               Unpublish
             </Button>
           ) : (
-            <Button variant="default" size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => togglePublish.mutate(true)}>
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white font-medium shadow-sm"
+              disabled={togglePublish.isPending}
+              onClick={() => togglePublish.mutate(true)}
+            >
+              {togglePublish.isPending && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
               Publish
             </Button>
           )}

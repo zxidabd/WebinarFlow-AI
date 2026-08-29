@@ -360,6 +360,11 @@ async def update_landing_page(
             data["status"] = LandingPageStatus.draft
             data["published_at"] = None
 
+        from app.models.webinar import Webinar
+        parent_webinar = (await db.execute(select(Webinar).where(Webinar.id == webinar_id))).scalar_one_or_none()
+        if parent_webinar is not None:
+            parent_webinar.is_published = is_pub
+
     # Pop pricing fields so we don't setattr on LandingPage model
     pricing_fields = {}
     for fld in ["is_paid", "price_cents", "currency", "payment_gateway"]:
