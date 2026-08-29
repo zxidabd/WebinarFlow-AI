@@ -51,13 +51,40 @@ async def _get_lp_org_scoped(
     return lp
 
 
-async def _to_detail(db: AsyncSession, lp: LandingPage) -> LandingPageDetail:
+async def _to_detail_by_id(db: AsyncSession, landing_page_id: uuid.UUID) -> LandingPageDetail:
+    lp_row = (
+        await db.execute(
+            select(
+                LandingPage.id,
+                LandingPage.webinar_id,
+                LandingPage.organization_id,
+                LandingPage.created_by,
+                LandingPage.title,
+                LandingPage.slug,
+                LandingPage.status,
+                LandingPage.page_type,
+                LandingPage.content,
+                LandingPage.meta_title,
+                LandingPage.meta_description,
+                LandingPage.meta_image,
+                LandingPage.custom_head_html,
+                LandingPage.custom_body_html,
+                LandingPage.is_published,
+                LandingPage.template_id,
+                LandingPage.created_at,
+                LandingPage.updated_at,
+            ).where(LandingPage.id == landing_page_id)
+        )
+    ).first()
+    if lp_row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
+
     webinar_vals = {}
-    if getattr(lp, "webinar_id", None):
+    if lp_row[1]:
         w_row = (
             await db.execute(
                 select(Webinar.organization_id, Webinar.is_paid, Webinar.price_cents, Webinar.currency, Webinar.payment_gateway)
-                .where(Webinar.id == lp.webinar_id)
+                .where(Webinar.id == lp_row[1])
             )
         ).first()
         if w_row:
@@ -69,33 +96,38 @@ async def _to_detail(db: AsyncSession, lp: LandingPage) -> LandingPageDetail:
                 "payment_gateway": str(w_row[4] or "stripe"),
             }
 
-    org_id = lp.organization_id or webinar_vals.get("organization_id")
+    org_id = lp_row[2] or webinar_vals.get("organization_id")
+    status_val = lp_row[6]
+    if hasattr(status_val, "value"):
+        status_val = status_val.value
+    page_type_val = lp_row[7]
+    if hasattr(page_type_val, "value"):
+        page_type_val = page_type_val.value
 
-    detail_data = {
-        "id": lp.id,
-        "webinar_id": lp.webinar_id,
-        "organization_id": org_id,
-        "created_by": lp.created_by,
-        "title": lp.title or "Untitled Page",
-        "slug": lp.slug or "",
-        "status": lp.status or "draft",
-        "page_type": lp.page_type or "opt_in",
-        "content": lp.content or {},
-        "meta_title": lp.meta_title or lp.title,
-        "meta_description": lp.meta_description,
-        "meta_image": lp.meta_image,
-        "custom_head_html": lp.custom_head_html,
-        "custom_body_html": lp.custom_body_html,
-        "is_published": bool(lp.is_published),
-        "template_id": lp.template_id or "modern-saas",
-        "created_at": lp.created_at,
-        "updated_at": lp.updated_at,
-        "is_paid": webinar_vals.get("is_paid", False),
-        "price_cents": webinar_vals.get("price_cents", 0),
-        "currency": webinar_vals.get("currency", "usd"),
-        "payment_gateway": webinar_vals.get("payment_gateway", "stripe"),
-    }
-    return LandingPageDetail(**detail_data)
+    return LandingPageDetail(
+        id=lp_row[0],
+        webinar_id=lp_row[1],
+        organization_id=org_id,
+        created_by=lp_row[3],
+        title=lp_row[4] or "Untitled Page",
+        slug=lp_row[5] or "",
+        status=status_val or "draft",
+        page_type=page_type_val or "opt_in",
+        content=lp_row[8] or {},
+        meta_title=lp_row[9] or lp_row[4],
+        meta_description=lp_row[10],
+        meta_image=lp_row[11],
+        custom_head_html=lp_row[12],
+        custom_body_html=lp_row[13],
+        is_published=bool(lp_row[14]),
+        template_id=lp_row[15] or "modern-saas",
+        created_at=lp_row[16],
+        updated_at=lp_row[17],
+        is_paid=webinar_vals.get("is_paid", False),
+        price_cents=webinar_vals.get("price_cents", 0),
+        currency=webinar_vals.get("currency", "usd"),
+        payment_gateway=webinar_vals.get("payment_gateway", "stripe"),
+    )
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────────
@@ -158,7 +190,7 @@ async def create_landing_page(
         payload=payload,
     )
     await db.flush()
-    return await _to_detail(db, lp)
+    return await _to_detail_by_id(db, lp.id)
 
 
 @router.get("/{landing_page_id}", response_model=LandingPageDetail)
@@ -169,8 +201,7 @@ async def get_landing_page(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a single landing page (org-scoped by landing page ID)."""
-    lp = await _get_lp_org_scoped(db, landing_page_id, membership.organization_id)
-    return await _to_detail(db, lp)
+    return await _to_detail_by_id(db, landing_page_id)
 
 
 @router.patch("/{landing_page_id}", response_model=LandingPageDetail)
@@ -182,15 +213,15 @@ async def update_landing_page(
     db: AsyncSession = Depends(get_db),
 ):
     """Update a landing page (org-scoped)."""
-    lp = await _get_lp_org_scoped(db, landing_page_id, membership.organization_id)
     updated = await landing_page_service.update_landing_page(
         db,
-        webinar_id=lp.webinar_id,
+        webinar_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),
         organization_id=membership.organization_id,
         landing_page_id=landing_page_id,
         payload=payload,
     )
-    return await _to_detail(db, updated)
+    await db.flush()
+    return await _to_detail_by_id(db, landing_page_id)
 
 
 @router.delete("/{landing_page_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -22,7 +22,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, backref, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
 from app.db import Base
@@ -89,7 +89,7 @@ class LandingPage(UUIDMixin, TimestampMixin, Base):
     # Template system (Phase 2)
     template_id: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
 
-    webinar = relationship("Webinar", backref="landing_pages", lazy="selectin")
+    webinar = relationship("Webinar", backref=backref("landing_pages", lazy="selectin"), lazy="selectin")
     organization = relationship("Organization", lazy="selectin")
     creator = relationship("User", foreign_keys=[created_by], lazy="selectin")
 

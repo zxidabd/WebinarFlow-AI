@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, useTheme } from 'next-themes';
 import { Toaster } from 'sonner';
@@ -16,7 +16,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30_000,
+            staleTime: 60_000,
+            gcTime: 300_000,
             retry: 1,
             refetchOnWindowFocus: false,
           },
@@ -24,13 +25,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  // Background keep-warm ping to Render backend
-  useState(() => {
-    if (typeof window !== 'undefined') {
-      const rawApi = (process.env.NEXT_PUBLIC_API_URL || 'https://webinarflow-ai.onrender.com').replace(/\/$/, '').replace(/\/api\/v1\/?$/, '');
-      fetch(`${rawApi}/health`, { method: 'GET', keepalive: true }).catch(() => {});
-    }
-  });
+  // Background keep-warm ping to prevent Render cold-starts
+  useEffect(() => {
+    const rawApi = (process.env.NEXT_PUBLIC_API_URL || 'https://webinarflow-ai.onrender.com').replace(/\/$/, '').replace(/\/api\/v1\/?$/, '');
+    const ping = () => fetch(`${rawApi}/health`, { method: 'GET', keepalive: true }).catch(() => {});
+    ping();
+    const interval = setInterval(ping, 240_000); // every 4 minutes
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
