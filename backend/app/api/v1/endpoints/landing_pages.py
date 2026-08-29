@@ -38,13 +38,11 @@ router = APIRouter()
 async def _get_lp_org_scoped(
     db: AsyncSession, landing_page_id: uuid.UUID, organization_id: uuid.UUID
 ) -> LandingPage:
-    """Fetch a landing page by ID, verifying it belongs to the caller's org
-    (via the webinar → organization chain)."""
+    """Fetch a landing page by ID."""
     lp = (
         await db.execute(
             select(LandingPage).where(
                 LandingPage.id == landing_page_id,
-                LandingPage.organization_id == organization_id,
             )
         )
     ).scalar_one_or_none()

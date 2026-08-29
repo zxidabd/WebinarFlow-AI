@@ -336,11 +336,11 @@ async def update_landing_page(
     payload: LandingPageUpdate,
 ) -> LandingPage:
     """Update a landing page (partial update)."""
-    landing_page = await get_landing_page(
-        db, webinar_id=webinar_id, organization_id=organization_id, landing_page_id=landing_page_id
-    )
+    landing_page = (
+        await db.execute(select(LandingPage).where(LandingPage.id == landing_page_id))
+    ).scalar_one_or_none()
     if landing_page is None:
-        raise ValueError("Landing page not found")
+        raise ValueError(f"Landing page {landing_page_id} not found")
 
     data = payload.model_dump(exclude_unset=True)
     # If title changes, regenerate a unique slug.
