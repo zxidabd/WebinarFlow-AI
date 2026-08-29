@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI):
 
 async def _run_startup_seeding() -> None:
     """Seed RBAC roles/permissions and ensure DB tables exist."""
+    from sqlalchemy import text
     from app.db import AsyncSessionLocal, Base, engine
     import app.models  # noqa: F401
     from app.services.rbac import seed_rbac
@@ -45,6 +46,42 @@ async def _run_startup_seeding() -> None:
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+
+            # Auto-migrate columns that may be missing on existing production tables
+            if engine.dialect.name == "postgresql":
+                migration_statements = [
+                    # organizations
+                    "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS settings JSON DEFAULT '{}'::json;",
+                    # webinars
+                    "ALTER TABLE webinars ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;",
+                    "ALTER TABLE webinars ADD COLUMN IF NOT EXISTS price_cents INTEGER DEFAULT 0;",
+                    "ALTER TABLE webinars ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'usd';",
+                    "ALTER TABLE webinars ADD COLUMN IF NOT EXISTS payment_gateway VARCHAR(50) DEFAULT 'stripe';",
+                    # landing_pages
+                    "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS template_id VARCHAR(100);",
+                    "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS content JSON DEFAULT '{}'::json;",
+                    "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS is_published BOOLEAN DEFAULT FALSE;",
+                    "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;",
+                    "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS custom_head_html TEXT;",
+                    "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS custom_body_html TEXT;",
+                    "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS meta_title VARCHAR(255);",
+                    "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS meta_description VARCHAR(512);",
+                    "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS meta_image VARCHAR(512);",
+                    # registrants
+                    "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS custom_answers JSON;",
+                    "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'registered';",
+                    "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS attended_at TIMESTAMPTZ;",
+                    "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS is_buyer BOOLEAN DEFAULT FALSE;",
+                    "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS total_spent_cents INTEGER DEFAULT 0;",
+                    # users
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;",
+                ]
+                for stmt in migration_statements:
+                    try:
+                        await conn.execute(text(stmt))
+                    except Exception as col_err:
+                        logger.debug("Startup migration statement notice: %s", col_err)
+
         async with AsyncSessionLocal() as session:
             await seed_rbac(session)
     except Exception as exc:  # noqa: BLE001
