@@ -360,10 +360,15 @@ async def update_landing_page(
             data["status"] = LandingPageStatus.draft
             data["published_at"] = None
 
-        from app.models.webinar import Webinar
-        parent_webinar = (await db.execute(select(Webinar).where(Webinar.id == webinar_id))).scalar_one_or_none()
-        if parent_webinar is not None:
-            parent_webinar.is_published = is_pub
+        target_webinar_id = getattr(landing_page, "webinar_id", webinar_id)
+        if target_webinar_id:
+            from sqlalchemy import update
+            from app.models.webinar import Webinar
+            await db.execute(
+                update(Webinar)
+                .where(Webinar.id == target_webinar_id)
+                .values(is_published=is_pub)
+            )
 
     # Pop pricing fields so we don't setattr on LandingPage model
     pricing_fields = {}
@@ -372,17 +377,25 @@ async def update_landing_page(
             pricing_fields[fld] = data.pop(fld)
 
     if pricing_fields:
-        from app.models.webinar import Webinar
-        parent_webinar = (await db.execute(select(Webinar).where(Webinar.id == webinar_id))).scalar_one_or_none()
-        if parent_webinar is not None:
+        target_webinar_id = getattr(landing_page, "webinar_id", webinar_id)
+        if target_webinar_id:
+            update_vals = {}
             if "is_paid" in pricing_fields:
-                parent_webinar.is_paid = bool(pricing_fields["is_paid"])
+                update_vals["is_paid"] = bool(pricing_fields["is_paid"])
             if "price_cents" in pricing_fields and pricing_fields["price_cents"] is not None:
-                parent_webinar.price_cents = pricing_fields["price_cents"]
+                update_vals["price_cents"] = pricing_fields["price_cents"]
             if "currency" in pricing_fields and pricing_fields["currency"]:
-                parent_webinar.currency = pricing_fields["currency"]
+                update_vals["currency"] = pricing_fields["currency"]
             if "payment_gateway" in pricing_fields and pricing_fields["payment_gateway"]:
-                parent_webinar.payment_gateway = pricing_fields["payment_gateway"]
+                update_vals["payment_gateway"] = pricing_fields["payment_gateway"]
+            if update_vals:
+                from sqlalchemy import update
+                from app.models.webinar import Webinar
+                await db.execute(
+                    update(Webinar)
+                    .where(Webinar.id == target_webinar_id)
+                    .values(**update_vals)
+                )
 
     for key, value in data.items():
         setattr(landing_page, key, value)

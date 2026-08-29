@@ -52,13 +52,24 @@ async def _get_lp_org_scoped(
 
 
 async def _to_detail(db: AsyncSession, lp: LandingPage) -> LandingPageDetail:
-    webinar = None
+    webinar_vals = {}
     if getattr(lp, "webinar_id", None):
-        webinar = (
-            await db.execute(select(Webinar).where(Webinar.id == lp.webinar_id))
-        ).scalar_one_or_none()
+        w_row = (
+            await db.execute(
+                select(Webinar.organization_id, Webinar.is_paid, Webinar.price_cents, Webinar.currency, Webinar.payment_gateway)
+                .where(Webinar.id == lp.webinar_id)
+            )
+        ).first()
+        if w_row:
+            webinar_vals = {
+                "organization_id": w_row[0],
+                "is_paid": bool(w_row[1]),
+                "price_cents": int(w_row[2] or 0),
+                "currency": str(w_row[3] or "usd"),
+                "payment_gateway": str(w_row[4] or "stripe"),
+            }
 
-    org_id = lp.organization_id or (webinar.organization_id if webinar else None)
+    org_id = lp.organization_id or webinar_vals.get("organization_id")
 
     detail_data = {
         "id": lp.id,
@@ -79,10 +90,10 @@ async def _to_detail(db: AsyncSession, lp: LandingPage) -> LandingPageDetail:
         "template_id": lp.template_id or "modern-saas",
         "created_at": lp.created_at,
         "updated_at": lp.updated_at,
-        "is_paid": bool(getattr(webinar, "is_paid", False)) if webinar else False,
-        "price_cents": int(getattr(webinar, "price_cents", 0) or 0) if webinar else 0,
-        "currency": str(getattr(webinar, "currency", "usd") or "usd") if webinar else "usd",
-        "payment_gateway": str(getattr(webinar, "payment_gateway", "stripe") or "stripe") if webinar else "stripe",
+        "is_paid": webinar_vals.get("is_paid", False),
+        "price_cents": webinar_vals.get("price_cents", 0),
+        "currency": webinar_vals.get("currency", "usd"),
+        "payment_gateway": webinar_vals.get("payment_gateway", "stripe"),
     }
     return LandingPageDetail(**detail_data)
 

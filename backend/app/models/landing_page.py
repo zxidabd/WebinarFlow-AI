@@ -89,9 +89,9 @@ class LandingPage(UUIDMixin, TimestampMixin, Base):
     # Template system (Phase 2)
     template_id: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
 
-    webinar = relationship("Webinar", backref="landing_pages")
-    organization = relationship("Organization")
-    creator = relationship("User", foreign_keys=[created_by])
+    webinar = relationship("Webinar", backref="landing_pages", lazy="selectin")
+    organization = relationship("Organization", lazy="selectin")
+    creator = relationship("User", foreign_keys=[created_by], lazy="selectin")
 
 
 class LandingPageVisit(UUIDMixin, TimestampMixin, Base):
