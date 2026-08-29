@@ -48,8 +48,9 @@ export default function LandingPageDetailPage() {
 
   const togglePublish = useMutation({
     mutationFn: (publish: boolean) => api.updateLandingPage(params.lpId, { is_published: publish }),
-    onSuccess: (_, publish) => {
+    onSuccess: (data, publish) => {
       toast.success(publish ? 'Published live!' : 'Unpublished');
+      qc.setQueryData(['landing-page', params.lpId], (prev: any) => prev ? { ...prev, is_published: publish, status: publish ? 'published' : 'draft' } : data);
       qc.invalidateQueries({ queryKey: ['landing-page'] });
       qc.invalidateQueries({ queryKey: ['landing-pages'] });
       qc.invalidateQueries({ queryKey: ['webinar', params.id] });

@@ -127,8 +127,21 @@ export default function LandingPagesPage() {
 
   const publishMut = useMutation({
     mutationFn: (id: string) => api.updateLandingPage(id, { is_published: true }),
-    onSuccess: () => {
+    onSuccess: (data, id) => {
       toast.success('Published live!');
+      qc.setQueryData(['landing-pages', params.id], (prev: any) => {
+        if (!prev) return prev;
+        if (Array.isArray(prev)) {
+          return prev.map((item: any) => item.id === id ? { ...item, is_published: true, status: 'published' } : item);
+        }
+        if (prev.items) {
+          return {
+            ...prev,
+            items: prev.items.map((item: any) => item.id === id ? { ...item, is_published: true, status: 'published' } : item),
+          };
+        }
+        return prev;
+      });
       qc.invalidateQueries({ queryKey: ['landing-pages'] });
       qc.invalidateQueries({ queryKey: ['webinar', params.id] });
       qc.invalidateQueries({ queryKey: ['webinars'] });
@@ -138,8 +151,21 @@ export default function LandingPagesPage() {
 
   const unpublishMut = useMutation({
     mutationFn: (id: string) => api.updateLandingPage(id, { is_published: false }),
-    onSuccess: () => {
+    onSuccess: (data, id) => {
       toast.success('Unpublished');
+      qc.setQueryData(['landing-pages', params.id], (prev: any) => {
+        if (!prev) return prev;
+        if (Array.isArray(prev)) {
+          return prev.map((item: any) => item.id === id ? { ...item, is_published: false, status: 'draft' } : item);
+        }
+        if (prev.items) {
+          return {
+            ...prev,
+            items: prev.items.map((item: any) => item.id === id ? { ...item, is_published: false, status: 'draft' } : item),
+          };
+        }
+        return prev;
+      });
       qc.invalidateQueries({ queryKey: ['landing-pages'] });
       qc.invalidateQueries({ queryKey: ['webinar', params.id] });
       qc.invalidateQueries({ queryKey: ['webinars'] });

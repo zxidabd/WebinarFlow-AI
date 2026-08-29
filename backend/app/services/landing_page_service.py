@@ -400,7 +400,7 @@ async def update_landing_page(
     for key, value in data.items():
         setattr(landing_page, key, value)
 
-    await db.commit()
+    await db.flush()
     return landing_page
 
 
