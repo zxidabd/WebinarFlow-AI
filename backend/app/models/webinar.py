@@ -129,13 +129,13 @@ class Webinar(UUIDMixin, TimestampMixin, Base):
     attendance_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     visitor_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
 
-    organization = relationship("Organization")
-    creator = relationship("User", foreign_keys=[created_by])
+    organization = relationship("Organization", lazy="selectin")
+    creator = relationship("User", foreign_keys=[created_by], lazy="selectin")
     registrants: Mapped[list["Registrant"]] = relationship(
-        "Registrant", back_populates="webinar", cascade="all, delete-orphan"
+        "Registrant", back_populates="webinar", cascade="all, delete-orphan", lazy="selectin"
     )
     attendance: Mapped[list["Attendance"]] = relationship(
-        "Attendance", back_populates="webinar", cascade="all, delete-orphan"
+        "Attendance", back_populates="webinar", cascade="all, delete-orphan", lazy="selectin"
     )
 
 

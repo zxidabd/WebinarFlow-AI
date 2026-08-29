@@ -15,14 +15,22 @@ from app.core.config import settings
 
 def _resolve_url() -> str:
     """Allow a SQLite fallback when explicitly requested, and normalize Postgres URLs for asyncpg."""
-    if settings.SQLITE_FALLBACK:
+    raw_url = str(settings.DATABASE_URL or "").strip()
+    if raw_url and ("postgres" in raw_url or "postgresql" in raw_url) and "localhost" not in raw_url:
+        if raw_url.startswith("postgres://"):
+            return raw_url.replace("postgres://", "postgresql+asyncpg://", 1)
+        if raw_url.startswith("postgresql://") and not raw_url.startswith("postgresql+"):
+            return raw_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return raw_url
+
+    if settings.SQLITE_FALLBACK and (not raw_url or "localhost" in raw_url):
         return "sqlite+aiosqlite:///.local.db"
-    url = str(settings.DATABASE_URL)
-    if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-    elif url.startswith("postgresql://") and not url.startswith("postgresql+"):
-        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    return url
+
+    if raw_url.startswith("postgres://"):
+        return raw_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    if raw_url.startswith("postgresql://") and not raw_url.startswith("postgresql+"):
+        return raw_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return raw_url or "sqlite+aiosqlite:///.local.db"
 
 
 engine = create_async_engine(

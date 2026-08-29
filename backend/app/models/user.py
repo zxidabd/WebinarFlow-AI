@@ -29,8 +29,8 @@ class User(UUIDMixin, TimestampMixin, Base):
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     memberships: Mapped[list["Membership"]] = relationship(  # type: ignore[name-defined]
-        "Membership", back_populates="user", cascade="all, delete-orphan"
+        "Membership", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(  # type: ignore[name-defined]
-        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
+        "RefreshToken", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )

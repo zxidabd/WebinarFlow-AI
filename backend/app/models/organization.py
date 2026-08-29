@@ -31,6 +31,6 @@ class Organization(UUIDMixin, TimestampMixin, Base):
     settings: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
 
     members: Mapped[list["Membership"]] = relationship(  # type: ignore[name-defined]
-        "Membership", back_populates="organization", cascade="all, delete-orphan"
+        "Membership", back_populates="organization", cascade="all, delete-orphan", lazy="selectin"
     )
-    owner = relationship("User", foreign_keys=[owner_user_id])
+    owner = relationship("User", foreign_keys=[owner_user_id], lazy="selectin")

@@ -35,6 +35,6 @@ class Membership(UUIDMixin, TimestampMixin, Base):
     )
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    user = relationship("User", back_populates="memberships")
-    organization = relationship("Organization", back_populates="members")
+    user = relationship("User", back_populates="memberships", lazy="selectin")
+    organization = relationship("Organization", back_populates="members", lazy="selectin")
     role = relationship("Role", lazy="selectin")

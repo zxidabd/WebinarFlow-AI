@@ -190,7 +190,6 @@ async def update_landing_page(
         landing_page_id=landing_page_id,
         payload=payload,
     )
-    await db.flush()
     return await _to_detail(db, updated)
 
 
