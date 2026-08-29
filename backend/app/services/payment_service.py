@@ -115,6 +115,7 @@ async def create_stripe_checkout_session(
                         "product_data": {
                             "name": webinar.title,
                             "description": webinar.description or f"Registration for {webinar.title}",
+                            "tax_code": "txcd_10000000",
                         },
                         "unit_amount": amount_cents,
                     },
@@ -130,6 +131,39 @@ async def create_stripe_checkout_session(
                 "organization_id": str(webinar.organization_id),
             },
         )
+    except Exception as exc:
+        err_msg = str(exc).lower()
+        if "managed_payments" in err_msg or "tax_code" in err_msg or "tax code" in err_msg:
+            try:
+                session = stripe.checkout.Session.create(
+                    mode="payment",
+                    managed_payments={"enabled": False},
+                    line_items=[
+                        {
+                            "price_data": {
+                                "currency": currency,
+                                "product_data": {
+                                    "name": webinar.title,
+                                    "description": webinar.description or f"Registration for {webinar.title}",
+                                },
+                                "unit_amount": amount_cents,
+                            },
+                            "quantity": 1,
+                        }
+                    ],
+                    client_reference_id=str(registrant.id),
+                    success_url=final_success_url,
+                    cancel_url=final_cancel_url,
+                    metadata={
+                        "webinar_id": str(webinar.id),
+                        "registrant_id": str(registrant.id),
+                        "organization_id": str(webinar.organization_id),
+                    },
+                )
+            except Exception:
+                raise PaymentError(f"Stripe checkout session creation failed: {exc}", code="STRIPE_ERROR")
+        else:
+            raise PaymentError(f"Stripe checkout session creation failed: {exc}", code="STRIPE_ERROR")
 
         payment = Payment(
             registrant_id=registrant.id,
