@@ -48,7 +48,7 @@ async def _run_startup_seeding() -> None:
             await conn.run_sync(Base.metadata.create_all)
 
             # Auto-migrate columns that may be missing on existing production tables
-            if engine.dialect.name == "postgresql":
+            if "postgres" in engine.dialect.name.lower():
                 migration_statements = [
                     # organizations
                     "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS settings JSON DEFAULT '{}'::json;",
@@ -131,6 +131,48 @@ app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 async def health() -> dict[str, str]:
     """Lightweight liveness probe — does not touch the DB."""
     return {"status": "ok", "app": settings.APP_NAME, "version": __version__}
+
+
+@app.get("/health/migrate", tags=["system"])
+@app.get("/api/v1/health/migrate", tags=["system"])
+async def run_db_migration() -> dict[str, object]:
+    """Explicit endpoint to trigger column migrations on PostgreSQL."""
+    from sqlalchemy import text
+    from app.db import engine
+
+    results = []
+    migration_statements = [
+        "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS settings JSON DEFAULT '{}'::json;",
+        "ALTER TABLE webinars ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;",
+        "ALTER TABLE webinars ADD COLUMN IF NOT EXISTS price_cents INTEGER DEFAULT 0;",
+        "ALTER TABLE webinars ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'usd';",
+        "ALTER TABLE webinars ADD COLUMN IF NOT EXISTS payment_gateway VARCHAR(50) DEFAULT 'stripe';",
+        "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS template_id VARCHAR(100);",
+        "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS content JSON DEFAULT '{}'::json;",
+        "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS is_published BOOLEAN DEFAULT FALSE;",
+        "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;",
+        "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS custom_head_html TEXT;",
+        "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS custom_body_html TEXT;",
+        "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS meta_title VARCHAR(255);",
+        "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS meta_description VARCHAR(512);",
+        "ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS meta_image VARCHAR(512);",
+        "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS custom_answers JSON;",
+        "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'registered';",
+        "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS attended_at TIMESTAMPTZ;",
+        "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS is_buyer BOOLEAN DEFAULT FALSE;",
+        "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS total_spent_cents INTEGER DEFAULT 0;",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;",
+    ]
+
+    async with engine.begin() as conn:
+        for stmt in migration_statements:
+            try:
+                await conn.execute(text(stmt))
+                results.append({"stmt": stmt, "status": "executed"})
+            except Exception as e:
+                results.append({"stmt": stmt, "error": str(e)})
+
+    return {"status": "ok", "dialect": engine.dialect.name, "results": results}
 
 
 @app.get("/health/ready", tags=["system"])
