@@ -96,7 +96,7 @@ export default function PublicPageClient({ content, webinarId, slug, isPaid, pri
           const rzpOptions = {
             key: regData.razorpay.key_id,
             amount: regData.razorpay.amount,
-            currency: regData.razorpay.currency || 'INR',
+            currency: (regData.razorpay.currency || 'INR').toUpperCase(),
             name: 'Webinar Registration',
             description: `Registration for ${content?.headline || 'Webinar'}`,
             order_id: regData.razorpay.order_id,
@@ -106,38 +106,6 @@ export default function PublicPageClient({ content, webinarId, slug, isPaid, pri
             },
             theme: {
               color: '#4f46e5',
-            },
-            config: {
-              display: {
-                blocks: {
-                  upi: {
-                    name: 'Pay via UPI / QR',
-                    instruments: [
-                      {
-                        method: 'upi',
-                      },
-                    ],
-                  },
-                  other: {
-                    name: 'Cards & NetBanking',
-                    instruments: [
-                      {
-                        method: 'card',
-                      },
-                      {
-                        method: 'netbanking',
-                      },
-                      {
-                        method: 'wallet',
-                      },
-                    ],
-                  },
-                },
-                sequence: ['block.upi', 'block.other'],
-                preferences: {
-                  show_default_blocks: true,
-                },
-              },
             },
             handler: async function (response: any) {
               try {
