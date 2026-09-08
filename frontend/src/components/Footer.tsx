@@ -57,7 +57,7 @@ export default function Footer() {
               <img
                 src="/logo.png"
                 alt="WebinarFlow.AI"
-                className="h-8 w-8 rounded-lg object-contain bg-black shadow-sm border border-white/10"
+                className="h-8 w-8 rounded-lg object-contain bg-white shadow-sm border border-white/20"
               />
               <span className="text-base font-semibold text-white">
                 WebinarFlow<span className="text-[#D6D6D6]">.AI</span>

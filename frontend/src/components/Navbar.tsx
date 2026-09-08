@@ -57,7 +57,7 @@ export default function Navbar() {
           <img
             src="/logo.png"
             alt="WebinarFlow.AI"
-            className="h-9 w-9 rounded-xl object-contain shadow-md border border-white/20 transition-transform group-hover:scale-105 bg-black/40"
+            className="h-9 w-9 rounded-xl object-contain shadow-md border border-white/20 transition-transform group-hover:scale-105 bg-white"
           />
           <span className="text-xl font-bold tracking-tight text-white">
             WebinarFlow<span className="text-[#D6D6D6]">.AI</span>

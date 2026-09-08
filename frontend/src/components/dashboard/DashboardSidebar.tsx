@@ -62,7 +62,7 @@ export function DashboardSidebar() {
         <img
           src="/logo.png"
           alt="WebinarFlow.AI"
-          className="h-8 w-8 rounded-lg object-contain bg-black shadow-sm"
+          className="h-8 w-8 rounded-lg object-contain bg-white shadow-sm border border-border/40"
         />
         <span className="text-base font-semibold tracking-tight text-foreground">
           WebinarFlow<span className="text-[#852533] dark:text-[#f8a5b2] font-bold">.AI</span>

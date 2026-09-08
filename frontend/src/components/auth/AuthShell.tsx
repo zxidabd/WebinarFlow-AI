@@ -35,7 +35,7 @@ export function AuthShell({
             <img
               src="/logo.png"
               alt="WebinarFlow.AI"
-              className="h-9 w-9 rounded-xl object-contain bg-black shadow-md border border-white/20"
+              className="h-9 w-9 rounded-xl object-contain bg-white shadow-md border border-white/20"
             />
             <span className="text-xl font-bold text-white">WebinarFlow AI</span>
           </Link>
@@ -78,7 +78,7 @@ export function AuthShell({
             <img
               src="/logo.png"
               alt="WebinarFlow.AI"
-              className="h-8 w-8 rounded-lg object-contain bg-black shadow-sm"
+              className="h-8 w-8 rounded-lg object-contain bg-white shadow-sm border border-gray-200"
             />
             <span className="text-xl font-bold text-[#2d3561]">WebinarFlow AI</span>
           </Link>
