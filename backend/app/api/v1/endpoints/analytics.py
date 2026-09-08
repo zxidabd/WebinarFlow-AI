@@ -11,6 +11,7 @@ from app.api.deps import get_current_active_user, get_current_membership, get_db
 from app.models import (
     LandingPage,
     LandingPageVisit,
+    Membership,
     Payment,
     PaymentStatus,
     Registrant,

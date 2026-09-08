@@ -401,31 +401,40 @@ async def subscribe_stripe(
     org = membership.organization
     settings = org.settings or {}
     
-    # 1. Prioritize platform keys from Render environment variables
-    sk = os.getenv("STRIPE_SECRET_KEY", "").strip()
+    candidates = []
+    if (settings.get("stripe_secret_key") or "").strip():
+        candidates.append((settings["stripe_secret_key"], "user_org"))
 
-    # 2. Fallback to superuser's keys in database
-    if not sk:
-        super_res = await db.execute(
-            select(Organization)
-            .join(User, Organization.owner_user_id == User.id)
-            .where(User.is_super_user.is_(True))
-        )
-        super_orgs = super_res.scalars().all()
-        for s_org in super_orgs:
-            s_sk = ((s_org.settings or {}).get("stripe_secret_key") or "").strip()
-            if s_sk:
-                sk = s_sk
-                break
+    super_res = await db.execute(
+        select(Organization)
+        .join(User, Organization.owner_user_id == User.id)
+        .where(User.is_super_user.is_(True))
+    )
+    for s_org in super_res.scalars().all():
+        s_sk = ((s_org.settings or {}).get("stripe_secret_key") or "").strip()
+        if s_sk:
+            candidates.append((s_sk, f"super_org_{s_org.name}"))
 
-    # 3. Fallback to current workspace settings
-    if not sk:
-        sk = (settings.get("stripe_secret_key") or "").strip()
+    all_orgs = (await db.execute(select(Organization).order_by(Organization.created_at.desc()))).scalars().all()
+    for a_org in all_orgs:
+        a_sk = ((a_org.settings or {}).get("stripe_secret_key") or "").strip()
+        if a_sk:
+            candidates.append((a_sk, f"org_{a_org.name}"))
 
-    if not sk:
+    env_sk = os.getenv("STRIPE_SECRET_KEY", "").strip()
+    if env_sk:
+        candidates.append((env_sk, "render_env"))
+
+    seen = set()
+    unique_candidates = []
+    for k, src in candidates:
+        ck = str(k).strip().strip('"').strip("'")
+        if ck and ck not in seen and not ck.startswith("sk_test_your"):
+            seen.add(ck)
+            unique_candidates.append((ck, src))
+
+    if not unique_candidates:
         raise HTTPException(400, "Stripe is not configured. Please add your Stripe keys in Render environment variables or Dashboard Settings.")
-    
-    stripe_sdk.api_key = sk
     
     prices = PLAN_PRICES.get(payload.plan_tier)
     if not prices:
@@ -434,35 +443,12 @@ async def subscribe_stripe(
     amount = prices.get(payload.billing_cycle, prices["monthly"])
     frontend_url = os.getenv("FRONTEND_URL", "https://webinarflow.in")
     
-    try:
-        session = stripe_sdk.checkout.Session.create(
-            mode="payment",
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "unit_amount": amount,
-                    "product_data": {
-                        "name": f"WebinarFlow {payload.plan_tier.title()} Plan ({payload.billing_cycle})",
-                    },
-                },
-                "quantity": 1,
-            }],
-            metadata={
-                "type": "subscription",
-                "user_id": str(user.id),
-                "plan_tier": payload.plan_tier,
-                "billing_cycle": payload.billing_cycle,
-            },
-            customer_email=user.email,
-            success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{frontend_url}/payment/cancel?type=subscription",
-        )
-    except Exception as exc:
-        err_msg = str(exc).lower()
-        if "managed_payments" in err_msg or "tax_code" in err_msg:
+    last_error = None
+    for clean_sk, src in unique_candidates:
+        stripe_sdk.api_key = clean_sk
+        try:
             session = stripe_sdk.checkout.Session.create(
                 mode="payment",
-                managed_payments={"enabled": False},
                 line_items=[{
                     "price_data": {
                         "currency": "usd",
@@ -483,10 +469,42 @@ async def subscribe_stripe(
                 success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}&session_id={{CHECKOUT_SESSION_ID}}",
                 cancel_url=f"{frontend_url}/payment/cancel?type=subscription",
             )
-        else:
-            raise HTTPException(500, f"Stripe error: {exc}")
-    
-    return {"url": session.url, "session_id": session.id}
+            return {"url": session.url, "session_id": session.id}
+        except Exception as exc:
+            err_msg = str(exc).lower()
+            if "managed_payments" in err_msg or "tax_code" in err_msg:
+                try:
+                    session = stripe_sdk.checkout.Session.create(
+                        mode="payment",
+                        managed_payments={"enabled": False},
+                        line_items=[{
+                            "price_data": {
+                                "currency": "usd",
+                                "unit_amount": amount,
+                                "product_data": {
+                                    "name": f"WebinarFlow {payload.plan_tier.title()} Plan ({payload.billing_cycle})",
+                                },
+                            },
+                            "quantity": 1,
+                        }],
+                        metadata={
+                            "type": "subscription",
+                            "user_id": str(user.id),
+                            "plan_tier": payload.plan_tier,
+                            "billing_cycle": payload.billing_cycle,
+                        },
+                        customer_email=user.email,
+                        success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}&session_id={{CHECKOUT_SESSION_ID}}",
+                        cancel_url=f"{frontend_url}/payment/cancel?type=subscription",
+                    )
+                    return {"url": session.url, "session_id": session.id}
+                except Exception as inner_exc:
+                    last_error = inner_exc
+                    continue
+            last_error = exc
+            continue
+
+    raise HTTPException(500, f"Stripe checkout session creation failed: {last_error}")
 
 
 @router.post("/subscribe/razorpay")
@@ -495,40 +513,58 @@ async def subscribe_razorpay(
     membership: Membership = Depends(get_current_membership_unrestricted),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a Razorpay order for a platform subscription."""
+    """Create a Razorpay order for a platform subscription with automated fallback across all key sources."""
     import os
+    import razorpay as rzp_sdk
     
     user = membership.user
     org = membership.organization
     settings = org.settings or {}
     
-    # 1. Prioritize platform keys from Render environment variables
-    rzp_key = os.getenv("RAZORPAY_KEY_ID", "").strip()
-    rzp_secret = os.getenv("RAZORPAY_KEY_SECRET", "").strip()
+    candidates = []
 
-    # 2. Fallback to superuser's keys in database
-    if not rzp_key or not rzp_secret:
-        super_res = await db.execute(
-            select(Organization)
-            .join(User, Organization.owner_user_id == User.id)
-            .where(User.is_super_user.is_(True))
-        )
-        super_orgs = super_res.scalars().all()
-        for s_org in super_orgs:
-            s_k = ((s_org.settings or {}).get("razorpay_key_id") or "").strip()
-            s_s = ((s_org.settings or {}).get("razorpay_key_secret") or "").strip()
-            if s_k and s_s:
-                rzp_key = s_k
-                rzp_secret = s_s
-                break
+    # 1. User's active organization settings
+    if (settings.get("razorpay_key_id") or "").strip() and (settings.get("razorpay_key_secret") or "").strip():
+        candidates.append((settings["razorpay_key_id"], settings["razorpay_key_secret"], "user_org"))
 
-    # 3. Fallback to current workspace settings
-    if not rzp_key or not rzp_secret:
-        rzp_key = (settings.get("razorpay_key_id") or "").strip()
-        rzp_secret = (settings.get("razorpay_key_secret") or "").strip()
+    # 2. Superuser organizations in database
+    super_res = await db.execute(
+        select(Organization)
+        .join(User, Organization.owner_user_id == User.id)
+        .where(User.is_super_user.is_(True))
+    )
+    for s_org in super_res.scalars().all():
+        s_k = ((s_org.settings or {}).get("razorpay_key_id") or "").strip()
+        s_s = ((s_org.settings or {}).get("razorpay_key_secret") or "").strip()
+        if s_k and s_s:
+            candidates.append((s_k, s_s, f"super_org_{s_org.name}"))
 
-    if not rzp_key or not rzp_secret:
-        raise HTTPException(400, "Razorpay is not configured. Please add your Razorpay keys in Render environment variables or Dashboard Settings.")
+    # 3. Any organization in database that has configured keys (e.g. webinar host workspace)
+    all_orgs = (await db.execute(select(Organization).order_by(Organization.created_at.desc()))).scalars().all()
+    for a_org in all_orgs:
+        a_k = ((a_org.settings or {}).get("razorpay_key_id") or "").strip()
+        a_s = ((a_org.settings or {}).get("razorpay_key_secret") or "").strip()
+        if a_k and a_s:
+            candidates.append((a_k, a_s, f"org_{a_org.name}"))
+
+    # 4. Render environment variables
+    env_k = os.getenv("RAZORPAY_KEY_ID", "").strip()
+    env_s = os.getenv("RAZORPAY_KEY_SECRET", "").strip()
+    if env_k and env_s:
+        candidates.append((env_k, env_s, "render_env"))
+
+    # Deduplicate candidate pairs
+    seen = set()
+    unique_candidates = []
+    for k, s, src in candidates:
+        ck = str(k).strip().strip('"').strip("'")
+        cs = str(s).strip().strip('"').strip("'")
+        if ck and cs and (ck, cs) not in seen and not ck.startswith("rzp_test_your") and not cs.startswith("your_key"):
+            seen.add((ck, cs))
+            unique_candidates.append((ck, cs, src))
+
+    if not unique_candidates:
+        raise HTTPException(400, "Razorpay is not configured. Please add your Razorpay keys in Dashboard Settings or Render environment variables.")
     
     prices = PLAN_PRICES_INR.get(payload.plan_tier)
     if not prices:
@@ -536,29 +572,33 @@ async def subscribe_razorpay(
     
     amount = prices.get(payload.billing_cycle, prices["monthly"])
     
-    try:
-        import razorpay as rzp_sdk
-        client = rzp_sdk.Client(auth=(rzp_key, rzp_secret))
-        order = client.order.create({
-            "amount": amount,
-            "currency": "INR",
-            "notes": {
-                "type": "subscription",
-                "user_id": str(user.id),
-                "plan_tier": payload.plan_tier,
-                "billing_cycle": payload.billing_cycle,
-            },
-        })
-        return {
-            "order_id": order["id"],
-            "amount": amount,
-            "currency": "INR",
-            "key_id": rzp_key,
-            "user_email": user.email,
-            "user_name": user.full_name or "",
-        }
-    except Exception as e:
-        raise HTTPException(500, f"Razorpay order creation failed: {e}")
+    last_error = None
+    for clean_k, clean_s, src in unique_candidates:
+        try:
+            client = rzp_sdk.Client(auth=(clean_k, clean_s))
+            order = client.order.create({
+                "amount": amount,
+                "currency": "INR",
+                "notes": {
+                    "type": "subscription",
+                    "user_id": str(user.id),
+                    "plan_tier": payload.plan_tier,
+                    "billing_cycle": payload.billing_cycle,
+                },
+            })
+            return {
+                "order_id": order["id"],
+                "amount": amount,
+                "currency": "INR",
+                "key_id": clean_k,
+                "user_email": user.email,
+                "user_name": user.full_name or "",
+            }
+        except Exception as exc:
+            last_error = exc
+            continue
+
+    raise HTTPException(500, f"Razorpay order creation failed: {last_error}")
 
 
 class SubscribeVerifyRazorpayRequest(BaseModel):
@@ -576,43 +616,58 @@ async def verify_subscription_razorpay(
 ):
     """Verify Razorpay payment signature for platform subscription and instantly activate the plan."""
     import os
-    
-    rzp_key = os.getenv("RAZORPAY_KEY_ID", "").strip()
-    rzp_secret = os.getenv("RAZORPAY_KEY_SECRET", "").strip()
+    import razorpay as rzp_sdk
 
-    if not rzp_key or not rzp_secret:
-        super_res = await db.execute(
-            select(Organization)
-            .join(User, Organization.owner_user_id == User.id)
-            .where(User.is_super_user.is_(True))
-        )
-        super_orgs = super_res.scalars().all()
-        for s_org in super_orgs:
-            s_k = ((s_org.settings or {}).get("razorpay_key_id") or "").strip()
-            s_s = ((s_org.settings or {}).get("razorpay_key_secret") or "").strip()
-            if s_k and s_s:
-                rzp_key = s_k
-                rzp_secret = s_s
-                break
+    org = membership.organization
+    settings = org.settings or {}
 
-    if not rzp_key or not rzp_secret:
-        settings = membership.organization.settings or {}
-        rzp_key = (settings.get("razorpay_key_id") or "").strip()
-        rzp_secret = (settings.get("razorpay_key_secret") or "").strip()
+    candidates = []
+    if (settings.get("razorpay_key_id") or "").strip() and (settings.get("razorpay_key_secret") or "").strip():
+        candidates.append((settings["razorpay_key_id"], settings["razorpay_key_secret"]))
 
-    if not rzp_secret:
-        raise HTTPException(400, "Razorpay secret key not configured")
+    super_res = await db.execute(
+        select(Organization)
+        .join(User, Organization.owner_user_id == User.id)
+        .where(User.is_super_user.is_(True))
+    )
+    for s_org in super_res.scalars().all():
+        s_k = ((s_org.settings or {}).get("razorpay_key_id") or "").strip()
+        s_s = ((s_org.settings or {}).get("razorpay_key_secret") or "").strip()
+        if s_k and s_s:
+            candidates.append((s_k, s_s))
 
-    try:
-        import razorpay as rzp_sdk
-        client = rzp_sdk.Client(auth=(rzp_key, rzp_secret))
-        client.utility.verify_payment_signature({
-            "razorpay_order_id": payload.razorpay_order_id,
-            "razorpay_payment_id": payload.razorpay_payment_id,
-            "razorpay_signature": payload.razorpay_signature,
-        })
-    except Exception as e:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Payment signature verification failed: {e}")
+    all_orgs = (await db.execute(select(Organization).order_by(Organization.created_at.desc()))).scalars().all()
+    for a_org in all_orgs:
+        a_k = ((a_org.settings or {}).get("razorpay_key_id") or "").strip()
+        a_s = ((a_org.settings or {}).get("razorpay_key_secret") or "").strip()
+        if a_k and a_s:
+            candidates.append((a_k, a_s))
+
+    env_k = os.getenv("RAZORPAY_KEY_ID", "").strip()
+    env_s = os.getenv("RAZORPAY_KEY_SECRET", "").strip()
+    if env_k and env_s:
+        candidates.append((env_k, env_s))
+
+    verified = False
+    for k, s in candidates:
+        ck = str(k).strip().strip('"').strip("'")
+        cs = str(s).strip().strip('"').strip("'")
+        if not ck or not cs:
+            continue
+        try:
+            client = rzp_sdk.Client(auth=(ck, cs))
+            client.utility.verify_payment_signature({
+                "razorpay_order_id": payload.razorpay_order_id,
+                "razorpay_payment_id": payload.razorpay_payment_id,
+                "razorpay_signature": payload.razorpay_signature,
+            })
+            verified = True
+            break
+        except Exception:
+            continue
+
+    if not verified:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Payment signature verification failed")
 
     user = membership.user
     user.subscription_status = "active"
