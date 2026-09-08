@@ -23,7 +23,6 @@ import {
   Sparkles,
   Settings,
   Zap,
-  History,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -94,25 +93,6 @@ export function DashboardSidebar() {
             </Link>
           );
         })}
-
-        <div className="pt-2 mt-2 border-t border-border">
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                if (window.location.pathname === '/dashboard/ai-agent') {
-                  window.dispatchEvent(new CustomEvent('open-ai-chat-history'));
-                } else {
-                  window.location.href = '/dashboard/ai-agent';
-                }
-              }
-            }}
-            className="w-full group relative flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all text-left"
-          >
-            <History className="h-4 w-4 shrink-0 text-[#852533] dark:text-[#f8a5b2]" />
-            <span>Chat History</span>
-          </button>
-        </div>
       </nav>
 
       <div className="border-t border-border p-4 text-xs text-muted-foreground">
