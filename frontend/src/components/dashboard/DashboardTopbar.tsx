@@ -7,12 +7,64 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
-import { LogOut, Menu, X, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { LogOut, Menu, X, Zap, Clock, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
+
+function TrialTimerBadge({ trialEndsAt }: { trialEndsAt: string }) {
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number } | null>(null);
+
+  useEffect(() => {
+    function update() {
+      const now = new Date().getTime();
+      const end = new Date(trialEndsAt).getTime();
+      const diff = end - now;
+
+      if (diff <= 0) {
+        setTimeLeft(null);
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setTimeLeft({ days, hours, minutes });
+    }
+
+    update();
+    const interval = setInterval(update, 60000); // refresh every minute
+    return () => clearInterval(interval);
+  }, [trialEndsAt]);
+
+  if (!timeLeft) return null;
+
+  return (
+    <Link
+      href="/dashboard/settings"
+      className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-600 dark:text-amber-400 transition-all shadow-sm"
+      title="Click to upgrade"
+    >
+      <Clock className="h-3.5 w-3.5 animate-pulse text-amber-500" />
+      <span>
+        {timeLeft.days > 0 ? (
+          <>
+            <strong>{timeLeft.days}d {timeLeft.hours}h</strong> left
+          </>
+        ) : (
+          <>
+            <strong>{timeLeft.hours}h {timeLeft.minutes}m</strong> left
+          </>
+        )}
+      </span>
+      <span className="hidden sm:inline text-[10px] uppercase font-bold tracking-wider bg-amber-500 text-white dark:text-black px-1.5 py-0.2 rounded-full">
+        Upgrade
+      </span>
+    </Link>
+  );
+}
 
 function initials(nameOrEmail: string): string {
   const source = nameOrEmail.trim();
@@ -69,6 +121,11 @@ export function DashboardTopbar() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Live Free Trial Countdown Badge */}
+            {user?.subscription_status === 'trialing' && user?.trial_ends_at && (
+              <TrialTimerBadge trialEndsAt={user.trial_ends_at} />
+            )}
+
             <div className="hidden items-center gap-2.5 sm:flex">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#852533] text-xs font-semibold text-white shadow-sm shadow-[#852533]/20">
                 {initials(displayName)}
