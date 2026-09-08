@@ -19,6 +19,12 @@ import {
   Mail,
   ListOrdered,
   ChevronRight,
+  Plus,
+  Trash2,
+  Clock,
+  History,
+  X,
+  PanelLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +32,58 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import * as aiApi from '@/lib/ai-api';
+
+interface ChatSession {
+  id: string;
+  title: string;
+  category: 'recent' | 'funnels' | 'copy';
+  createdAt: number;
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+}
+
+const INITIAL_SESSIONS: ChatSession[] = [
+  {
+    id: 'session-welcome',
+    title: 'Getting Started with AI Agent',
+    category: 'recent',
+    createdAt: Date.now(),
+    messages: [
+      {
+        role: 'assistant',
+        content:
+          '👋 Hello! I am your **WebinarFlow AI Agent**.\n\nI can build complete 11-section webinar funnels, write high-converting email sequences, answer technical questions, and help optimize your conversion rates.\n\nWhat would you like to create or ask today?',
+      },
+    ],
+  },
+  {
+    id: 'session-funnel-strategy',
+    title: 'High-Converting Webinar Funnel Strategy',
+    category: 'funnels',
+    createdAt: Date.now() - 3600000 * 2,
+    messages: [
+      { role: 'user', content: 'What is the highest converting structure for a 45-minute webinar pitch?' },
+      {
+        role: 'assistant',
+        content:
+          '### High-Converting Webinar Structure:\n\n1. **The Hook (0-5 min)**: State the #1 bottleneck and make a big promise.\n2. **The Origin Story (5-15 min)**: Why conventional advice fails.\n3. **Core Pillars (15-35 min)**: 3 actionable frameworks with social proof.\n4. **The Offer Pitch (35-42 min)**: Value stack, bonuses, and time-sensitive CTA.\n5. **Live Q&A (42-45+ min)**: Answer technical and pricing objections.',
+      },
+    ],
+  },
+  {
+    id: 'session-email-sequence',
+    title: 'Urgent 1-Hour Reminder Email Copy',
+    category: 'copy',
+    createdAt: Date.now() - 86400000,
+    messages: [
+      { role: 'user', content: 'Write an urgent 1-hour before webinar reminder email.' },
+      {
+        role: 'assistant',
+        content:
+          '**Subject**: [STARTING IN 60 MIN] Join the live masterclass now!\n\n**Body**:\nHey there,\n\nWe are going live in exactly 60 minutes! Click the link below to enter the live room early and grab your seat before we hit capacity:\n\n👉 **[Enter Live Webinar Room]**\n\nSee you inside!',
+      },
+    ],
+  },
+];
 
 // Formatted Chat Message Renderer with Code Highlight & Copy
 function ChatMessageContent({ content }: { content: string }) {
@@ -105,22 +163,22 @@ function renderMarkdownBlocks(text: string, partIndex: number) {
       const dataRows = tableRows.slice(1);
 
       elements.push(
-        <div key={key} className="my-2 overflow-x-auto rounded-lg border border-[#5a1a23]/50 shadow-sm">
+        <div key={key} className="my-2 overflow-x-auto rounded-lg border border-[#C7D2FE] shadow-sm">
           <table className="w-full text-[11px] text-left border-collapse">
-            <thead className="bg-[#240a0f] text-[#f8d7dc] border-b border-[#5a1a23]/50 uppercase tracking-wider text-[10px]">
+            <thead className="bg-[#E0E7FF] text-[#1E1B4B] border-b border-[#C7D2FE] uppercase tracking-wider text-[10px]">
               <tr>
                 {headerRow.map((cell, idx) => (
-                  <th key={idx} className="px-3 py-2 font-bold border-r border-[#5a1a23]/30 last:border-r-0">
+                  <th key={idx} className="px-3 py-2 font-bold border-r border-[#C7D2FE] last:border-r-0">
                     {renderInlineMarkdown(cell.trim())}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#5a1a23]/30 bg-black/40">
+            <tbody className="divide-y divide-[#C7D2FE] bg-white/50">
               {dataRows.map((row, rIdx) => (
-                <tr key={rIdx} className="hover:bg-[#380f15]/30 transition-colors">
+                <tr key={rIdx} className="hover:bg-[#EEF2FF] transition-colors">
                   {row.map((cell, cIdx) => (
-                    <td key={cIdx} className="px-3 py-1.5 border-r border-[#5a1a23]/30 last:border-r-0 text-gray-200">
+                    <td key={cIdx} className="px-3 py-1.5 border-r border-[#C7D2FE] last:border-r-0 text-[#1E1B4B]">
                       {renderInlineMarkdown(cell.trim())}
                     </td>
                   ))}
@@ -252,17 +310,41 @@ export default function AIAgentFullPage() {
   const [isDeploying, setIsDeploying] = useState(false);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
-  // Chat State
+  // Chat State with Multiple Sessions
+  const [sessions, setSessions] = useState<ChatSession[]>(INITIAL_SESSIONS);
+  const [activeSessionId, setActiveSessionId] = useState<string>('session-welcome');
+  const [showMobileHistory, setShowMobileHistory] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
-    {
-      role: 'assistant',
-      content:
-        '👋 Hello! I am your **WebinarFlow AI Agent**.\n\nI can build complete 11-section webinar funnels, write high-converting email sequences, answer technical questions, and help optimize your conversion rates.\n\nWhat would you like to create or ask today?',
-    },
-  ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // Load chat sessions from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('webinarflow_ai_chat_sessions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSessions(parsed);
+          setActiveSessionId(parsed[0].id);
+        }
+      }
+    } catch {
+      // Graceful fallback to default sessions
+    }
+  }, []);
+
+  // Sync chat sessions to localStorage
+  const saveSessions = (updated: ChatSession[]) => {
+    setSessions(updated);
+    try {
+      localStorage.setItem('webinarflow_ai_chat_sessions', JSON.stringify(updated));
+    } catch {
+      // Handled gracefully
+    }
+  };
+
+  const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0] || INITIAL_SESSIONS[0];
 
   useEffect(() => {
     aiApi
@@ -282,7 +364,42 @@ export default function AIAgentFullPage() {
     if (activeTab === 'chat') {
       chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatMessages, activeTab]);
+  }, [activeSession?.messages, activeTab]);
+
+  const handleCreateNewChat = () => {
+    const newId = `session-${Date.now()}`;
+    const newChat: ChatSession = {
+      id: newId,
+      title: 'New Conversation',
+      category: 'recent',
+      createdAt: Date.now(),
+      messages: [
+        {
+          role: 'assistant',
+          content: '👋 Hi! What would you like to explore, draft, or code today?',
+        },
+      ],
+    };
+    const updated = [newChat, ...sessions];
+    saveSessions(updated);
+    setActiveSessionId(newId);
+    setShowMobileHistory(false);
+    toast.success('Started a new chat session');
+  };
+
+  const handleDeleteChat = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (sessions.length <= 1) {
+      toast.error('Cannot delete the last remaining chat session.');
+      return;
+    }
+    const updated = sessions.filter((s) => s.id !== sessionId);
+    saveSessions(updated);
+    if (activeSessionId === sessionId) {
+      setActiveSessionId(updated[0].id);
+    }
+    toast.success('Chat removed from history');
+  };
 
   const handleGenerateFunnel = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -350,11 +467,32 @@ export default function AIAgentFullPage() {
 
     const userText = chatInput.trim();
     setChatInput('');
+
+    // Determine updated session title if it's currently generic
+    const currentTitle = activeSession.title;
+    const shouldRename = currentTitle === 'New Conversation' || currentTitle === 'Getting Started with AI Agent';
+    const newTitle = shouldRename ? userText.slice(0, 32) + (userText.length > 32 ? '...' : '') : currentTitle;
+
+    // Determine category based on keywords
+    let category: 'recent' | 'funnels' | 'copy' = activeSession.category;
+    const lower = userText.toLowerCase();
+    if (lower.includes('funnel') || lower.includes('webinar') || lower.includes('landing') || lower.includes('agenda')) {
+      category = 'funnels';
+    } else if (lower.includes('email') || lower.includes('headline') || lower.includes('copy') || lower.includes('subject')) {
+      category = 'copy';
+    }
+
     const newConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
-      ...chatMessages,
+      ...activeSession.messages,
       { role: 'user', content: userText },
     ];
-    setChatMessages(newConvo);
+
+    const updatedSessions = sessions.map((s) =>
+      s.id === activeSession.id
+        ? { ...s, title: newTitle, category, messages: newConvo }
+        : s
+    );
+    saveSessions(updatedSessions);
     setIsChatLoading(true);
 
     try {
@@ -362,19 +500,36 @@ export default function AIAgentFullPage() {
         messages: newConvo,
         model: selectedModel,
       });
-      setChatMessages([...newConvo, { role: 'assistant', content: res.reply }]);
+
+      const finalConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
+        ...newConvo,
+        { role: 'assistant', content: res.reply },
+      ];
+
+      const withAssistantReply = updatedSessions.map((s) =>
+        s.id === activeSession.id ? { ...s, messages: finalConvo } : s
+      );
+      saveSessions(withAssistantReply);
     } catch {
-      setChatMessages([
+      const fallbackConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
         ...newConvo,
         {
           role: 'assistant',
-          content: 'I have analyzed your request. You can configure your campaign in the "1-Click Funnel Generator" tab or ask any question!',
+          content: 'I have analyzed your request. You can configure your campaign in the "1-Click Funnel Generator" tab or ask any follow-up question!',
         },
-      ]);
+      ];
+      const withFallback = updatedSessions.map((s) =>
+        s.id === activeSession.id ? { ...s, messages: fallbackConvo } : s
+      );
+      saveSessions(withFallback);
     } finally {
       setIsChatLoading(false);
     }
   };
+
+  const recentSessions = sessions.filter((s) => s.category === 'recent');
+  const funnelSessions = sessions.filter((s) => s.category === 'funnels');
+  const copySessions = sessions.filter((s) => s.category === 'copy');
 
   return (
     <div className="space-y-6 pb-12">
@@ -829,69 +984,267 @@ export default function AIAgentFullPage() {
         </div>
       )}
 
-      {/* Tab 2: AI Co-Pilot Chat */}
+      {/* Tab 2: AI Co-Pilot Chat with ChatGPT-Style Chat History Sidebar */}
       {activeTab === 'chat' && (
-        <div className="flex flex-col bg-white dark:bg-[#140507]/90 border border-neutral-200 dark:border-[#5a1a23]/50 rounded-2xl overflow-hidden shadow-sm min-h-[600px] h-[75vh]">
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-            {chatMessages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+        <div className="flex flex-col md:flex-row bg-white dark:bg-[#140507]/90 border border-neutral-200 dark:border-[#5a1a23]/50 rounded-2xl overflow-hidden shadow-lg min-h-[650px] h-[78vh]">
+          {/* Mobile Chat History Drawer Backdrop */}
+          {showMobileHistory && (
+            <div
+              onClick={() => setShowMobileHistory(false)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+            />
+          )}
+
+          {/* Left Chat History Sidebar (ChatGPT Style with Sections & White Text) */}
+          <aside
+            className={`fixed inset-y-0 left-0 z-50 w-72 md:static md:z-auto md:w-64 lg:w-72 flex flex-col bg-[#120406] border-r border-[#5a1a23]/60 text-white transition-transform duration-300 ease-in-out ${
+              showMobileHistory ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+            }`}
+          >
+            {/* Sidebar Top: New Chat CTA */}
+            <div className="p-3.5 border-b border-[#5a1a23]/50 flex items-center justify-between gap-2">
+              <Button
+                onClick={handleCreateNewChat}
+                className="flex-1 bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/50 shadow-md font-semibold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all hover:scale-[1.01]"
               >
-                {msg.role === 'assistant' && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#4F46E5] text-white border border-[#4338CA] text-xs font-bold shadow-sm">
-                    AI
+                <Plus className="h-4 w-4 text-[#f8d7dc]" />
+                <span>New Chat</span>
+              </Button>
+
+              <button
+                onClick={() => setShowMobileHistory(false)}
+                className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Chat Sessions Grouped into Categorized Sections with Clear Headings and White Text */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+              {/* Section 1: Recent Chats */}
+              {recentSessions.length > 0 && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
+                    <Clock className="h-3 w-3 text-[#f8a5b2]" />
+                    <span>Recent Chats</span>
                   </div>
-                )}
-                <div
-                  className={`max-w-2xl rounded-2xl px-4 py-3 text-xs leading-relaxed ${
-                    msg.role === 'user'
-                      ? 'bg-[#852533] text-white border border-[#a63344]/40 shadow-sm'
-                      : 'bg-[#EEF2FF] text-[#1E1B4B] border border-[#C7D2FE] shadow-sm'
-                  }`}
+                  <div className="space-y-0.5">
+                    {recentSessions.map((s) => (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          setActiveSessionId(s.id);
+                          setShowMobileHistory(false);
+                        }}
+                        className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
+                          activeSessionId === s.id
+                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
+                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <MessageSquare className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-[#f8a5b2]' : 'text-gray-400'}`} />
+                          <span className="truncate text-white font-medium">{s.title}</span>
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteChat(s.id, e)}
+                          title="Delete chat"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400 transition-opacity"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Section 2: Funnel Discussions */}
+              {funnelSessions.length > 0 && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
+                    <Wand2 className="h-3 w-3 text-amber-400" />
+                    <span>Funnel Discussions</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {funnelSessions.map((s) => (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          setActiveSessionId(s.id);
+                          setShowMobileHistory(false);
+                        }}
+                        className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
+                          activeSessionId === s.id
+                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
+                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <Zap className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-amber-400' : 'text-gray-400'}`} />
+                          <span className="truncate text-white font-medium">{s.title}</span>
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteChat(s.id, e)}
+                          title="Delete chat"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400 transition-opacity"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Section 3: Marketing & Copy */}
+              {copySessions.length > 0 && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
+                    <Sparkles className="h-3 w-3 text-pink-400" />
+                    <span>Marketing & Copy</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {copySessions.map((s) => (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          setActiveSessionId(s.id);
+                          setShowMobileHistory(false);
+                        }}
+                        className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
+                          activeSessionId === s.id
+                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
+                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <FileText className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-pink-400' : 'text-gray-400'}`} />
+                          <span className="truncate text-white font-medium">{s.title}</span>
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteChat(s.id, e)}
+                          title="Delete chat"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400 transition-opacity"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar Bottom Footer */}
+            <div className="p-3 border-t border-[#5a1a23]/50 text-[11px] text-[#f8d7dc]/70 flex items-center justify-between">
+              <span className="font-semibold text-white">Chat Memory Saved</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            </div>
+          </aside>
+
+          {/* Right Main Chat Area */}
+          <div className="flex-1 flex flex-col min-w-0 bg-[#0f0406]/50 dark:bg-black/40">
+            {/* Top Chat Bar: Mobile Toggle + Active Chat Title */}
+            <div className="px-4 py-3 bg-neutral-50 dark:bg-[#190609]/90 border-b border-neutral-200 dark:border-[#5a1a23]/50 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 truncate">
+                {/* Mobile Drawer Trigger */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowMobileHistory(true)}
+                  className="md:hidden border-neutral-300 dark:border-[#5a1a23]/60 bg-white dark:bg-black/50 text-neutral-800 dark:text-white text-xs px-2.5 h-8 flex items-center gap-1.5"
                 >
-                  {msg.role === 'user' ? (
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  ) : (
-                    <div className="text-[#1E1B4B]">
-                      <ChatMessageContent content={msg.content} />
+                  <PanelLeft className="h-4 w-4" />
+                  <span>History</span>
+                </Button>
+
+                <div className="truncate">
+                  <h3 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white truncate">
+                    {activeSession.title}
+                  </h3>
+                  <span className="text-[10px] text-neutral-500 dark:text-[#f8d7dc]/70 font-medium">
+                    {activeSession.messages.length} messages · Model: {selectedModel}
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCreateNewChat}
+                className="text-xs text-neutral-600 dark:text-gray-300 hover:text-neutral-900 dark:hover:text-white flex items-center gap-1 h-8 px-2.5"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">New Chat</span>
+              </Button>
+            </div>
+
+            {/* Chat Messages Feed */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {activeSession.messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  {msg.role === 'assistant' && (
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#4F46E5] text-white border border-[#4338CA] text-xs font-bold shadow-sm">
+                      AI
                     </div>
                   )}
+                  <div
+                    className={`max-w-2xl rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-[#852533] text-white border border-[#a63344]/40 shadow-sm font-medium'
+                        : 'bg-[#EEF2FF] text-[#1E1B4B] border border-[#C7D2FE] shadow-sm'
+                    }`}
+                  >
+                    {msg.role === 'user' ? (
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    ) : (
+                      <div className="text-[#1E1B4B]">
+                        <ChatMessageContent content={msg.content} />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {isChatLoading && (
-              <div className="flex gap-3 justify-start">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#4F46E5] text-white border border-[#4338CA] text-xs font-bold">
-                  AI
+              ))}
+              {isChatLoading && (
+                <div className="flex gap-3 justify-start">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#4F46E5] text-white border border-[#4338CA] text-xs font-bold">
+                    AI
+                  </div>
+                  <div className="rounded-2xl bg-[#EEF2FF] border border-[#C7D2FE] px-4 py-3 text-xs text-[#1E1B4B] flex items-center gap-2 shadow-sm font-medium">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#4F46E5]" />
+                    Thinking and synthesizing response...
+                  </div>
                 </div>
-                <div className="rounded-2xl bg-[#EEF2FF] border border-[#C7D2FE] px-4 py-3 text-xs text-[#1E1B4B] flex items-center gap-2 shadow-sm font-medium">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#4F46E5]" />
-                  Thinking and synthesizing response...
-                </div>
-              </div>
-            )}
-            <div ref={chatBottomRef} />
-          </div>
+              )}
+              <div ref={chatBottomRef} />
+            </div>
 
-          {/* Chat Input */}
-          <form onSubmit={handleSendMessage} className="p-3 sm:p-4 bg-neutral-50 dark:bg-black/60 border-t border-neutral-200 dark:border-[#5a1a23]/40 flex gap-2">
-            <Input
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Ask your AI Agent anything (e.g. 'write a 3-day reminder sequence', 'generate high-converting webinar headlines')..."
-              className="bg-white dark:bg-black/60 border-neutral-300 dark:border-[#5a1a23]/60 text-neutral-900 dark:text-white text-xs sm:text-sm"
-            />
-            <Button
-              type="submit"
-              disabled={isChatLoading || !chatInput.trim()}
-              className="bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 px-5 font-semibold text-xs shadow-md shrink-0 transition-all hover:scale-[1.02]"
+            {/* Chat Message Input Composer */}
+            <form
+              onSubmit={handleSendMessage}
+              className="p-3 sm:p-4 bg-neutral-50 dark:bg-black/60 border-t border-neutral-200 dark:border-[#5a1a23]/40 flex gap-2"
             >
-              <Send className="h-3.5 w-3.5 mr-1 text-[#f8d7dc]" />
-              Send
-            </Button>
-          </form>
+              <Input
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask your AI Agent anything (e.g. 'write a 3-day reminder sequence', 'generate high-converting webinar headlines')..."
+                className="bg-white dark:bg-black/60 border-neutral-300 dark:border-[#5a1a23]/60 text-neutral-900 dark:text-white text-xs sm:text-sm"
+              />
+              <Button
+                type="submit"
+                disabled={isChatLoading || !chatInput.trim()}
+                className="bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 px-5 font-semibold text-xs shadow-md shrink-0 transition-all hover:scale-[1.02]"
+              >
+                <Send className="h-3.5 w-3.5 mr-1 text-[#f8d7dc]" />
+                Send
+              </Button>
+            </form>
+          </div>
         </div>
       )}
     </div>
