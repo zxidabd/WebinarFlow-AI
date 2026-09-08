@@ -206,22 +206,22 @@ export default function BillingPage() {
                 <div className="space-y-2 pt-2 border-t border-border">
                   <Button
                     onClick={() => handleSubscribe(plan.tier, 'stripe')}
-                    disabled={Boolean(loading) || isCurrentPlan}
+                    disabled={Boolean(loading)}
                     className="w-full bg-[#4a6cf7] hover:bg-[#3b5bd8] text-white flex items-center justify-center gap-2"
                   >
                     <CreditCard className="w-4 h-4" />
-                    Pay with Card (Stripe)
+                    {isCurrentPlan ? 'Renew with Card (Stripe)' : 'Pay with Card (Stripe)'}
                     <ArrowRight className="w-3.5 h-3.5 ml-auto" />
                   </Button>
 
                   <Button
                     onClick={() => handleSubscribe(plan.tier, 'razorpay')}
-                    disabled={Boolean(loading) || isCurrentPlan}
+                    disabled={Boolean(loading)}
                     variant="outline"
                     className="w-full flex items-center justify-center gap-2 border-border hover:bg-muted"
                   >
                     <Zap className="w-4 h-4 text-blue-500" />
-                    Pay with UPI / Cards (Razorpay)
+                    {isCurrentPlan ? 'Renew with UPI / Cards (Razorpay)' : 'Pay with UPI / Cards (Razorpay)'}
                     <ArrowRight className="w-3.5 h-3.5 ml-auto" />
                   </Button>
                 </div>

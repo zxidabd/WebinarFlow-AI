@@ -24,7 +24,7 @@ from app.api.deps import (
     get_current_membership_unrestricted,
     get_db,
 )
-from app.models import Membership, Payment, PaymentStatus, Registrant, Webinar
+from app.models import Membership, Organization, Payment, PaymentStatus, Registrant, User, Webinar
 from app.api.v1.endpoints.organizations import (
     PaymentKeysPayload,
     _format_payment_keys,
