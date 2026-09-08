@@ -8,7 +8,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { LogOut, Menu, X, Zap, History } from 'lucide-react';
+import { LogOut, Menu, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -27,8 +27,6 @@ export function DashboardTopbar() {
   const { user, organization, logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-
-  const isAiAgentPage = pathname?.startsWith('/dashboard/ai-agent');
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -71,21 +69,6 @@ export function DashboardTopbar() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {isAiAgentPage && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('open-ai-chat-history'));
-                }}
-                className="bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#45141B] hover:from-[#7d232f] hover:to-[#551824] text-white border border-[#a63344] text-xs px-2.5 h-8 flex items-center gap-1.5 shadow-md font-semibold transition-all hover:scale-105 active:scale-95"
-                title="Open Chat History"
-              >
-                <History className="h-4 w-4 text-[#f8a5b2]" />
-                <span className="font-semibold text-xs">Chat History</span>
-              </Button>
-            )}
-
             <div className="hidden items-center gap-2.5 sm:flex">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#45141B] text-xs font-semibold text-white shadow-sm shadow-[#45141B]/20">
                 {initials(displayName)}

@@ -313,21 +313,12 @@ export default function AIAgentFullPage() {
   // Chat State with Multiple Sessions
   const [sessions, setSessions] = useState<ChatSession[]>(INITIAL_SESSIONS);
   const [activeSessionId, setActiveSessionId] = useState<string>('session-welcome');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showMobileHistory, setShowMobileHistory] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
-  // Listen for global 'open-ai-chat-history' event dispatched from topbar or other components
-  useEffect(() => {
-    const handleOpenHistory = () => {
-      setActiveTab('chat');
-      setShowMobileHistory(true);
-    };
-    window.addEventListener('open-ai-chat-history', handleOpenHistory);
-    return () => window.removeEventListener('open-ai-chat-history', handleOpenHistory);
-  }, []);
 
   // Load chat sessions from localStorage on mount
   useEffect(() => {
@@ -597,20 +588,6 @@ export default function AIAgentFullPage() {
               AI Co-Pilot Chat
             </button>
           </div>
-
-          {/* Quick Chat History Button in Top Header */}
-          <Button
-            size="sm"
-            onClick={() => {
-              setActiveTab('chat');
-              setShowMobileHistory(true);
-            }}
-            className="bg-[#2b0c11] hover:bg-[#3d1219] text-white border border-[#a63344]/70 text-xs px-3.5 h-9 rounded-xl flex items-center gap-2 shadow-md font-semibold transition-all hover:scale-105 active:scale-95"
-            title="Open Chat History"
-          >
-            <History className="h-4 w-4 text-[#f8a5b2]" />
-            <span>Chat History ({sessions.length})</span>
-          </Button>
         </div>
       </div>
 
@@ -1153,10 +1130,14 @@ export default function AIAgentFullPage() {
             </div>
           )}
 
-          {/* Desktop Persistent Chat History Sidebar - Clean White Background with Black Text */}
-          <aside className="hidden md:flex w-64 lg:w-72 flex-col bg-white border-r border-neutral-200 text-neutral-900 shrink-0">
-            {/* Sidebar Top: New Chat CTA */}
-            <div className="p-3.5 border-b border-neutral-200 flex items-center justify-between gap-2 bg-white">
+          {/* Desktop Persistent / Collapsible Chat History Sidebar - Clean White Background with Black Text */}
+          <aside
+            className={`hidden md:flex flex-col bg-white border-r border-neutral-200 text-neutral-900 shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
+              isSidebarOpen ? 'w-64 lg:w-72' : 'w-0 border-r-0'
+            }`}
+          >
+            {/* Sidebar Top: New Chat CTA + Close Sidebar Button */}
+            <div className="p-3.5 border-b border-neutral-200 flex items-center justify-between gap-2 bg-white min-w-[250px]">
               <Button
                 onClick={handleCreateNewChat}
                 className="flex-1 bg-neutral-900 hover:bg-black text-white border border-neutral-800 shadow-md font-semibold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all hover:scale-[1.01]"
@@ -1164,10 +1145,19 @@ export default function AIAgentFullPage() {
                 <Plus className="h-4 w-4 text-white" />
                 <span>New Chat</span>
               </Button>
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-2 rounded-xl text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors"
+                title="Collapse sidebar"
+                aria-label="Collapse sidebar"
+              >
+                <PanelLeft className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Chat Sessions Grouped into Categorized Sections with Clear Headings and Black Text */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-4 bg-white">
+            <div className="flex-1 overflow-y-auto p-3 space-y-4 bg-white min-w-[250px]">
               {/* Section 1: Recent Chats */}
               {recentSessions.length > 0 && (
                 <div className="space-y-1">
@@ -1275,7 +1265,7 @@ export default function AIAgentFullPage() {
             </div>
 
             {/* Sidebar Bottom Footer */}
-            <div className="p-3 border-t border-neutral-200 text-[11px] text-neutral-600 flex items-center justify-between bg-neutral-50">
+            <div className="p-3 border-t border-neutral-200 text-[11px] text-neutral-600 flex items-center justify-between bg-neutral-50 min-w-[250px]">
               <span className="font-semibold text-neutral-800">Chat Memory Saved</span>
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
             </div>
@@ -1285,17 +1275,28 @@ export default function AIAgentFullPage() {
           <div className="flex-1 flex flex-col min-w-0 bg-black relative">
             {/* Top Chat Bar: Always Sticky at Top, High Contrast, Pure Black with White Text */}
             <div className="sticky top-0 z-20 px-3 sm:px-4 py-2.5 sm:py-3 bg-black border-b border-neutral-800 flex items-center justify-between gap-2 sm:gap-3 text-white shadow-md">
-              <div className="flex items-center gap-2 truncate flex-1 min-w-0">
-                {/* Mobile Button to open Full History Modal */}
-                <Button
-                  size="sm"
-                  onClick={() => setShowMobileHistory(true)}
-                  className="md:hidden bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 text-xs px-2.5 h-8 flex items-center gap-1.5 shrink-0 shadow-md font-semibold active:scale-95 transition-all"
-                  title="Open Chat History"
+              <div className="flex items-center gap-2.5 truncate flex-1 min-w-0">
+                {/* Desktop Sidebar Toggle Icon */}
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarOpen((prev) => !prev)}
+                  className="hidden md:flex items-center justify-center p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors border border-neutral-700/60"
+                  title={isSidebarOpen ? 'Collapse chat history sidebar' : 'Open chat history sidebar'}
+                  aria-label="Toggle chat history sidebar"
                 >
-                  <History className="h-4 w-4 text-white" />
-                  <span>History ({sessions.length})</span>
-                </Button>
+                  <PanelLeft className="h-4 w-4" />
+                </button>
+
+                {/* Mobile Toggle Icon to open Full History Modal */}
+                <button
+                  type="button"
+                  onClick={() => setShowMobileHistory(true)}
+                  className="md:hidden flex items-center justify-center p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors border border-neutral-700/60"
+                  title="Open Chat History"
+                  aria-label="Open Chat History"
+                >
+                  <PanelLeft className="h-4 w-4" />
+                </button>
 
                 {/* Mobile Direct Dropdown Switcher */}
                 <div className="md:hidden flex-1 min-w-0">
@@ -1328,14 +1329,15 @@ export default function AIAgentFullPage() {
               </div>
 
               {/* Quick Actions: New Chat */}
-              <Button
-                size="sm"
+              <button
+                type="button"
                 onClick={handleCreateNewChat}
-                className="bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 text-xs h-8 px-3 font-semibold shadow-sm shrink-0 flex items-center gap-1 active:scale-95 transition-transform"
+                className="p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors border border-neutral-700/60"
+                title="New Chat"
+                aria-label="New Chat"
               >
-                <Plus className="h-3.5 w-3.5 text-white" />
-                <span className="hidden xs:inline">New Chat</span>
-              </Button>
+                <Plus className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Chat Messages Feed - Pure Solid Black */}
@@ -1380,17 +1382,6 @@ export default function AIAgentFullPage() {
               )}
               <div ref={chatBottomRef} />
             </div>
-
-            {/* Mobile Floating Action Button: Instant 1-Tap Access to Chat History */}
-            <button
-              type="button"
-              onClick={() => setShowMobileHistory(true)}
-              className="md:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-white text-black font-bold text-xs shadow-2xl border border-neutral-300 transition-all duration-200 active:scale-90 hover:scale-105"
-              aria-label="Open Chat History"
-            >
-              <History className="h-4 w-4 text-black animate-pulse" />
-              <span>History ({sessions.length})</span>
-            </button>
 
             {/* Chat Message Input Composer - Pure Solid Black */}
             <form
