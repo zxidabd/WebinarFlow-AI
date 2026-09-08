@@ -48,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Webinars', href: '/dashboard/webinars', icon: Video, matchPrefix: '/dashboard/webinars' },
   { label: 'Payments', href: '/dashboard/payments', icon: CreditCard, matchPrefix: '/dashboard/payments' },
   { label: 'AI Agent', href: '/dashboard/ai-agent', icon: Sparkles, matchPrefix: '/dashboard/ai-agent' },
+  { label: 'Billing & Plans', href: '/dashboard/billing', icon: Zap, matchPrefix: '/dashboard/billing' },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings, matchPrefix: '/dashboard/settings' },
   { label: 'Admin', href: '/dashboard/admin', icon: Shield, matchPrefix: '/dashboard/admin', superuserOnly: true },
 ];

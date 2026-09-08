@@ -43,7 +43,7 @@ function TrialTimerBadge({ trialEndsAt }: { trialEndsAt: string }) {
 
   return (
     <Link
-      href="/dashboard/settings"
+      href="/dashboard/billing"
       className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-600 dark:text-amber-400 transition-all shadow-sm"
       title="Click to upgrade"
     >

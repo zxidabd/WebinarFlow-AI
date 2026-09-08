@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white text-center py-1.5 px-4 text-sm font-medium">
       ⏱️ Free Trial: {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining
       <span className="mx-2">|</span>
-      <a href="/dashboard/settings" className="underline underline-offset-2 hover:text-white/90 font-semibold">
+      <a href="/dashboard/billing" className="underline underline-offset-2 hover:text-white/90 font-semibold">
         Upgrade Now →
       </a>
     </div>
