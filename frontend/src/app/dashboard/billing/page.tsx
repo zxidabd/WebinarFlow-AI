@@ -191,7 +191,7 @@ export default function BillingPage() {
 
               <CardContent className="space-y-6">
                 <div className="space-y-2.5 border-t border-border pt-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">What's Included:</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">What&apos;s Included:</p>
                   <ul className="space-y-2 text-xs">
                     {plan.features.map((feat, i) => (
                       <li key={i} className="flex items-center gap-2 text-foreground">
