@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -9,13 +9,15 @@ export function FloatingAIAssistant() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  // If already on the dedicated full-page AI Agent screen, don't show the quick popover
-  const isAiAgentPage = pathname?.startsWith('/dashboard/ai-agent');
+  // If already on the dedicated full-page AI Agent screen, do not show the floating assistant widget at all
+  if (pathname?.startsWith('/dashboard/ai-agent')) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none select-none">
       {/* Quick Launch Popover Card */}
-      {isOpen && !isAiAgentPage && (
+      {isOpen && (
         <div className="pointer-events-auto mb-3 w-80 sm:w-88 rounded-2xl border border-purple-500/30 bg-neutral-950/95 backdrop-blur-xl p-4 shadow-2xl shadow-purple-950/50 text-white animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-center justify-between pb-3 border-b border-purple-500/20">
             <div className="flex items-center gap-2.5">
@@ -113,10 +115,7 @@ export function FloatingAIAssistant() {
         {/* Floating Glowing Orb Button */}
         <button
           type="button"
-          onClick={() => {
-            if (isAiAgentPage) return;
-            setIsOpen((prev) => !prev);
-          }}
+          onClick={() => setIsOpen((prev) => !prev)}
           className="relative flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-full transition-transform duration-300 active:scale-95 group-hover:scale-110 focus:outline-none"
           title="WebinarFlow AI+"
           aria-label="WebinarFlow AI+"

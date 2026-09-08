@@ -1,3 +1,6 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
@@ -5,8 +8,24 @@ import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 /**
  * Signed-in dashboard shell. Respects light/dark theme from next-themes.
  * Gated by RequireAuth — an unauthenticated visitor is redirected to /login.
+ * 
+ * For /dashboard/ai-agent, renders an edge-to-edge full-page ChatGPT layout
+ * without outer scrolling or standard dashboard chrome.
  */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAiAgent = pathname?.startsWith('/dashboard/ai-agent');
+
+  if (isAiAgent) {
+    return (
+      <RequireAuth>
+        <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#0b0305] text-white">
+          {children}
+        </div>
+      </RequireAuth>
+    );
+  }
+
   return (
     <RequireAuth>
       <div className="min-h-screen bg-background text-foreground">
