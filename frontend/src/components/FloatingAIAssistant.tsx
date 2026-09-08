@@ -10,8 +10,8 @@ export function FloatingAIAssistant() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  // If already on the dedicated full-page AI Agent screen, do not show the floating assistant widget at all
-  if (pathname?.startsWith('/dashboard/ai-agent')) {
+  // If already on the dedicated full-page AI Agent screen or on public published webinar landing pages (/r/[slug]), do not show the floating assistant widget at all
+  if (pathname?.startsWith('/dashboard/ai-agent') || pathname?.startsWith('/r/')) {
     return null;
   }
 
