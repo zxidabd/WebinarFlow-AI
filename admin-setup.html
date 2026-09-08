@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head><title>WebinarFlow Admin Setup</title></head>
+<body style="font-family: Arial; max-width: 400px; margin: 100px auto; text-align: center;">
+  <h2>Make Yourself Admin</h2>
+  <p>Enter your WebinarFlow email:</p>
+  <input id="email" type="email" placeholder="your@email.com" style="width: 100%; padding: 10px; font-size: 16px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px;" />
+  <br/>
+  <button onclick="setup()" style="width: 100%; padding: 12px; font-size: 16px; background: #852533; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">
+    Make Admin
+  </button>
+  <p id="result" style="margin-top: 20px; font-weight: bold;"></p>
+
+  <script>
+    async function setup() {
+      var email = document.getElementById('email').value.trim();
+      if (!email) { alert('Enter your email'); return; }
+      document.getElementById('result').textContent = 'Working...';
+      try {
+        var res = await fetch('https://webinarflow-ai.onrender.com/api/v1/auth/setup-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, secret: 'webinarflow-admin-setup-2026' })
+        });
+        var data = await res.json();
+        if (res.ok) {
+          document.getElementById('result').textContent = '✅ ' + data.message;
+          document.getElementById('result').style.color = 'green';
+        } else {
+          document.getElementById('result').textContent = '❌ ' + (data.detail || 'Failed');
+          document.getElementById('result').style.color = 'red';
+        }
+      } catch(e) {
+        document.getElementById('result').textContent = '❌ Error: ' + e.message;
+        document.getElementById('result').style.color = 'red';
+      }
+    }
+  </script>
+</body>
+</html>

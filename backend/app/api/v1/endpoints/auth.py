@@ -14,6 +14,7 @@ Google flow:
 from __future__ import annotations
 
 import secrets
+import uuid
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
@@ -21,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.core.config import settings
+from app.services import security
 from app.schemas import (
     AccessTokenResponse,
     AuthResponse,
@@ -302,7 +304,6 @@ async def admin_update_subscription(
     creds = await _bearer(request)
     if creds is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
-    from app.core import security
     token_payload = security.decode_token(creds.credentials)
     admin_user = (await db.execute(select(User).where(User.id == uuid.UUID(token_payload["sub"])))).scalar_one_or_none()
     if not admin_user or not admin_user.is_super_user:
