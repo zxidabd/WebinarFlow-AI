@@ -222,15 +222,15 @@ export default function SettingsPage() {
 
         <CardContent className="space-y-8 pt-6">
           {/* Stripe Configuration */}
-          <div className="space-y-4 rounded-xl border border-slate-200/80 p-5 bg-slate-50/50">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+          <div className="space-y-4 rounded-xl border border-border p-5 bg-card/60 dark:bg-card/40">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-3">
                 <div className="h-7 w-16 rounded bg-[#635bff] flex items-center justify-center font-bold text-white text-xs tracking-wider">
                   stripe
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Stripe Integration</h3>
-                  <p className="text-xs text-slate-500">Accept international credit cards and Apple Pay</p>
+                  <h3 className="text-sm font-semibold text-foreground">Stripe Integration</h3>
+                  <p className="text-xs text-muted-foreground">Accept international credit cards and Apple Pay</p>
                 </div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -240,45 +240,45 @@ export default function SettingsPage() {
                   onChange={(e) => setStripeEnabled(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4a6cf7]"></div>
+                <div className="w-11 h-6 bg-muted border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4a6cf7]"></div>
               </label>
             </div>
 
             {stripeEnabled && (
               <div className="grid gap-4 md:grid-cols-2 pt-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                    Stripe Publishable Key (<code className="text-[11px] text-slate-500">pk_live_...</code> or <code className="text-[11px] text-slate-500">pk_test_...</code>)
+                  <label className="block text-xs font-medium text-foreground/90 mb-1.5">
+                    Stripe Publishable Key (<code className="text-[11px] text-muted-foreground">pk_live_...</code> or <code className="text-[11px] text-muted-foreground">pk_test_...</code>)
                   </label>
                   <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                       type="text"
                       placeholder="pk_test_51Nx..."
                       value={stripePublishableKey}
                       onChange={(e) => setStripePublishableKey(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-lg bg-white text-black focus:outline-none focus:border-[#4a6cf7]"
+                      className="w-full pl-9 pr-4 py-2 text-xs border border-input rounded-lg bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                    Stripe Secret Key (<code className="text-[11px] text-slate-500">sk_live_...</code>)
+                  <label className="block text-xs font-medium text-foreground/90 mb-1.5">
+                    Stripe Secret Key (<code className="text-[11px] text-muted-foreground">sk_live_...</code>)
                   </label>
                   <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                       type={showStripeSecret ? 'text' : 'password'}
                       placeholder="sk_test_51Nx..."
                       value={stripeSecretKey}
                       onChange={(e) => setStripeSecretKey(e.target.value)}
-                      className="w-full pl-9 pr-10 py-2 text-xs border border-slate-200 rounded-lg bg-white text-black focus:outline-none focus:border-[#4a6cf7]"
+                      className="w-full pl-9 pr-10 py-2 text-xs border border-input rounded-lg bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowStripeSecret(!showStripeSecret)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showStripeSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -286,18 +286,18 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                    Stripe Webhook Endpoint Secret (<code className="text-[11px] text-slate-500">whsec_...</code>)
+                  <label className="block text-xs font-medium text-foreground/90 mb-1.5">
+                    Stripe Webhook Endpoint Secret (<code className="text-[11px] text-muted-foreground">whsec_...</code>)
                   </label>
                   <input
                     type="text"
                     placeholder="whsec_... (optional, from Stripe Developers -> Webhooks)"
                     value={stripeWebhookSecret}
                     onChange={(e) => setStripeWebhookSecret(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-black focus:outline-none focus:border-[#4a6cf7]"
+                    className="w-full px-3 py-2 text-xs border border-input rounded-lg bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                   />
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    Set your Stripe webhook destination to: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-800 font-mono select-all">https://webinarflow-ai.onrender.com/api/v1/payments/webhook/stripe</code>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Set your Stripe webhook destination to: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono select-all text-[11px] border border-border">https://webinarflow-ai.onrender.com/api/v1/payments/webhook/stripe</code>
                   </p>
                 </div>
               </div>
@@ -305,15 +305,15 @@ export default function SettingsPage() {
           </div>
 
           {/* Razorpay Configuration */}
-          <div className="space-y-4 rounded-xl border border-slate-200/80 p-5 bg-slate-50/50">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+          <div className="space-y-4 rounded-xl border border-border p-5 bg-card/60 dark:bg-card/40">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-3">
                 <div className="h-7 w-20 rounded bg-[#0c2340] flex items-center justify-center font-bold text-sky-400 text-xs tracking-wider">
                   Razorpay
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Razorpay Integration</h3>
-                  <p className="text-xs text-slate-500">Accept UPI, Netbanking, and domestic Indian payment cards</p>
+                  <h3 className="text-sm font-semibold text-foreground">Razorpay Integration</h3>
+                  <p className="text-xs text-muted-foreground">Accept UPI, Netbanking, and domestic Indian payment cards</p>
                 </div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -323,27 +323,27 @@ export default function SettingsPage() {
                   onChange={(e) => setRazorpayEnabled(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4a6cf7]"></div>
+                <div className="w-11 h-6 bg-muted border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4a6cf7]"></div>
               </label>
             </div>
 
             {razorpayEnabled && (
               <div className="grid gap-4 md:grid-cols-2 pt-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                    Razorpay Key ID (<code className="text-[11px] text-slate-500">rzp_live_...</code>)
+                  <label className="block text-xs font-medium text-foreground/90 mb-1.5">
+                    Razorpay Key ID (<code className="text-[11px] text-muted-foreground">rzp_live_...</code>)
                   </label>
                   <input
                     type="text"
                     placeholder="rzp_test_..."
                     value={razorpayKeyId}
                     onChange={(e) => setRazorpayKeyId(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-black focus:outline-none focus:border-[#4a6cf7]"
+                    className="w-full px-3 py-2 text-xs border border-input rounded-lg bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  <label className="block text-xs font-medium text-foreground/90 mb-1.5">
                     Razorpay Key Secret
                   </label>
                   <div className="relative">
@@ -352,12 +352,12 @@ export default function SettingsPage() {
                       placeholder="Secret Key"
                       value={razorpayKeySecret}
                       onChange={(e) => setRazorpayKeySecret(e.target.value)}
-                      className="w-full pl-3 pr-10 py-2 text-xs border border-slate-200 rounded-lg bg-white text-black focus:outline-none focus:border-[#4a6cf7]"
+                      className="w-full pl-3 pr-10 py-2 text-xs border border-input rounded-lg bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowRazorpaySecret(!showRazorpaySecret)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showRazorpaySecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>

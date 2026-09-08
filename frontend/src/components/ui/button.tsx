@@ -10,15 +10,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-neutral-900 text-white hover:bg-neutral-800 border border-neutral-900 shadow-sm',
-        primary: 'bg-neutral-900 text-white hover:bg-neutral-800 border border-neutral-900 shadow-sm',
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm border border-primary/20',
+        primary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm border border-primary/20',
         yellow: 'bg-yellow-400 text-neutral-950 hover:bg-yellow-300 font-semibold border border-yellow-500/20 shadow-sm',
         accent: 'bg-yellow-400 text-neutral-950 hover:bg-yellow-300 font-semibold border border-yellow-500/20 shadow-sm',
-        secondary: 'bg-white text-neutral-900 border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 shadow-sm',
-        outline: 'bg-transparent text-neutral-900 border border-neutral-300 hover:bg-neutral-50 hover:border-neutral-400',
-        ghost: 'bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
-        link: 'text-neutral-900 underline-offset-4 hover:underline p-0 h-auto font-normal',
-        destructive: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
+        secondary: 'bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 shadow-sm',
+        outline: 'bg-transparent text-foreground border border-border hover:bg-muted hover:text-foreground',
+        ghost: 'bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground',
+        link: 'text-primary underline-offset-4 hover:underline p-0 h-auto font-normal',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm',
       },
       size: {
         default: 'h-10 px-4 py-2 text-sm',

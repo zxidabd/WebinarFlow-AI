@@ -57,12 +57,12 @@ export function DashboardTopbar() {
                 alt="WebinarFlow.AI"
                 className="h-8 w-8 rounded-lg object-contain bg-black shadow-sm"
               />
-              <span className="text-base font-semibold tracking-tight text-neutral-900">
-                WebinarFlow<span className="text-[#45141B] font-bold">.AI</span>
+              <span className="text-base font-semibold tracking-tight text-foreground">
+                WebinarFlow<span className="text-[#852533] dark:text-[#f8a5b2] font-bold">.AI</span>
               </span>
             </Link>
             {organization && (
-              <span className="hidden rounded-md border border-[#45141B]/20 bg-[#45141B]/5 px-2.5 py-0.5 text-xs font-mono text-[#45141B] sm:inline">
+              <span className="hidden rounded-md border border-border bg-muted/60 px-2.5 py-0.5 text-xs font-mono text-muted-foreground sm:inline">
                 {organization.name}
               </span>
             )}
@@ -70,10 +70,10 @@ export function DashboardTopbar() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden items-center gap-2.5 sm:flex">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#45141B] text-xs font-semibold text-white shadow-sm shadow-[#45141B]/20">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#852533] text-xs font-semibold text-white shadow-sm shadow-[#852533]/20">
                 {initials(displayName)}
               </div>
-              <span className="max-w-[160px] truncate text-sm font-medium text-neutral-800">{displayName}</span>
+              <span className="max-w-[160px] truncate text-sm font-medium text-foreground">{displayName}</span>
             </div>
             <Button
               variant="ghost"

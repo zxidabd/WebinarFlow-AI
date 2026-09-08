@@ -35,7 +35,7 @@ export function AnalyticsOverview() {
     <section aria-label="Analytics">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold tracking-tight text-foreground">Analytics</h2>
-        <Link href="/dashboard/analytics" className="text-xs font-medium text-[#7a222e] hover:text-[#45141B] flex items-center gap-1 transition-colors">
+        <Link href="/dashboard/analytics" className="text-xs font-medium text-[#852533] dark:text-[#f8a5b2] hover:underline flex items-center gap-1 transition-colors">
           Overview <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
@@ -45,7 +45,7 @@ export function AnalyticsOverview() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#45141B]/10 text-[#7a222e] border border-[#45141B]/15 transition-all duration-200 group-hover:scale-110 group-hover:bg-[#45141B]/20">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#852533]/10 dark:bg-[#f8a5b2]/10 text-[#852533] dark:text-[#f8a5b2] border border-[#852533]/20 dark:border-[#f8a5b2]/20 transition-all duration-200 group-hover:scale-110 group-hover:bg-[#852533]/20">
                   <Icon className="h-4 w-4" />
                 </span>
               </div>

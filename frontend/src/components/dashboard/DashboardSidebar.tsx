@@ -58,15 +58,15 @@ export function DashboardSidebar() {
   };
 
   return (
-    <aside className="flex h-full w-60 flex-col border-r border-neutral-200 bg-white">
-      <Link href="/dashboard" className="flex h-16 items-center gap-2.5 px-6 border-b border-neutral-100">
+    <aside className="flex h-full w-60 flex-col border-r border-border bg-card">
+      <Link href="/dashboard" className="flex h-16 items-center gap-2.5 px-6 border-b border-border">
         <img
           src="/logo.png"
           alt="WebinarFlow.AI"
           className="h-8 w-8 rounded-lg object-contain bg-black shadow-sm"
         />
-        <span className="text-base font-semibold tracking-tight text-neutral-900">
-          WebinarFlow<span className="text-[#45141B] font-bold">.AI</span>
+        <span className="text-base font-semibold tracking-tight text-foreground">
+          WebinarFlow<span className="text-[#852533] dark:text-[#f8a5b2] font-bold">.AI</span>
         </span>
       </Link>
 
@@ -81,12 +81,12 @@ export function DashboardSidebar() {
               className={cn(
                 'group relative flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-150',
                 active
-                  ? 'bg-[#45141B] text-white font-semibold shadow-sm shadow-[#45141B]/25'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
-                item.isHeroAnchor && !active && 'text-[#7a222e] font-semibold hover:bg-[#45141B]/5',
+                  ? 'bg-[#852533] text-white font-semibold shadow-sm shadow-[#852533]/25'
+                  : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                item.isHeroAnchor && !active && 'text-[#852533] dark:text-[#f8a5b2] font-semibold hover:bg-[#852533]/10',
               )}
             >
-              <Icon className={cn('h-4 w-4 shrink-0 transition-colors duration-150', active ? 'text-white' : 'text-neutral-500 group-hover:text-neutral-900')} />
+              <Icon className={cn('h-4 w-4 shrink-0 transition-colors duration-150', active ? 'text-white' : 'text-muted-foreground group-hover:text-foreground')} />
               <span>{item.label}</span>
               {active && (
                 <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white" />
@@ -95,7 +95,7 @@ export function DashboardSidebar() {
           );
         })}
 
-        <div className="pt-2 mt-2 border-t border-neutral-100">
+        <div className="pt-2 mt-2 border-t border-border">
           <button
             type="button"
             onClick={() => {
@@ -107,15 +107,15 @@ export function DashboardSidebar() {
                 }
               }
             }}
-            className="w-full group relative flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-all text-left"
+            className="w-full group relative flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all text-left"
           >
-            <History className="h-4 w-4 shrink-0 text-[#852533]" />
+            <History className="h-4 w-4 shrink-0 text-[#852533] dark:text-[#f8a5b2]" />
             <span>Chat History</span>
           </button>
         </div>
       </nav>
 
-      <div className="border-t border-white/10 p-4 text-xs text-muted-foreground/70">
+      <div className="border-t border-border p-4 text-xs text-muted-foreground">
         <p className="px-2 font-medium">Phase 2 — AI Funnel Workspace</p>
       </div>
     </aside>

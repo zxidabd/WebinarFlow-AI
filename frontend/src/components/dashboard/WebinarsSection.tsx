@@ -30,7 +30,7 @@ export function WebinarsSection() {
     <section aria-label="Webinars">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold tracking-tight text-foreground">Webinars</h2>
-        <Link href="/dashboard/webinars" className="text-xs font-medium text-[#7a222e] hover:text-[#45141B] flex items-center gap-1 transition-colors">
+        <Link href="/dashboard/webinars" className="text-xs font-medium text-[#852533] dark:text-[#f8a5b2] hover:underline flex items-center gap-1 transition-colors">
           View all {total > 0 ? `(${total})` : ''} →
         </Link>
       </div>

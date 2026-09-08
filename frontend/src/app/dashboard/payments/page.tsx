@@ -94,8 +94,8 @@ export default function PaymentsPage() {
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payments & Revenue</h1>
-          <p className="text-gray-500 mt-1">Manage your transactions and monitor revenue.</p>
+          <h1 className="text-2xl font-bold text-foreground">Payments & Revenue</h1>
+          <p className="text-muted-foreground mt-1">Manage your transactions and monitor revenue.</p>
         </div>
         <Button onClick={handleExport} className="flex items-center gap-2 bg-[#4a6cf7] hover:bg-[#395ce6] text-white">
           <Download className="w-4 h-4" />
@@ -107,11 +107,11 @@ export default function PaymentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Total Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
               <DollarSign className="w-4 h-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-foreground">
                 {formatCurrency(stats.total_revenue, stats.currency)}
               </div>
             </CardContent>
@@ -119,31 +119,31 @@ export default function PaymentsPage() {
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Completed Transactions</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Completed Transactions</CardTitle>
               <TrendingUp className="w-4 h-4 text-[#4a6cf7]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{stats.completed_payments}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.completed_payments}</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Pending Payments</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payments</CardTitle>
               <CreditCard className="w-4 h-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{stats.pending_payments}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.pending_payments}</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Refunded Amount</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Refunded Amount</CardTitle>
               <RefreshCw className="w-4 h-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-foreground">
                 {formatCurrency(stats.refunded_amount, stats.currency)}
               </div>
             </CardContent>
@@ -152,9 +152,9 @@ export default function PaymentsPage() {
       ) : null}
 
       <Card>
-        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Search by ID or email..." 
               value={searchQuery}
@@ -163,11 +163,11 @@ export default function PaymentsPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-400" />
+            <Filter className="w-4 h-4 text-muted-foreground" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-sm border-gray-200 rounded-md shadow-sm focus:border-[#4a6cf7] focus:ring-[#4a6cf7] px-3 py-2 border outline-none bg-white"
+              className="text-sm border-border rounded-md shadow-sm focus:border-[#4a6cf7] focus:ring-[#4a6cf7] px-3 py-2 border outline-none bg-background text-foreground"
             >
               <option value="All">All Statuses</option>
               <option value="completed">Completed</option>
@@ -181,7 +181,7 @@ export default function PaymentsPage() {
         <div className="overflow-x-auto">
           {filteredPayments.length > 0 ? (
             <table className="w-full text-sm text-left whitespace-nowrap">
-              <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+              <thead className="text-xs text-muted-foreground uppercase bg-muted/40 border-b border-border">
                 <tr>
                   <th className="px-6 py-3 font-medium">Transaction ID</th>
                   <th className="px-6 py-3 font-medium">Registrant</th>
@@ -192,24 +192,24 @@ export default function PaymentsPage() {
                   <th className="px-6 py-3 font-medium">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {filteredPayments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-gray-50/50">
-                    <td className="px-6 py-4 font-mono text-xs text-gray-500">
+                  <tr key={payment.id} className="hover:bg-muted/30">
+                    <td className="px-6 py-4 font-mono text-xs text-muted-foreground">
                       {payment.id.slice(0, 8)}...
                     </td>
-                    <td className="px-6 py-4 font-medium text-gray-900">
+                    <td className="px-6 py-4 font-medium text-foreground">
                       {payment.registrant_id.slice(0, 8)}...
                     </td>
-                    <td className="px-6 py-4 text-gray-500">
+                    <td className="px-6 py-4 text-muted-foreground">
                       {payment.webinar_id.slice(0, 8)}...
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant="outline" className="bg-gray-50 text-gray-600 capitalize">
+                      <Badge variant="outline" className="bg-muted text-muted-foreground capitalize">
                         {payment.provider}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 font-medium text-gray-900">
+                    <td className="px-6 py-4 font-medium text-foreground">
                       {formatCurrency(payment.amount, payment.currency)}
                     </td>
                     <td className="px-6 py-4">
@@ -217,7 +217,7 @@ export default function PaymentsPage() {
                         {payment.status}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">
+                    <td className="px-6 py-4 text-muted-foreground">
                       {new Date(payment.created_at).toLocaleDateString()}
                     </td>
                   </tr>
@@ -226,11 +226,11 @@ export default function PaymentsPage() {
             </table>
           ) : (
             <div className="py-12 flex flex-col items-center justify-center text-center">
-              <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                <CreditCard className="w-6 h-6 text-gray-400" />
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+                <CreditCard className="w-6 h-6 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900">No payments found</h3>
-              <p className="text-gray-500 mt-1 max-w-sm">
+              <h3 className="text-lg font-medium text-foreground">No payments found</h3>
+              <p className="text-muted-foreground mt-1 max-w-sm">
                 {searchQuery || statusFilter !== 'All' 
                   ? "We couldn't find any transactions matching your filters." 
                   : "You haven't received any payments yet. Set up your payment providers to start accepting payments."}
