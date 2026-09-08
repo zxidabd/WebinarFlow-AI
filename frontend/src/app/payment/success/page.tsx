@@ -13,16 +13,30 @@ function PaymentSuccessContent() {
   const [error, setError] = useState<string | null>(null);
   const sessionId = searchParams.get('session_id');
   const registrantId = searchParams.get('registrant_id');
+  const isSubscription = searchParams.get('type') === 'subscription';
+  const plan = searchParams.get('plan') || 'starter';
 
   useEffect(() => {
     async function verify() {
-      if (sessionId && registrantId) {
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://webinarflow-ai.onrender.com/api/v1').replace(/\/$/, '');
+
+      if (isSubscription && sessionId) {
         try {
-          const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://webinarflow-ai.onrender.com/api/v1').replace(/\/$/, '');
+          const res = await fetch(`${apiUrl}/payments/subscribe/stripe/verify?session_id=${encodeURIComponent(sessionId)}`);
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            if (res.status === 400 && errData.detail?.includes('Payment has not been completed')) {
+              setError(errData.detail);
+            }
+          }
+        } catch (e: any) {
+          console.warn('Subscription verification call error:', e);
+        }
+      } else if (sessionId && registrantId) {
+        try {
           const res = await fetch(`${apiUrl}/payments/verify-session?session_id=${encodeURIComponent(sessionId)}&registrant_id=${encodeURIComponent(registrantId)}`);
           if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
-            // If webhook already processed it or session is valid, it's fine; otherwise handle error
             if (res.status === 400 && errData.detail?.includes('Payment has not been completed')) {
               setError(errData.detail);
             }
@@ -34,7 +48,7 @@ function PaymentSuccessContent() {
       setLoading(false);
     }
     verify();
-  }, [sessionId, registrantId]);
+  }, [sessionId, registrantId, isSubscription]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4">
@@ -54,7 +68,11 @@ function PaymentSuccessContent() {
             )}
           </div>
           <CardTitle className={`text-2xl ${error ? 'text-rose-700' : 'text-emerald-700'}`}>
-            {loading ? 'Confirming Ticket & Payment...' : error ? 'Payment Incomplete' : 'Ticket & Registration Confirmed!'}
+            {loading
+              ? (isSubscription ? 'Activating Your Subscription...' : 'Confirming Ticket & Payment...')
+              : error
+              ? 'Payment Incomplete'
+              : (isSubscription ? `${plan.toUpperCase()} Plan Activated!` : 'Ticket & Registration Confirmed!')}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
@@ -65,18 +83,22 @@ function PaymentSuccessContent() {
           ) : error ? (
             <>
               <p className="text-muted-foreground text-sm">
-                {error}. Your registration is still pending payment.
+                {error}. Your transaction is still pending payment.
               </p>
               <div className="pt-4 space-y-2">
                 <Button asChild className="w-full bg-rose-600 hover:bg-rose-700">
-                  <Link href="/">Return to Home</Link>
+                  <Link href={isSubscription ? '/dashboard/billing' : '/'}>
+                    {isSubscription ? 'Return to Billing' : 'Return to Home'}
+                  </Link>
                 </Button>
               </div>
             </>
           ) : (
             <>
               <p className="text-muted-foreground text-sm">
-                Your payment was received successfully! Your registration is now officially confirmed and your access link has been generated.
+                {isSubscription
+                  ? `Your payment was received successfully! Your ${plan.toUpperCase()} plan is now active with all premium features unlocked.`
+                  : 'Your payment was received successfully! Your registration is now officially confirmed and your access link has been generated.'}
               </p>
               {sessionId && (
                 <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200">
@@ -85,13 +107,10 @@ function PaymentSuccessContent() {
                   </p>
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">
-                A confirmation email with the webinar join link has been dispatched to your inbox.
-              </p>
               <div className="pt-4 space-y-2">
                 <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
-                  <Link href="/">
-                    Back to Home
+                  <Link href={isSubscription ? '/dashboard' : '/'}>
+                    {isSubscription ? 'Go to Dashboard' : 'Back to Home'}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>

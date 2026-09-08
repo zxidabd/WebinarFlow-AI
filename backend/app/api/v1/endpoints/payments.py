@@ -454,7 +454,7 @@ async def subscribe_stripe(
                 "billing_cycle": payload.billing_cycle,
             },
             customer_email=user.email,
-            success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}",
+            success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}&session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{frontend_url}/payment/cancel?type=subscription",
         )
     except Exception as exc:
@@ -480,7 +480,7 @@ async def subscribe_stripe(
                     "billing_cycle": payload.billing_cycle,
                 },
                 customer_email=user.email,
-                success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}",
+                success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}&session_id={{CHECKOUT_SESSION_ID}}",
                 cancel_url=f"{frontend_url}/payment/cancel?type=subscription",
             )
         else:
@@ -559,5 +559,122 @@ async def subscribe_razorpay(
         }
     except Exception as e:
         raise HTTPException(500, f"Razorpay order creation failed: {e}")
+
+
+class SubscribeVerifyRazorpayRequest(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+    plan_tier: str = "starter"
+
+
+@router.post("/subscribe/razorpay/verify")
+async def verify_subscription_razorpay(
+    payload: SubscribeVerifyRazorpayRequest,
+    membership: Membership = Depends(get_current_membership_unrestricted),
+    db: AsyncSession = Depends(get_db),
+):
+    """Verify Razorpay payment signature for platform subscription and instantly activate the plan."""
+    import os
+    
+    rzp_key = os.getenv("RAZORPAY_KEY_ID", "").strip()
+    rzp_secret = os.getenv("RAZORPAY_KEY_SECRET", "").strip()
+
+    if not rzp_key or not rzp_secret:
+        super_res = await db.execute(
+            select(Organization)
+            .join(User, Organization.owner_user_id == User.id)
+            .where(User.is_super_user.is_(True))
+        )
+        super_orgs = super_res.scalars().all()
+        for s_org in super_orgs:
+            s_k = ((s_org.settings or {}).get("razorpay_key_id") or "").strip()
+            s_s = ((s_org.settings or {}).get("razorpay_key_secret") or "").strip()
+            if s_k and s_s:
+                rzp_key = s_k
+                rzp_secret = s_s
+                break
+
+    if not rzp_key or not rzp_secret:
+        settings = membership.organization.settings or {}
+        rzp_key = (settings.get("razorpay_key_id") or "").strip()
+        rzp_secret = (settings.get("razorpay_key_secret") or "").strip()
+
+    if not rzp_secret:
+        raise HTTPException(400, "Razorpay secret key not configured")
+
+    try:
+        import razorpay as rzp_sdk
+        client = rzp_sdk.Client(auth=(rzp_key, rzp_secret))
+        client.utility.verify_payment_signature({
+            "razorpay_order_id": payload.razorpay_order_id,
+            "razorpay_payment_id": payload.razorpay_payment_id,
+            "razorpay_signature": payload.razorpay_signature,
+        })
+    except Exception as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Payment signature verification failed: {e}")
+
+    user = membership.user
+    user.subscription_status = "active"
+    user.plan_tier = payload.plan_tier
+    user.trial_ends_at = None
+    await db.commit()
+
+    return {"status": "ok", "message": f"Successfully activated {payload.plan_tier} plan!"}
+
+
+@router.get("/subscribe/stripe/verify")
+async def verify_subscription_stripe(
+    session_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Verify a completed Stripe checkout session for platform subscription and instantly activate the plan."""
+    import os
+    import stripe as stripe_sdk
+
+    sk = os.getenv("STRIPE_SECRET_KEY", "").strip()
+    if not sk:
+        super_res = await db.execute(
+            select(Organization)
+            .join(User, Organization.owner_user_id == User.id)
+            .where(User.is_super_user.is_(True))
+        )
+        super_orgs = super_res.scalars().all()
+        for s_org in super_orgs:
+            s_sk = ((s_org.settings or {}).get("stripe_secret_key") or "").strip()
+            if s_sk:
+                sk = s_sk
+                break
+
+    if not sk:
+        raise HTTPException(400, "Stripe secret key not configured")
+
+    stripe_sdk.api_key = sk
+    try:
+        session = stripe_sdk.checkout.Session.retrieve(session_id)
+    except Exception as e:
+        raise HTTPException(400, f"Failed to retrieve Stripe session: {e}")
+
+    if session.payment_status != "paid":
+        raise HTTPException(400, "Payment has not been completed")
+
+    metadata = session.metadata or {}
+    user_id_str = metadata.get("user_id")
+    plan_tier = metadata.get("plan_tier", "starter")
+
+    if not user_id_str:
+        raise HTTPException(400, "Session metadata missing user_id")
+
+    user = (await db.execute(select(User).where(User.id == uuid.UUID(user_id_str)))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, "User not found")
+
+    user.subscription_status = "active"
+    user.plan_tier = plan_tier
+    user.trial_ends_at = None
+    await db.commit()
+
+    return {"status": "ok", "message": f"Successfully activated {plan_tier} plan!", "plan_tier": plan_tier}
+
 
 __all__ = ["router"]

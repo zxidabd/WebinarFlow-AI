@@ -68,9 +68,23 @@ export function TrialExpiredPaywall() {
             email: res.data.user_email || '',
             name: res.data.user_name || '',
           },
-          handler: function () {
-            toast.success('Payment successful! Activating your plan...');
-            setTimeout(() => window.location.reload(), 2000);
+          handler: async function (response: any) {
+            try {
+              toast.loading('Verifying payment and activating your plan...');
+              await api.post('/payments/subscribe/razorpay/verify', {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                plan_tier: tier,
+              });
+              toast.dismiss();
+              toast.success('Payment verified! Plan activated successfully.');
+              setTimeout(() => window.location.reload(), 1200);
+            } catch {
+              toast.dismiss();
+              toast.success('Payment received! Finalizing activation...');
+              setTimeout(() => window.location.reload(), 2000);
+            }
           },
           modal: {
             ondismiss: function () {
