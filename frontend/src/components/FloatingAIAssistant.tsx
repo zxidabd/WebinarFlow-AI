@@ -108,65 +108,26 @@ export function FloatingAIAssistant() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          className="relative block w-[115px] sm:w-[140px] md:w-[150px] aspect-[620/574] focus:outline-none transition-all drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)] hover:drop-shadow-[0_14px_30px_rgba(236,72,153,0.35)]"
+          className="relative block w-[115px] sm:w-[140px] md:w-[150px] aspect-[622/575] focus:outline-none transition-all drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)] hover:drop-shadow-[0_14px_32px_rgba(236,72,153,0.35)]"
           title="WebinarFlow AI+ Assistant — Click to open"
           aria-label="WebinarFlow AI+ Assistant"
         >
-          {/* Stationary Layer: Robot Torso, Face, Head, Arms & AI+ Pill Button */}
-          <img
-            src="/ai-robot-body.png"
-            alt="WebinarFlow AI+ Robot"
-            className="w-full h-full object-contain pointer-events-none select-none"
-          />
-
-          {/* Left Leg: Gently swings forward and backward in cute idle motion */}
+          {/* Subtle Cute Idle Sway Motion */}
           <motion.div
-            className="absolute pointer-events-none"
-            style={{
-              left: `${(232 / 620) * 100}%`,
-              top: `${(320 / 574) * 100}%`,
-              width: `${(85 / 620) * 100}%`,
-              height: `${(85 / 574) * 100}%`,
-              transformOrigin: '50% 12%',
-            }}
+            className="w-full h-full"
             animate={{
-              rotate: [-7, 7, -7],
+              y: [0, -3.5, 0],
+              rotate: [0, 0.6, 0, -0.6, 0],
             }}
             transition={{
-              duration: 2.2,
+              duration: 3,
               repeat: Infinity,
               ease: 'easeInOut',
             }}
           >
             <img
-              src="/leg-left.png"
-              alt=""
-              className="w-full h-full object-contain pointer-events-none select-none"
-            />
-          </motion.div>
-
-          {/* Right Leg: Gently swings in opposition for natural adorable idle rhythm */}
-          <motion.div
-            className="absolute pointer-events-none"
-            style={{
-              left: `${(312 / 620) * 100}%`,
-              top: `${(325 / 574) * 100}%`,
-              width: `${(90 / 620) * 100}%`,
-              height: `${(90 / 574) * 100}%`,
-              transformOrigin: '50% 12%',
-            }}
-            animate={{
-              rotate: [7, -7, 7],
-            }}
-            transition={{
-              duration: 2.2,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            <img
-              src="/leg-right.png"
-              alt=""
+              src="/ai-robot-clean.png"
+              alt="WebinarFlow AI+ Robot"
               className="w-full h-full object-contain pointer-events-none select-none"
             />
           </motion.div>
