@@ -649,18 +649,27 @@ export default function AIAgentFullPage() {
               )}
             </div>
 
-            <div className="p-3 border-t border-[#5a1a23]/50 text-[11px] text-[#f8d7dc]/70 flex items-center justify-between">
-              <span className="font-semibold text-white">Chat Memory Saved</span>
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <div className="p-3 border-t border-[#5a1a23]/50 flex items-center justify-between text-[11px]">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 text-[#f8d7dc]/80 hover:text-white font-medium transition-colors"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span>Exit to Dashboard</span>
+              </Link>
+              <span className="flex items-center gap-1.5 text-[#f8d7dc]/70">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span>Memory Saved</span>
+              </span>
             </div>
           </aside>
         </div>
       )}
 
       {/* TOP HEADER IN A SINGLE CLEAN LINE */}
-      <header className="h-14 px-2.5 sm:px-6 border-b border-[#5a1a23]/60 bg-[#140507] flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 z-20">
-        {/* Left: Menu toggle + Back to Dashboard + Branding */}
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+      <header className="h-14 px-3 sm:px-6 border-b border-[#5a1a23]/60 bg-[#140507] flex items-center justify-between gap-2 shrink-0 z-20">
+        {/* Left: Menu toggle */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowHistoryDrawer(true)}
             className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center gap-1.5 transition-colors shrink-0"
@@ -668,33 +677,13 @@ export default function AIAgentFullPage() {
           >
             <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-[#f8a5b2]" />
           </button>
-
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1 text-xs text-[#f8d7dc]/80 hover:text-white px-1.5 sm:px-2 py-1 rounded-lg hover:bg-white/5 transition-colors shrink-0"
-            title="Return to Dashboard"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline font-medium">Dashboard</span>
-          </Link>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <img
-              src="/logo.png"
-              alt="WebinarFlow"
-              className="h-6 w-6 rounded-lg bg-black object-contain shadow-sm shrink-0"
-            />
-            <span className="font-bold text-xs sm:text-sm tracking-tight text-white hidden xs:inline sm:inline">
-              WebinarFlow<span className="text-[#f8a5b2]">.AI</span>
-            </span>
-          </div>
         </div>
 
         {/* Center: Simple Mode Switcher (Funnel Builder / AI Chat) */}
         <div className="flex items-center bg-black/60 p-0.5 sm:p-1 rounded-xl border border-[#5a1a23]/60 shrink-0">
           <button
             onClick={() => setActiveTab('chat')}
-            className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'chat'
                 ? 'bg-[#852533] text-white shadow-sm ring-1 ring-[#a63344]/50'
                 : 'text-gray-400 hover:text-white'
@@ -704,13 +693,13 @@ export default function AIAgentFullPage() {
           </button>
           <button
             onClick={() => setActiveTab('funnel')}
-            className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'funnel'
                 ? 'bg-[#852533] text-white shadow-sm ring-1 ring-[#a63344]/50'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            🚀 Funnel<span className="hidden sm:inline"> Builder</span>
+            🚀 Funnel Builder
           </button>
         </div>
 
