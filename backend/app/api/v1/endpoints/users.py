@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_active_user, get_db
+from app.api.deps import get_current_active_user, get_current_user_unrestricted, get_db
 from app.models import Membership, User
 from app.schemas import AuthUser, MeResponse, UserOrganization, UserUpdate
 
@@ -35,7 +35,7 @@ def _to_user_org(m: Membership) -> UserOrganization:
 
 
 @router.get("/me", response_model=MeResponse)
-async def get_me(current_user: User = Depends(get_current_active_user), db: AsyncSession = Depends(get_db)):
+async def get_me(current_user: User = Depends(get_current_user_unrestricted), db: AsyncSession = Depends(get_db)):
     memberships = await _memberships_with_orgs(db, current_user.id)
     me = MeResponse.model_validate(
         {
