@@ -40,6 +40,21 @@ const PLANS = [
 
 type Cycle = 'monthly' | 'yearly';
 
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && (window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export function TrialExpiredPaywall() {
   const [cycle, setCycle] = useState<Cycle>('monthly');
   const [loading, setLoading] = useState<string | null>(null);
@@ -56,6 +71,11 @@ export function TrialExpiredPaywall() {
       if (provider === 'stripe' && res.data?.url) {
         window.location.href = res.data.url;
       } else if (provider === 'razorpay' && res.data?.order_id) {
+        await loadRazorpayScript();
+        if (typeof window === 'undefined' || !(window as any).Razorpay) {
+          throw new Error('Razorpay SDK failed to load. Please disable ad-blockers or try another browser.');
+        }
+
         // Open Razorpay checkout popup
         const options = {
           key: res.data.key_id,
@@ -97,7 +117,7 @@ export function TrialExpiredPaywall() {
         return;
       }
     } catch (err: any) {
-      const detail = err?.response?.data?.detail || 'Payment failed. Please try again.';
+      const detail = err?.response?.data?.detail || err?.message || 'Payment failed. Please try again.';
       toast.error(detail);
     } finally {
       setLoading(null);

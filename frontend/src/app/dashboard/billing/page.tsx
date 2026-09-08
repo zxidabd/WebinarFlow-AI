@@ -45,6 +45,21 @@ const PLANS = [
   },
 ];
 
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && (window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function BillingPage() {
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState<string | null>(null);
@@ -61,6 +76,11 @@ export default function BillingPage() {
       if (provider === 'stripe' && res.data?.url) {
         window.location.href = res.data.url;
       } else if (provider === 'razorpay' && res.data?.order_id) {
+        await loadRazorpayScript();
+        if (typeof window === 'undefined' || !(window as any).Razorpay) {
+          throw new Error('Razorpay SDK failed to load. Please disable ad-blockers or try another browser.');
+        }
+
         const options = {
           key: res.data.key_id,
           amount: res.data.amount,
@@ -100,7 +120,7 @@ export default function BillingPage() {
         rzp.open();
       }
     } catch (err: any) {
-      const detail = err?.response?.data?.detail || 'Failed to initiate checkout. Please try again.';
+      const detail = err?.response?.data?.detail || err?.message || 'Failed to initiate checkout. Please try again.';
       toast.error(detail);
     } finally {
       setLoading(null);
