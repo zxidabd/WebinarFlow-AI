@@ -429,29 +429,57 @@ async def subscribe_stripe(
     amount = prices.get(payload.billing_cycle, prices["monthly"])
     frontend_url = os.getenv("FRONTEND_URL", "https://webinarflow.in")
     
-    session = stripe_sdk.checkout.Session.create(
-        payment_method_types=["card"],
-        mode="payment",
-        line_items=[{
-            "price_data": {
-                "currency": "usd",
-                "unit_amount": amount,
-                "product_data": {
-                    "name": f"WebinarFlow {payload.plan_tier.title()} Plan ({payload.billing_cycle})",
+    try:
+        session = stripe_sdk.checkout.Session.create(
+            mode="payment",
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": amount,
+                    "product_data": {
+                        "name": f"WebinarFlow {payload.plan_tier.title()} Plan ({payload.billing_cycle})",
+                    },
                 },
+                "quantity": 1,
+            }],
+            metadata={
+                "type": "subscription",
+                "user_id": str(user.id),
+                "plan_tier": payload.plan_tier,
+                "billing_cycle": payload.billing_cycle,
             },
-            "quantity": 1,
-        }],
-        metadata={
-            "type": "subscription",
-            "user_id": str(user.id),
-            "plan_tier": payload.plan_tier,
-            "billing_cycle": payload.billing_cycle,
-        },
-        customer_email=user.email,
-        success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}",
-        cancel_url=f"{frontend_url}/payment/cancel?type=subscription",
-    )
+            customer_email=user.email,
+            success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}",
+            cancel_url=f"{frontend_url}/payment/cancel?type=subscription",
+        )
+    except Exception as exc:
+        err_msg = str(exc).lower()
+        if "managed_payments" in err_msg or "tax_code" in err_msg:
+            session = stripe_sdk.checkout.Session.create(
+                mode="payment",
+                managed_payments={"enabled": False},
+                line_items=[{
+                    "price_data": {
+                        "currency": "usd",
+                        "unit_amount": amount,
+                        "product_data": {
+                            "name": f"WebinarFlow {payload.plan_tier.title()} Plan ({payload.billing_cycle})",
+                        },
+                    },
+                    "quantity": 1,
+                }],
+                metadata={
+                    "type": "subscription",
+                    "user_id": str(user.id),
+                    "plan_tier": payload.plan_tier,
+                    "billing_cycle": payload.billing_cycle,
+                },
+                customer_email=user.email,
+                success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}",
+                cancel_url=f"{frontend_url}/payment/cancel?type=subscription",
+            )
+        else:
+            raise HTTPException(500, f"Stripe error: {exc}")
     
     return {"url": session.url, "session_id": session.id}
 
