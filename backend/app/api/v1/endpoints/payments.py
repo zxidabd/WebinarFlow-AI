@@ -407,7 +407,7 @@ async def subscribe_stripe(
         raise HTTPException(400, f"Invalid plan: {payload.plan_tier}")
     
     amount = prices.get(payload.billing_cycle, prices["monthly"])
-    frontend_url = os.getenv("FRONTEND_URL", "https://webinarflow-ai.vercel.app")
+    frontend_url = os.getenv("FRONTEND_URL", "https://webinarflow.in")
     
     session = stripe_sdk.checkout.Session.create(
         payment_method_types=["card"],
