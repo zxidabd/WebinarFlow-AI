@@ -290,6 +290,25 @@ export default function AIAgentFullPage() {
   const [activeTab, setActiveTab] = useState<'chat' | 'funnel'>('chat');
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
 
+  // Sync active studio mode from URL query parameters (e.g. ?tab=funnel or ?tab=chat)
+  useEffect(() => {
+    const handleCheckTab = () => {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab === 'funnel') {
+          setActiveTab('funnel');
+        } else if (tab === 'chat') {
+          setActiveTab('chat');
+        }
+      }
+    };
+
+    handleCheckTab();
+    window.addEventListener('popstate', handleCheckTab);
+    return () => window.removeEventListener('popstate', handleCheckTab);
+  }, []);
+
   // Funnel Builder State
   const [topic, setTopic] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
@@ -707,7 +726,12 @@ export default function AIAgentFullPage() {
         {/* Center: Simple Mode Switcher (Funnel Builder / AI Chat) */}
         <div className="flex items-center bg-muted/80 dark:bg-black/60 p-0.5 sm:p-1 rounded-xl border border-border dark:border-[#5a1a23]/60 shrink-0">
           <button
-            onClick={() => setActiveTab('chat')}
+            onClick={() => {
+              setActiveTab('chat');
+              if (typeof window !== 'undefined' && window.history.replaceState) {
+                window.history.replaceState(null, '', '/dashboard/ai-agent?tab=chat');
+              }
+            }}
             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'chat'
                 ? 'bg-[#852533] text-white shadow-sm ring-1 ring-[#a63344]/50'
@@ -717,7 +741,12 @@ export default function AIAgentFullPage() {
             💬 Chat
           </button>
           <button
-            onClick={() => setActiveTab('funnel')}
+            onClick={() => {
+              setActiveTab('funnel');
+              if (typeof window !== 'undefined' && window.history.replaceState) {
+                window.history.replaceState(null, '', '/dashboard/ai-agent?tab=funnel');
+              }
+            }}
             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'funnel'
                 ? 'bg-[#852533] text-white shadow-sm ring-1 ring-[#a63344]/50'

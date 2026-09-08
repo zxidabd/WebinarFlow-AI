@@ -50,7 +50,7 @@ export function FloatingAIAssistant() {
           {/* Quick Actions List */}
           <div className="py-3 space-y-2 text-xs">
             <Link
-              href="/dashboard/ai-agent"
+              href="/dashboard/ai-agent?tab=funnel"
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-between p-2.5 rounded-xl bg-purple-950/30 hover:bg-purple-900/40 border border-purple-500/20 hover:border-purple-500/40 text-neutral-200 hover:text-white transition-all group"
             >
@@ -67,7 +67,7 @@ export function FloatingAIAssistant() {
             </Link>
 
             <Link
-              href="/dashboard/ai-agent"
+              href="/dashboard/ai-agent?tab=chat"
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-900/60 hover:bg-neutral-800/80 border border-neutral-800 hover:border-purple-500/30 text-neutral-200 hover:text-white transition-all group"
             >
