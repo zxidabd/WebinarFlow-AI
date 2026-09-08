@@ -13,18 +13,13 @@ import {
   CheckCircle2,
   Zap,
   Code2,
-  ArrowRight,
-  RefreshCw,
-  FileText,
-  Mail,
-  ListOrdered,
-  ChevronRight,
+  ArrowLeft,
+  Clock,
+  Menu,
+  X,
   Plus,
   Trash2,
-  Clock,
-  History,
-  X,
-  PanelLeft,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -292,9 +287,8 @@ function renderInlineMarkdown(text: string): React.ReactNode {
 }
 
 export default function AIAgentFullPage() {
-  const [activeTab, setActiveTab] = useState<'funnel' | 'chat'>('funnel');
-  const [models, setModels] = useState<aiApi.AIModel[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>('nvidia/DeepSeek V4 Pro');
+  const [activeTab, setActiveTab] = useState<'chat' | 'funnel'>('chat');
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
 
   // Funnel Builder State
   const [topic, setTopic] = useState('');
@@ -313,12 +307,9 @@ export default function AIAgentFullPage() {
   // Chat State with Multiple Sessions
   const [sessions, setSessions] = useState<ChatSession[]>(INITIAL_SESSIONS);
   const [activeSessionId, setActiveSessionId] = useState<string>('session-welcome');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [showMobileHistory, setShowMobileHistory] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // Load chat sessions from localStorage on mount
   useEffect(() => {
@@ -332,11 +323,10 @@ export default function AIAgentFullPage() {
         }
       }
     } catch {
-      // Graceful fallback to default sessions
+      // Graceful fallback
     }
   }, []);
 
-  // Sync chat sessions to localStorage
   const saveSessions = (updated: ChatSession[]) => {
     setSessions(updated);
     try {
@@ -349,26 +339,8 @@ export default function AIAgentFullPage() {
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0] || INITIAL_SESSIONS[0];
 
   useEffect(() => {
-    aiApi
-      .getAiModels()
-      .then((data) => {
-        if (data?.models?.length) {
-          setModels(data.models);
-          if (!selectedModel) setSelectedModel(data.models[0].id);
-        }
-      })
-      .catch(() => {
-        // Handled gracefully
-      });
-  }, []);
-
-  // Safe inner-container auto scroll without jittering the outer window
-  useEffect(() => {
-    if (activeTab === 'chat' && chatContainerRef.current) {
-      chatContainerRef.current.scrollTo({
-        top: chatContainerRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
+    if (activeTab === 'chat') {
+      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [activeSession?.messages, activeTab]);
 
@@ -382,14 +354,14 @@ export default function AIAgentFullPage() {
       messages: [
         {
           role: 'assistant',
-          content: '👋 Hi! What would you like to explore, draft, or code today?',
+          content: '👋 Hi! What would you like to build, draft, or ask today?',
         },
       ],
     };
     const updated = [newChat, ...sessions];
     saveSessions(updated);
     setActiveSessionId(newId);
-    setShowMobileHistory(false);
+    setShowHistoryDrawer(false);
     toast.success('Started a new chat session');
   };
 
@@ -405,6 +377,69 @@ export default function AIAgentFullPage() {
       setActiveSessionId(updated[0].id);
     }
     toast.success('Chat removed from history');
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || isChatLoading) return;
+
+    const userText = chatInput.trim();
+    setChatInput('');
+
+    const currentTitle = activeSession.title;
+    const shouldRename = currentTitle === 'New Conversation' || currentTitle === 'Getting Started with AI Agent';
+    const newTitle = shouldRename ? userText.slice(0, 32) + (userText.length > 32 ? '...' : '') : currentTitle;
+
+    let category: 'recent' | 'funnels' | 'copy' = activeSession.category;
+    const lower = userText.toLowerCase();
+    if (lower.includes('funnel') || lower.includes('webinar') || lower.includes('landing') || lower.includes('agenda')) {
+      category = 'funnels';
+    } else if (lower.includes('email') || lower.includes('headline') || lower.includes('copy') || lower.includes('subject')) {
+      category = 'copy';
+    }
+
+    const newConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
+      ...activeSession.messages,
+      { role: 'user', content: userText },
+    ];
+
+    const updatedSessions = sessions.map((s) =>
+      s.id === activeSession.id
+        ? { ...s, title: newTitle, category, messages: newConvo }
+        : s
+    );
+    saveSessions(updatedSessions);
+    setIsChatLoading(true);
+
+    try {
+      const res = await aiApi.chatWithAgent({
+        messages: newConvo,
+      });
+
+      const finalConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
+        ...newConvo,
+        { role: 'assistant', content: res.reply },
+      ];
+
+      const withAssistantReply = updatedSessions.map((s) =>
+        s.id === activeSession.id ? { ...s, messages: finalConvo } : s
+      );
+      saveSessions(withAssistantReply);
+    } catch {
+      const fallbackConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
+        ...newConvo,
+        {
+          role: 'assistant',
+          content: 'I have analyzed your request. You can configure your campaign in the "Funnel Builder" tab or ask any follow-up question!',
+        },
+      ];
+      const withFallback = updatedSessions.map((s) =>
+        s.id === activeSession.id ? { ...s, messages: fallbackConvo } : s
+      );
+      saveSessions(withFallback);
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   const handleGenerateFunnel = async (e: React.FormEvent) => {
@@ -424,7 +459,6 @@ export default function AIAgentFullPage() {
         is_paid: isPaid,
         price_cents: priceCents,
         custom_instructions: customInstructions,
-        model: selectedModel,
         template: selectedTemplate,
       });
 
@@ -467,723 +501,76 @@ export default function AIAgentFullPage() {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim() || isChatLoading) return;
-
-    const userText = chatInput.trim();
-    setChatInput('');
-
-    // Determine updated session title if it's currently generic
-    const currentTitle = activeSession.title;
-    const shouldRename = currentTitle === 'New Conversation' || currentTitle === 'Getting Started with AI Agent';
-    const newTitle = shouldRename ? userText.slice(0, 32) + (userText.length > 32 ? '...' : '') : currentTitle;
-
-    // Determine category based on keywords
-    let category: 'recent' | 'funnels' | 'copy' = activeSession.category;
-    const lower = userText.toLowerCase();
-    if (lower.includes('funnel') || lower.includes('webinar') || lower.includes('landing') || lower.includes('agenda')) {
-      category = 'funnels';
-    } else if (lower.includes('email') || lower.includes('headline') || lower.includes('copy') || lower.includes('subject')) {
-      category = 'copy';
-    }
-
-    const newConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
-      ...activeSession.messages,
-      { role: 'user', content: userText },
-    ];
-
-    const updatedSessions = sessions.map((s) =>
-      s.id === activeSession.id
-        ? { ...s, title: newTitle, category, messages: newConvo }
-        : s
-    );
-    saveSessions(updatedSessions);
-    setIsChatLoading(true);
-
-    try {
-      const res = await aiApi.chatWithAgent({
-        messages: newConvo,
-        model: selectedModel,
-      });
-
-      const finalConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
-        ...newConvo,
-        { role: 'assistant', content: res.reply },
-      ];
-
-      const withAssistantReply = updatedSessions.map((s) =>
-        s.id === activeSession.id ? { ...s, messages: finalConvo } : s
-      );
-      saveSessions(withAssistantReply);
-    } catch {
-      const fallbackConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
-        ...newConvo,
-        {
-          role: 'assistant',
-          content: 'I have analyzed your request. You can configure your campaign in the "1-Click Funnel Generator" tab or ask any follow-up question!',
-        },
-      ];
-      const withFallback = updatedSessions.map((s) =>
-        s.id === activeSession.id ? { ...s, messages: fallbackConvo } : s
-      );
-      saveSessions(withFallback);
-    } finally {
-      setIsChatLoading(false);
-    }
-  };
-
   const recentSessions = sessions.filter((s) => s.category === 'recent');
   const funnelSessions = sessions.filter((s) => s.category === 'funnels');
   const copySessions = sessions.filter((s) => s.category === 'copy');
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Top Header Card */}
-      <div className="relative overflow-hidden rounded-2xl border border-[#5a1a23]/60 bg-gradient-to-r from-[#1c080b] via-[#380f15] to-[#4d151e] p-6 sm:p-8 text-white shadow-xl">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 w-2/3 opacity-20 bg-[linear-gradient(to_right,#ffffff12_1px,transparent_1px),linear-gradient(to_bottom,#ffffff12_1px,transparent_1px)] bg-[size:32px_32px]"
-        />
-
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#852533] via-[#6b1e28] to-[#45141B] border border-[#a63344]/50 shadow-lg">
-              <Sparkles className="h-6 w-6 text-[#f8d7dc]" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                WebinarFlow AI Agent
-              </h1>
-              <p className="text-xs sm:text-sm text-[#f1d0d5]/80 mt-1">
-                Generate high-converting webinar funnels, landing pages, and email sequences in seconds.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Switcher */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[#5a1a23]/50 pt-4">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setActiveTab('funnel')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                activeTab === 'funnel'
-                  ? 'bg-[#852533] text-white shadow-md shadow-[#45141B]/40 ring-1 ring-[#a63344]'
-                  : 'bg-black/30 text-gray-300 hover:text-white hover:bg-black/50'
-              }`}
-            >
-              <Wand2 className="h-4 w-4 text-[#f8a5b2]" />
-              1-Click Funnel Generator
-            </button>
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                activeTab === 'chat'
-                  ? 'bg-[#852533] text-white shadow-md shadow-[#45141B]/40 ring-1 ring-[#a63344]'
-                  : 'bg-black/30 text-gray-300 hover:text-white hover:bg-black/50'
-              }`}
-            >
-              <MessageSquare className="h-4 w-4 text-[#f8a5b2]" />
-              AI Co-Pilot Chat
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Tab 1: 1-Click Funnel Generator */}
-      {activeTab === 'funnel' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Configuration Form */}
-          <div className="lg:col-span-5 flex flex-col space-y-4 bg-white dark:bg-[#140507]/90 border border-neutral-200 dark:border-[#5a1a23]/50 rounded-2xl p-5 sm:p-6 shadow-sm">
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                <Zap className="h-4 w-4 text-amber-500" />
-                Configure Webinar Funnel
-              </h2>
-              <p className="text-xs text-neutral-500 dark:text-[#f1d0d5]/70 mt-0.5">
-                Tell the AI your webinar topic and audience to generate the complete campaign.
-              </p>
-            </div>
-
-            <form onSubmit={handleGenerateFunnel} className="space-y-4 flex-1 flex flex-col justify-between">
-              <div className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 dark:text-gray-300 mb-1">
-                    Webinar Topic or Main Title *
-                  </label>
-                  <Input
-                    required
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    placeholder="e.g. AI Automation for Students & Creators"
-                    className="bg-neutral-50 dark:bg-black/60 border-neutral-300 dark:border-[#5a1a23]/60 text-neutral-900 dark:text-white text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 dark:text-gray-300 mb-1">
-                    Target Audience
-                  </label>
-                  <Input
-                    value={targetAudience}
-                    onChange={(e) => setTargetAudience(e.target.value)}
-                    placeholder="e.g. Students, Freelancers, Creators"
-                    className="bg-neutral-50 dark:bg-black/60 border-neutral-300 dark:border-[#5a1a23]/60 text-neutral-900 dark:text-white text-sm"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-700 dark:text-gray-300 mb-1">Pricing Model</label>
-                    <select
-                      value={isPaid ? 'paid' : 'free'}
-                      onChange={(e) => setIsPaid(e.target.value === 'paid')}
-                      className="w-full h-9 rounded-md bg-neutral-50 dark:bg-black/60 border border-neutral-300 dark:border-[#5a1a23]/60 px-3 text-xs text-neutral-900 dark:text-white focus:outline-none"
-                    >
-                      <option value="free">Free Training</option>
-                      <option value="paid">Paid Masterclass</option>
-                    </select>
-                  </div>
-
-                  {isPaid && (
-                    <div>
-                      <label className="block text-xs font-semibold text-neutral-700 dark:text-gray-300 mb-1">Ticket Price ($)</label>
-                      <Input
-                        type="number"
-                        value={priceDollars}
-                        onChange={(e) => setPriceDollars(e.target.value)}
-                        placeholder="47"
-                        className="bg-neutral-50 dark:bg-black/60 border-neutral-300 dark:border-[#5a1a23]/60 text-neutral-900 dark:text-white text-sm h-9"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Template Selection */}
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 dark:text-gray-300 mb-1.5 flex items-center justify-between">
-                    <span>Landing Page Template</span>
-                    <span className="text-[11px] text-[#852533] dark:text-[#f8a5b2] font-normal">Choose 1 of 3</span>
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTemplate('modern-saas')}
-                      className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
-                        selectedTemplate === 'modern-saas'
-                          ? 'border-[#852533] bg-[#45141B]/10 dark:bg-[#45141B]/70 text-neutral-900 dark:text-white ring-2 ring-[#852533]/50'
-                          : 'border-neutral-200 dark:border-[#5a1a23]/60 bg-neutral-50 dark:bg-black/40 text-neutral-600 dark:text-gray-400 hover:border-[#852533]'
-                      }`}
-                    >
-                      <span className="text-base mb-0.5">🚀</span>
-                      <span className="text-[11px] font-bold">Modern SaaS</span>
-                      <span className="text-[9px] text-neutral-500 dark:text-[#f8d7dc]/70">Stripe / Linear</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTemplate('corporate')}
-                      className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
-                        selectedTemplate === 'corporate'
-                          ? 'border-[#852533] bg-[#45141B]/10 dark:bg-[#45141B]/70 text-neutral-900 dark:text-white ring-2 ring-[#852533]/50'
-                          : 'border-neutral-200 dark:border-[#5a1a23]/60 bg-neutral-50 dark:bg-black/40 text-neutral-600 dark:text-gray-400 hover:border-[#852533]'
-                      }`}
-                    >
-                      <span className="text-base mb-0.5">🏢</span>
-                      <span className="text-[11px] font-bold">Corporate</span>
-                      <span className="text-[9px] text-neutral-500 dark:text-[#f8d7dc]/70">Executive B2B</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTemplate('education')}
-                      className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
-                        selectedTemplate === 'education'
-                          ? 'border-[#852533] bg-[#45141B]/10 dark:bg-[#45141B]/70 text-neutral-900 dark:text-white ring-2 ring-[#852533]/50'
-                          : 'border-neutral-200 dark:border-[#5a1a23]/60 bg-neutral-50 dark:bg-black/40 text-neutral-600 dark:text-gray-400 hover:border-[#852533]'
-                      }`}
-                    >
-                      <span className="text-base mb-0.5">🎓</span>
-                      <span className="text-[11px] font-bold">Education</span>
-                      <span className="text-[9px] text-neutral-500 dark:text-[#f8d7dc]/70">Academy</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 dark:text-gray-300 mb-1">
-                    Custom Instructions (Optional)
-                  </label>
-                  <Textarea
-                    rows={3}
-                    value={customInstructions}
-                    onChange={(e) => setCustomInstructions(e.target.value)}
-                    placeholder="e.g. Focus on portfolio projects students can show to universities or employers, include live practical case studies"
-                    className="bg-neutral-50 dark:bg-black/60 border-neutral-300 dark:border-[#5a1a23]/60 text-neutral-900 dark:text-white text-xs"
-                  />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isGenerating || !topic.trim()}
-                className="w-full bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white font-semibold py-3 rounded-xl border border-[#a63344]/50 shadow-lg shadow-[#45141B]/20 transition-all hover:scale-[1.01] mt-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#f8d7dc]" />
-                    Generating Funnel with AI...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4 text-[#f8d7dc]" />
-                    Generate Complete Funnel
-                  </>
-                )}
-              </Button>
-            </form>
-          </div>
-
-          {/* Right Column: Generated Output & Preview */}
+    // Full Edge-to-Edge Container: cancels outer padding, fills 100dvh, zero page scroll!
+    <div className="-mx-4 -my-8 md:-mx-6 md:-my-8 h-[calc(100dvh-4rem)] flex flex-col bg-[#0b0305] text-white overflow-hidden select-none">
+      {/* ChatGPT-Style Slide-over Chat History Drawer */}
+      {showHistoryDrawer && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
           <div
-            ref={previewContainerRef}
-            className="lg:col-span-7 flex flex-col bg-white dark:bg-[#140507]/80 border border-neutral-200 dark:border-[#5a1a23]/50 rounded-2xl overflow-hidden shadow-sm min-h-[500px]"
-          >
-            {generatedFunnel ? (
-              <div className="flex flex-col h-full">
-                {/* Sub-tabs & Deploy Bar */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-neutral-100 dark:bg-black/60 border-b border-neutral-200 dark:border-[#5a1a23]/40">
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewSection('landing')}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                        previewSection === 'landing'
-                          ? 'bg-[#852533] text-white shadow-sm'
-                          : 'text-neutral-600 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white bg-white dark:bg-white/5 border border-neutral-200 dark:border-transparent'
-                      }`}
-                    >
-                      🎨 Landing Page
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewSection('emails')}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                        previewSection === 'emails'
-                          ? 'bg-[#852533] text-white shadow-sm'
-                          : 'text-neutral-600 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white bg-white dark:bg-white/5 border border-neutral-200 dark:border-transparent'
-                      }`}
-                    >
-                      ✉️ 5-Email Sequence
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewSection('outline')}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                        previewSection === 'outline'
-                          ? 'bg-[#852533] text-white shadow-sm'
-                          : 'text-neutral-600 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white bg-white dark:bg-white/5 border border-neutral-200 dark:border-transparent'
-                      }`}
-                    >
-                      🎙️ Outline
-                    </button>
-                  </div>
+            onClick={() => setShowHistoryDrawer(false)}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity animate-in fade-in"
+          />
 
-                  <Button
-                    size="sm"
-                    onClick={handleDeployFunnel}
-                    disabled={isDeploying}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl px-4 py-2 shadow-md shrink-0 flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
-                  >
-                    {isDeploying ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="mr-1 h-3.5 w-3.5" />}
-                    Save to Workspace (Draft) →
-                  </Button>
-                </div>
-
-                {/* Preview Content */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                  {previewSection === 'landing' && (
-                    <div className="space-y-4 text-xs">
-                      {/* Hero Preview */}
-                      <div className="p-4 rounded-xl bg-neutral-50 dark:bg-black/50 border border-neutral-200 dark:border-[#5a1a23]/40 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Hero Section</span>
-                          <Badge variant="outline" className="border-neutral-300 dark:border-[#a63344]/40 text-neutral-700 dark:text-[#f8d7dc] text-[10px]">
-                            {generatedFunnel.landing_page.sections?.navbar?.logo_text || 'WebinarFlow'}
-                          </Badge>
-                        </div>
-                        <h3 className="text-base font-bold text-neutral-900 dark:text-white leading-snug">
-                          {generatedFunnel.landing_page.hero_headline}
-                        </h3>
-                        <p className="text-neutral-600 dark:text-gray-300 text-xs leading-relaxed">
-                          {generatedFunnel.landing_page.hero_subheadline}
-                        </p>
-                        <div className="pt-2 flex flex-wrap items-center gap-2">
-                          <Badge className="bg-[#852533] hover:bg-[#852533] text-white px-3 py-1 text-xs">
-                            {generatedFunnel.landing_page.cta_text}
-                          </Badge>
-                          {generatedFunnel.landing_page.sections?.countdown?.message && (
-                            <span className="text-[11px] text-amber-600 dark:text-amber-300 font-mono font-medium">
-                              ⏳ {generatedFunnel.landing_page.sections.countdown.message}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Stats Grid */}
-                      {generatedFunnel.landing_page.sections?.stats?.stats && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          {generatedFunnel.landing_page.sections.stats.stats.map((st: any, i: number) => (
-                            <div key={i} className="p-2.5 rounded-lg bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-[#5a1a23]/30 text-center">
-                              <div className="font-bold text-[#852533] dark:text-[#f8a5b2] text-xs">{st.value}</div>
-                              <div className="text-[10px] text-neutral-500 dark:text-gray-400">{st.label}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Instructors & Mentors */}
-                      {generatedFunnel.landing_page.sections?.speakers?.speakers && (
-                        <div className="space-y-2">
-                          <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">
-                            Instructors & Mentors
-                          </span>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {generatedFunnel.landing_page.sections.speakers.speakers.map((sp: any, i: number) => (
-                              <div key={i} className="p-3 rounded-lg bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-[#5a1a23]/30 space-y-1">
-                                <div className="font-bold text-neutral-900 dark:text-white text-xs">{sp.name}</div>
-                                <div className="text-[11px] text-[#852533] dark:text-[#f8a5b2] font-medium">{sp.title}</div>
-                                <p className="text-[10px] text-neutral-600 dark:text-gray-400 line-clamp-2 leading-relaxed">{sp.bio}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Key Benefits */}
-                      <div className="space-y-2">
-                        <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Key Benefits</span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {generatedFunnel.landing_page.benefits.map((b, i) => (
-                            <div key={i} className="p-3 rounded-lg bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-[#5a1a23]/30">
-                              <h5 className="font-bold text-[#852533] dark:text-[#f8a5b2] text-xs">{b.title}</h5>
-                              <p className="text-[10px] text-neutral-600 dark:text-gray-400 mt-1 leading-relaxed">{b.description}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Agenda */}
-                      <div className="space-y-2">
-                        <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Curriculum & Agenda</span>
-                        <div className="space-y-1.5">
-                          {generatedFunnel.landing_page.agenda.map((a, i) => (
-                            <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-neutral-50 dark:bg-black/30 border border-neutral-200 dark:border-[#5a1a23]/30">
-                              <span className="font-mono font-bold text-[#852533] dark:text-[#f8a5b2] text-xs shrink-0 mr-3">{a.time}</span>
-                              <span className="text-neutral-800 dark:text-gray-200 text-xs truncate font-medium">{a.topic}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* FAQs */}
-                      <div className="space-y-2">
-                        <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Frequently Asked Questions</span>
-                        <div className="space-y-1.5">
-                          {generatedFunnel.landing_page.faqs.map((f, i) => (
-                            <div key={i} className="p-2.5 rounded-lg bg-neutral-50 dark:bg-black/30 border border-neutral-200 dark:border-[#5a1a23]/30 space-y-0.5">
-                              <div className="font-semibold text-neutral-800 dark:text-gray-200 text-xs">Q: {f.question}</div>
-                              <div className="text-neutral-500 dark:text-gray-400 text-[11px]">A: {f.answer}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {previewSection === 'emails' && (
-                    <div className="space-y-3.5">
-                      {generatedFunnel.email_sequence.map((em, i) => (
-                        <div key={i} className="p-4 rounded-xl bg-neutral-50 dark:bg-black/50 border border-neutral-200 dark:border-[#5a1a23]/40 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Badge variant="outline" className="text-[#852533] dark:text-[#f8a5b2] border-[#852533]/30 text-[10px] font-semibold uppercase">
-                              {em.type}
-                            </Badge>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${em.subject}\n\n${em.body}`);
-                                toast.success('Email copied to clipboard!');
-                              }}
-                              className="text-xs text-neutral-500 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white flex items-center gap-1 font-medium transition-colors"
-                            >
-                              <Copy className="h-3.5 w-3.5" /> Copy
-                            </button>
-                          </div>
-                          <h4 className="font-bold text-neutral-900 dark:text-white text-xs">{em.subject}</h4>
-                          <p className="text-xs text-neutral-700 dark:text-gray-300 whitespace-pre-line leading-relaxed font-mono bg-white dark:bg-black/40 p-3 rounded-lg border border-neutral-200 dark:border-white/5">
-                            {em.body}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {previewSection === 'outline' && (
-                    <div className="space-y-3 text-xs">
-                      <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-[#5a1a23]/40">
-                        <span className="text-amber-600 dark:text-amber-400 font-bold uppercase text-[10px]">1. The Hook</span>
-                        <p className="text-neutral-700 dark:text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.hook}</p>
-                      </div>
-                      <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-[#5a1a23]/40">
-                        <span className="text-blue-600 dark:text-indigo-300 font-bold uppercase text-[10px]">2. Origin Story & Problem</span>
-                        <p className="text-neutral-700 dark:text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.story}</p>
-                      </div>
-                      <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-[#5a1a23]/40">
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase text-[10px]">3. Core Content Pillars</span>
-                        <p className="text-neutral-700 dark:text-gray-300 mt-1 whitespace-pre-line leading-relaxed">{generatedFunnel.outline.core_content}</p>
-                      </div>
-                      <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-[#5a1a23]/40">
-                        <span className="text-rose-600 dark:text-pink-400 font-bold uppercase text-[10px]">4. Offer Pitch</span>
-                        <p className="text-neutral-700 dark:text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.offer_pitch}</p>
-                      </div>
-                      <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-[#5a1a23]/40">
-                        <span className="text-purple-600 dark:text-purple-300 font-bold uppercase text-[10px]">5. Q&A and Objections</span>
-                        <p className="text-neutral-700 dark:text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.qa_points}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+          {/* Drawer Panel */}
+          <aside className="relative z-50 w-72 sm:w-80 h-full bg-[#120406] border-r border-[#5a1a23]/60 flex flex-col text-white shadow-2xl animate-in slide-in-from-left duration-200">
+            {/* Drawer Header */}
+            <div className="p-3.5 border-b border-[#5a1a23]/50 flex items-center justify-between gap-2 bg-[#1a0609]">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-[#f8a5b2]" />
+                <span className="font-bold text-sm text-white">Chat History</span>
               </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center text-neutral-500 dark:text-gray-400 space-y-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-[#2b0c11]/80 border border-neutral-200 dark:border-[#6b202c] shadow-inner text-[#852533] dark:text-[#f8a5b2]">
-                  <Sparkles className="h-7 w-7" />
-                </div>
-                <h3 className="text-base font-bold text-neutral-900 dark:text-white">Your Funnel Preview will appear here</h3>
-                <p className="text-xs max-w-sm text-neutral-600 dark:text-[#f1d0d5]/70 leading-relaxed">
-                  Enter your webinar details on the left and click <strong>Generate</strong> to see your landing page, 5 emails, and script outline ready for 1-click launch.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Tab 2: AI Co-Pilot Chat with ChatGPT-Style Chat History Sidebar */}
-      {activeTab === 'chat' && (
-        <div className="relative flex flex-col md:flex-row bg-white border border-neutral-300 rounded-2xl overflow-hidden shadow-2xl min-h-[650px] h-[78vh]">
-          {/* Fullscreen Mobile History Modal - White Background with Black Text */}
-          {showMobileHistory && (
-            <div className="fixed inset-0 z-[100] flex flex-col bg-white text-neutral-900 animate-in fade-in duration-150 md:hidden">
-              {/* Mobile History Header */}
-              <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-200 bg-neutral-50">
-                <div className="flex items-center gap-2">
-                  <History className="h-4 w-4 text-neutral-800" />
-                  <span className="font-bold text-sm text-neutral-900">All Chat History</span>
-                  <span className="text-[11px] text-neutral-500 font-medium">({sessions.length} chats)</span>
-                </div>
-                <button
-                  onClick={() => setShowMobileHistory(false)}
-                  className="p-1.5 rounded-lg bg-neutral-200 text-neutral-800 hover:bg-neutral-300 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Mobile History New Chat CTA */}
-              <div className="p-3.5 border-b border-neutral-200 bg-white">
-                <Button
-                  onClick={() => {
-                    handleCreateNewChat();
-                    setShowMobileHistory(false);
-                  }}
-                  className="w-full bg-neutral-900 hover:bg-black text-white font-bold text-xs py-2.5 rounded-xl border border-neutral-800 shadow-md flex items-center justify-center gap-2"
-                >
-                  <Plus className="h-4 w-4 text-white" />
-                  <span>+ Start New Chat</span>
-                </Button>
-              </div>
-
-              {/* Categorized Sessions List for Mobile */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
-                {recentSessions.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
-                      <Clock className="h-3.5 w-3.5 text-neutral-700" />
-                      <span>Recent Chats</span>
-                    </div>
-                    <div className="space-y-1">
-                      {recentSessions.map((s) => (
-                        <div
-                          key={s.id}
-                          onClick={() => {
-                            setActiveSessionId(s.id);
-                            setShowMobileHistory(false);
-                            toast.success(`Switched to: ${s.title}`);
-                          }}
-                          className={`flex items-center justify-between p-3 rounded-xl text-xs cursor-pointer border transition-all ${
-                            activeSessionId === s.id
-                              ? 'bg-neutral-100 text-black font-bold border-neutral-300 shadow-sm ring-1 ring-neutral-400'
-                              : 'bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:text-black'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 truncate flex-1 min-w-0 mr-2">
-                            <MessageSquare className={`h-4 w-4 shrink-0 ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-400'}`} />
-                            <div className="truncate">
-                              <div className={`truncate font-semibold text-xs ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-900'}`}>{s.title}</div>
-                              <div className="text-[10px] text-neutral-500">{s.messages.length} messages</div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => handleDeleteChat(s.id, e)}
-                            className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 rounded-lg"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {funnelSessions.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
-                      <Wand2 className="h-3.5 w-3.5 text-amber-600" />
-                      <span>Funnel Discussions</span>
-                    </div>
-                    <div className="space-y-1">
-                      {funnelSessions.map((s) => (
-                        <div
-                          key={s.id}
-                          onClick={() => {
-                            setActiveSessionId(s.id);
-                            setShowMobileHistory(false);
-                            toast.success(`Switched to: ${s.title}`);
-                          }}
-                          className={`flex items-center justify-between p-3 rounded-xl text-xs cursor-pointer border transition-all ${
-                            activeSessionId === s.id
-                              ? 'bg-neutral-100 text-black font-bold border-neutral-300 shadow-sm ring-1 ring-neutral-400'
-                              : 'bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:text-black'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 truncate flex-1 min-w-0 mr-2">
-                            <Zap className={`h-4 w-4 shrink-0 ${activeSessionId === s.id ? 'text-amber-600' : 'text-neutral-400'}`} />
-                            <div className="truncate">
-                              <div className={`truncate font-semibold text-xs ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-900'}`}>{s.title}</div>
-                              <div className="text-[10px] text-neutral-500">{s.messages.length} messages</div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => handleDeleteChat(s.id, e)}
-                            className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 rounded-lg"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {copySessions.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
-                      <Sparkles className="h-3.5 w-3.5 text-rose-600" />
-                      <span>Marketing & Copy</span>
-                    </div>
-                    <div className="space-y-1">
-                      {copySessions.map((s) => (
-                        <div
-                          key={s.id}
-                          onClick={() => {
-                            setActiveSessionId(s.id);
-                            setShowMobileHistory(false);
-                            toast.success(`Switched to: ${s.title}`);
-                          }}
-                          className={`flex items-center justify-between p-3 rounded-xl text-xs cursor-pointer border transition-all ${
-                            activeSessionId === s.id
-                              ? 'bg-neutral-100 text-black font-bold border-neutral-300 shadow-sm ring-1 ring-neutral-400'
-                              : 'bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:text-black'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 truncate flex-1 min-w-0 mr-2">
-                            <FileText className={`h-4 w-4 shrink-0 ${activeSessionId === s.id ? 'text-rose-600' : 'text-neutral-400'}`} />
-                            <div className="truncate">
-                              <div className={`truncate font-semibold text-xs ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-900'}`}>{s.title}</div>
-                              <div className="text-[10px] text-neutral-500">{s.messages.length} messages</div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => handleDeleteChat(s.id, e)}
-                            className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 rounded-lg"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Desktop Persistent / Collapsible Chat History Sidebar - Clean White Background with Black Text */}
-          <aside
-            className={`hidden md:flex flex-col bg-white border-r border-neutral-200 text-neutral-900 shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
-              isSidebarOpen ? 'w-64 lg:w-72' : 'w-0 border-r-0'
-            }`}
-          >
-            {/* Sidebar Top: New Chat CTA + Close Sidebar Button */}
-            <div className="p-3.5 border-b border-neutral-200 flex items-center justify-between gap-2 bg-white min-w-[250px]">
-              <Button
-                onClick={handleCreateNewChat}
-                className="flex-1 bg-neutral-900 hover:bg-black text-white border border-neutral-800 shadow-md font-semibold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all hover:scale-[1.01]"
-              >
-                <Plus className="h-4 w-4 text-white" />
-                <span>New Chat</span>
-              </Button>
               <button
-                type="button"
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 rounded-xl text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors"
-                title="Collapse sidebar"
-                aria-label="Collapse sidebar"
+                onClick={() => setShowHistoryDrawer(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
               >
-                <PanelLeft className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Chat Sessions Grouped into Categorized Sections with Clear Headings and Black Text */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-4 bg-white min-w-[250px]">
-              {/* Section 1: Recent Chats */}
+            {/* New Chat Button */}
+            <div className="p-3 border-b border-[#5a1a23]/40">
+              <Button
+                onClick={handleCreateNewChat}
+                className="w-full bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/50 shadow-md font-semibold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+              >
+                <Plus className="h-4 w-4 text-[#f8d7dc]" />
+                <span>+ New Chat</span>
+              </Button>
+            </div>
+
+            {/* Categorized Sessions List with Bold White Headings and White Text */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
               {recentSessions.length > 0 && (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
-                    <Clock className="h-3.5 w-3.5 text-neutral-700" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
+                    <Clock className="h-3 w-3 text-[#f8a5b2]" />
                     <span>Recent Chats</span>
                   </div>
                   <div className="space-y-0.5">
                     {recentSessions.map((s) => (
                       <div
                         key={s.id}
-                        onClick={() => setActiveSessionId(s.id)}
+                        onClick={() => {
+                          setActiveSessionId(s.id);
+                          setShowHistoryDrawer(false);
+                          toast.success(`Switched to: ${s.title}`);
+                        }}
                         className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                           activeSessionId === s.id
-                            ? 'bg-neutral-100 text-black font-bold border border-neutral-300 shadow-sm'
-                            : 'text-neutral-700 hover:bg-neutral-50 hover:text-black'
+                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
+                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
                         }`}
                       >
-                        <div className="flex items-center gap-2 truncate">
-                          <MessageSquare className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-400'}`} />
-                          <span className={`truncate ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-700 group-hover:text-black font-medium'}`}>{s.title}</span>
-                        </div>
+                        <span className="truncate text-white font-medium">{s.title}</span>
                         <button
                           onClick={(e) => handleDeleteChat(s.id, e)}
-                          title="Delete chat"
-                          className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-rose-600 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -1193,32 +580,31 @@ export default function AIAgentFullPage() {
                 </div>
               )}
 
-              {/* Section 2: Funnel Discussions */}
               {funnelSessions.length > 0 && (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
-                    <Wand2 className="h-3.5 w-3.5 text-amber-600" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
+                    <Wand2 className="h-3 w-3 text-amber-400" />
                     <span>Funnel Discussions</span>
                   </div>
                   <div className="space-y-0.5">
                     {funnelSessions.map((s) => (
                       <div
                         key={s.id}
-                        onClick={() => setActiveSessionId(s.id)}
+                        onClick={() => {
+                          setActiveSessionId(s.id);
+                          setShowHistoryDrawer(false);
+                          toast.success(`Switched to: ${s.title}`);
+                        }}
                         className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                           activeSessionId === s.id
-                            ? 'bg-neutral-100 text-black font-bold border border-neutral-300 shadow-sm'
-                            : 'text-neutral-700 hover:bg-neutral-50 hover:text-black'
+                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
+                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
                         }`}
                       >
-                        <div className="flex items-center gap-2 truncate">
-                          <Zap className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-amber-600' : 'text-neutral-400'}`} />
-                          <span className={`truncate ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-700 group-hover:text-black font-medium'}`}>{s.title}</span>
-                        </div>
+                        <span className="truncate text-white font-medium">{s.title}</span>
                         <button
                           onClick={(e) => handleDeleteChat(s.id, e)}
-                          title="Delete chat"
-                          className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-rose-600 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -1228,32 +614,31 @@ export default function AIAgentFullPage() {
                 </div>
               )}
 
-              {/* Section 3: Marketing & Copy */}
               {copySessions.length > 0 && (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
-                    <Sparkles className="h-3.5 w-3.5 text-rose-600" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
+                    <Sparkles className="h-3 w-3 text-pink-400" />
                     <span>Marketing & Copy</span>
                   </div>
                   <div className="space-y-0.5">
                     {copySessions.map((s) => (
                       <div
                         key={s.id}
-                        onClick={() => setActiveSessionId(s.id)}
+                        onClick={() => {
+                          setActiveSessionId(s.id);
+                          setShowHistoryDrawer(false);
+                          toast.success(`Switched to: ${s.title}`);
+                        }}
                         className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                           activeSessionId === s.id
-                            ? 'bg-neutral-100 text-black font-bold border border-neutral-300 shadow-sm'
-                            : 'text-neutral-700 hover:bg-neutral-50 hover:text-black'
+                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
+                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
                         }`}
                       >
-                        <div className="flex items-center gap-2 truncate">
-                          <FileText className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-rose-600' : 'text-neutral-400'}`} />
-                          <span className={`truncate ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-700 group-hover:text-black font-medium'}`}>{s.title}</span>
-                        </div>
+                        <span className="truncate text-white font-medium">{s.title}</span>
                         <button
                           onClick={(e) => handleDeleteChat(s.id, e)}
-                          title="Delete chat"
-                          className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-rose-600 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -1264,145 +649,472 @@ export default function AIAgentFullPage() {
               )}
             </div>
 
-            {/* Sidebar Bottom Footer */}
-            <div className="p-3 border-t border-neutral-200 text-[11px] text-neutral-600 flex items-center justify-between bg-neutral-50 min-w-[250px]">
-              <span className="font-semibold text-neutral-800">Chat Memory Saved</span>
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <div className="p-3 border-t border-[#5a1a23]/50 text-[11px] text-[#f8d7dc]/70 flex items-center justify-between">
+              <span className="font-semibold text-white">Chat Memory Saved</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
             </div>
           </aside>
+        </div>
+      )}
 
-          {/* Right Main Chat Area - Pure Black Background */}
-          <div className="flex-1 flex flex-col min-w-0 bg-black relative">
-            {/* Top Chat Bar: Always Sticky at Top, High Contrast, Pure Black with White Text */}
-            <div className="sticky top-0 z-20 px-3 sm:px-4 py-2.5 sm:py-3 bg-black border-b border-neutral-800 flex items-center justify-between gap-2 sm:gap-3 text-white shadow-md">
-              <div className="flex items-center gap-2.5 truncate flex-1 min-w-0">
-                {/* Desktop Sidebar Toggle Icon */}
-                <button
-                  type="button"
-                  onClick={() => setIsSidebarOpen((prev) => !prev)}
-                  className="hidden md:flex items-center justify-center p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors border border-neutral-700/60"
-                  title={isSidebarOpen ? 'Collapse chat history sidebar' : 'Open chat history sidebar'}
-                  aria-label="Toggle chat history sidebar"
-                >
-                  <PanelLeft className="h-4 w-4" />
-                </button>
+      {/* TOP HEADER IN A SINGLE CLEAN LINE */}
+      <header className="h-14 px-3 sm:px-6 border-b border-[#5a1a23]/60 bg-[#140507] flex items-center justify-between gap-2 shrink-0 z-20">
+        {/* Left: Menu toggle + Back to Dashboard + Branding */}
+        <div className="flex items-center gap-2 sm:gap-3 truncate">
+          <button
+            onClick={() => setShowHistoryDrawer(true)}
+            className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center gap-1.5 transition-colors shrink-0"
+            title="Open Chat History"
+          >
+            <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-[#f8a5b2]" />
+          </button>
 
-                {/* Mobile Toggle Icon to open Full History Modal */}
-                <button
-                  type="button"
-                  onClick={() => setShowMobileHistory(true)}
-                  className="md:hidden flex items-center justify-center p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors border border-neutral-700/60"
-                  title="Open Chat History"
-                  aria-label="Open Chat History"
-                >
-                  <PanelLeft className="h-4 w-4" />
-                </button>
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1 text-xs text-[#f8d7dc]/70 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5 transition-colors shrink-0"
+            title="Return to Dashboard"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline font-medium">Dashboard</span>
+          </Link>
 
-                {/* Mobile Direct Dropdown Switcher */}
-                <div className="md:hidden flex-1 min-w-0">
-                  <select
-                    value={activeSessionId}
-                    onChange={(e) => {
-                      setActiveSessionId(e.target.value);
-                      const title = sessions.find((s) => s.id === e.target.value)?.title;
-                      if (title) toast.success(`Loaded: ${title}`);
-                    }}
-                    className="w-full bg-neutral-900 text-white text-xs font-semibold border border-neutral-700 rounded-lg px-2.5 py-1.5 truncate focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                  >
-                    {sessions.map((s) => (
-                      <option key={s.id} value={s.id} className="bg-neutral-900 text-white">
-                        💬 {s.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          <div className="flex items-center gap-2 truncate">
+            <img
+              src="/logo.png"
+              alt="WebinarFlow"
+              className="h-6 w-6 rounded-lg bg-black object-contain shadow-sm shrink-0"
+            />
+            <span className="font-bold text-xs sm:text-sm tracking-tight text-white truncate">
+              WebinarFlow<span className="text-[#f8a5b2]">.AI</span>
+            </span>
+          </div>
+        </div>
 
-                {/* Desktop Chat Title */}
-                <div className="hidden md:block truncate">
-                  <h3 className="text-xs sm:text-sm font-bold text-white truncate">
-                    {activeSession.title}
-                  </h3>
-                  <span className="text-[10px] text-neutral-400 font-medium">
-                    {activeSession.messages.length} messages
-                  </span>
-                </div>
-              </div>
+        {/* Center: Simple Mode Switcher (Funnel Builder / AI Chat) */}
+        <div className="flex items-center bg-black/60 p-1 rounded-xl border border-[#5a1a23]/60 shrink-0">
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'chat'
+                ? 'bg-[#852533] text-white shadow-sm ring-1 ring-[#a63344]/50'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            💬 Chat
+          </button>
+          <button
+            onClick={() => setActiveTab('funnel')}
+            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'funnel'
+                ? 'bg-[#852533] text-white shadow-sm ring-1 ring-[#a63344]/50'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            🚀 Funnel Builder
+          </button>
+        </div>
 
-              {/* Quick Actions: New Chat */}
-              <button
-                type="button"
-                onClick={handleCreateNewChat}
-                className="p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors border border-neutral-700/60"
-                title="New Chat"
-                aria-label="New Chat"
+        {/* Right: + New Chat CTA */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Button
+            size="sm"
+            onClick={handleCreateNewChat}
+            className="bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 text-xs h-8 px-2.5 sm:px-3 rounded-xl font-semibold shadow-sm flex items-center gap-1 transition-all hover:scale-[1.02]"
+          >
+            <Plus className="h-3.5 w-3.5 text-[#f8d7dc]" />
+            <span className="hidden sm:inline">New Chat</span>
+          </Button>
+        </div>
+      </header>
+
+      {/* MODE 1: FULL-PAGE CHATGPT-STYLE AI AGENT (Zero outer scroll, 100% full screen) */}
+      {activeTab === 'chat' && (
+        <div className="flex-1 flex flex-col min-h-0 relative bg-[#0c0305]">
+          {/* Messages Scroll Area */}
+          <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4 max-w-4xl w-full mx-auto">
+            {activeSession.messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Chat Messages Feed - Pure Solid Black */}
-            <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-black">
-              {activeSession.messages.map((msg, i) => (
+                {msg.role === 'assistant' && (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#6E1F32] text-white border border-[#551827] text-xs font-bold shadow-sm">
+                    AI
+                  </div>
+                )}
                 <div
-                  key={i}
-                  className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`max-w-[85%] sm:max-w-2xl rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'bg-[#852533] text-white border border-[#a63344]/40 shadow-sm font-medium'
+                      : 'bg-[#F3DDE2] text-[#1F1F1F] border border-[#E8BAC5] shadow-sm'
+                  }`}
                 >
-                  {msg.role === 'assistant' && (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#6E1F32] text-white border border-[#551827] text-xs font-bold shadow-sm">
-                      AI
+                  {msg.role === 'user' ? (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  ) : (
+                    <div className="text-[#1F1F1F]">
+                      <ChatMessageContent content={msg.content} />
                     </div>
                   )}
-                  <div
-                    className={`max-w-2xl rounded-2xl px-4 py-3 text-xs leading-relaxed ${
-                      msg.role === 'user'
-                        ? 'bg-[#852533] text-white border border-[#a63344]/40 shadow-sm font-medium'
-                        : 'bg-[#F3DDE2] text-[#1F1F1F] border border-[#E8BAC5] shadow-sm'
-                    }`}
-                  >
-                    {msg.role === 'user' ? (
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
-                    ) : (
-                      <div className="text-[#1F1F1F]">
-                        <ChatMessageContent content={msg.content} />
+                </div>
+              </div>
+            ))}
+
+            {isChatLoading && (
+              <div className="flex gap-3 justify-start">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#6E1F32] text-white border border-[#551827] text-xs font-bold">
+                  AI
+                </div>
+                <div className="rounded-2xl bg-[#F3DDE2] border border-[#E8BAC5] px-4 py-3 text-xs text-[#1F1F1F] flex items-center gap-2 shadow-sm font-medium">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#6E1F32]" />
+                  Thinking and synthesizing response...
+                </div>
+              </div>
+            )}
+            <div ref={chatBottomRef} />
+          </div>
+
+          {/* ChatGPT-Style Bottom Input Bar: Pinned & 16px font to NEVER zoom on iOS Safari */}
+          <div className="p-3 sm:p-4 bg-[#120406]/95 border-t border-[#5a1a23]/40 shrink-0">
+            <form
+              onSubmit={handleSendMessage}
+              className="max-w-4xl mx-auto flex items-center gap-2 bg-black/70 border border-[#5a1a23]/60 focus-within:border-[#a63344] rounded-2xl px-3 py-1.5 shadow-inner transition-all"
+            >
+              {/* Note: text-[16px] is MANDATORY on mobile to completely disable iOS Safari auto-zoom */}
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask WebinarFlow AI anything..."
+                className="flex-1 bg-transparent border-0 text-white text-[16px] sm:text-sm placeholder:text-gray-400 focus:outline-none focus:ring-0 py-1.5 px-1 min-w-0"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isChatLoading || !chatInput.trim()}
+                className="h-9 w-9 p-0 rounded-xl bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 shadow-sm shrink-0 flex items-center justify-center transition-all disabled:opacity-40"
+              >
+                <Send className="h-4 w-4 text-[#f8d7dc]" />
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODE 2: FULL-PAGE FUNNEL BUILDER */}
+      {activeTab === 'funnel' && (
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-7xl w-full mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
+            {/* Configuration Form */}
+            <div className="lg:col-span-5 flex flex-col space-y-4 bg-[#140507]/90 border border-[#5a1a23]/50 rounded-2xl p-5 sm:p-6 shadow-sm">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  Configure Webinar Funnel
+                </h2>
+                <p className="text-xs text-[#f1d0d5]/70 mt-0.5">
+                  Generate full landing page, 5-email sequence, and webinar outline in seconds.
+                </p>
+              </div>
+
+              <form onSubmit={handleGenerateFunnel} className="space-y-4 flex-1 flex flex-col justify-between">
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                      Webinar Topic or Main Title *
+                    </label>
+                    <Input
+                      required
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      placeholder="e.g. AI Automation for Students & Creators"
+                      className="bg-black/60 border-[#5a1a23]/60 text-white text-[16px] sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                      Target Audience
+                    </label>
+                    <Input
+                      value={targetAudience}
+                      onChange={(e) => setTargetAudience(e.target.value)}
+                      placeholder="e.g. Students, Freelancers, Creators"
+                      className="bg-black/60 border-[#5a1a23]/60 text-white text-[16px] sm:text-sm"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-300 mb-1">Pricing Model</label>
+                      <select
+                        value={isPaid ? 'paid' : 'free'}
+                        onChange={(e) => setIsPaid(e.target.value === 'paid')}
+                        className="w-full h-9 rounded-md bg-black/60 border border-[#5a1a23]/60 px-3 text-xs text-white focus:outline-none"
+                      >
+                        <option value="free">Free Training</option>
+                        <option value="paid">Paid Masterclass</option>
+                      </select>
+                    </div>
+
+                    {isPaid && (
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-300 mb-1">Ticket Price ($)</label>
+                        <Input
+                          type="number"
+                          value={priceDollars}
+                          onChange={(e) => setPriceDollars(e.target.value)}
+                          placeholder="47"
+                          className="bg-black/60 border-[#5a1a23]/60 text-white text-[16px] sm:text-sm h-9"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center justify-between">
+                      <span>Landing Page Template</span>
+                      <span className="text-[11px] text-[#f8a5b2] font-normal">Choose 1 of 3</span>
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTemplate('modern-saas')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
+                          selectedTemplate === 'modern-saas'
+                            ? 'border-[#852533] bg-[#45141B]/70 text-white ring-2 ring-[#852533]/50'
+                            : 'border-[#5a1a23]/60 bg-black/40 text-gray-400 hover:border-[#852533]'
+                        }`}
+                      >
+                        <span className="text-base mb-0.5">🚀</span>
+                        <span className="text-[11px] font-bold">Modern SaaS</span>
+                        <span className="text-[9px] text-[#f8d7dc]/70">Stripe / Linear</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTemplate('corporate')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
+                          selectedTemplate === 'corporate'
+                            ? 'border-[#852533] bg-[#45141B]/70 text-white ring-2 ring-[#852533]/50'
+                            : 'border-[#5a1a23]/60 bg-black/40 text-gray-400 hover:border-[#852533]'
+                        }`}
+                      >
+                        <span className="text-base mb-0.5">🏢</span>
+                        <span className="text-[11px] font-bold">Corporate</span>
+                        <span className="text-[9px] text-[#f8d7dc]/70">Executive B2B</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTemplate('education')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
+                          selectedTemplate === 'education'
+                            ? 'border-[#852533] bg-[#45141B]/70 text-white ring-2 ring-[#852533]/50'
+                            : 'border-[#5a1a23]/60 bg-black/40 text-gray-400 hover:border-[#852533]'
+                        }`}
+                      >
+                        <span className="text-base mb-0.5">🎓</span>
+                        <span className="text-[11px] font-bold">Education</span>
+                        <span className="text-[9px] text-[#f8d7dc]/70">Academy</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                      Custom Instructions (Optional)
+                    </label>
+                    <Textarea
+                      rows={3}
+                      value={customInstructions}
+                      onChange={(e) => setCustomInstructions(e.target.value)}
+                      placeholder="e.g. Focus on portfolio projects students can show to universities or employers, include live practical case studies"
+                      className="bg-black/60 border-[#5a1a23]/60 text-white text-[16px] sm:text-xs"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isGenerating || !topic.trim()}
+                  className="w-full bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white font-semibold py-3 rounded-xl border border-[#a63344]/50 shadow-lg shadow-[#45141B]/20 transition-all hover:scale-[1.01] mt-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#f8d7dc]" />
+                      Generating Funnel with AI...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4 text-[#f8d7dc]" />
+                      Generate Complete Funnel
+                    </>
+                  )}
+                </Button>
+              </form>
+            </div>
+
+            {/* Generated Output Preview */}
+            <div
+              ref={previewContainerRef}
+              className="lg:col-span-7 flex flex-col bg-[#140507]/80 border border-[#5a1a23]/50 rounded-2xl overflow-hidden shadow-sm min-h-[500px]"
+            >
+              {generatedFunnel ? (
+                <div className="flex flex-col h-full">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-black/60 border-b border-[#5a1a23]/40">
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewSection('landing')}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                          previewSection === 'landing'
+                            ? 'bg-[#852533] text-white shadow-sm'
+                            : 'text-gray-400 hover:text-white bg-white/5'
+                        }`}
+                      >
+                        🎨 Landing Page
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewSection('emails')}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                          previewSection === 'emails'
+                            ? 'bg-[#852533] text-white shadow-sm'
+                            : 'text-gray-400 hover:text-white bg-white/5'
+                        }`}
+                      >
+                        ✉️ 5-Email Sequence
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewSection('outline')}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                          previewSection === 'outline'
+                            ? 'bg-[#852533] text-white shadow-sm'
+                            : 'text-gray-400 hover:text-white bg-white/5'
+                        }`}
+                      >
+                        🎙️ Outline
+                      </button>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      onClick={handleDeployFunnel}
+                      disabled={isDeploying}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl px-4 py-2 shadow-md shrink-0 flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                    >
+                      {isDeploying ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="mr-1 h-3.5 w-3.5" />}
+                      Save to Workspace (Draft) →
+                    </Button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                    {previewSection === 'landing' && (
+                      <div className="space-y-4 text-xs">
+                        <div className="p-4 rounded-xl bg-black/50 border border-[#5a1a23]/40 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Hero Section</span>
+                            <Badge variant="outline" className="border-[#a63344]/40 text-[#f8d7dc] text-[10px]">
+                              {generatedFunnel.landing_page.sections?.navbar?.logo_text || 'WebinarFlow'}
+                            </Badge>
+                          </div>
+                          <h3 className="text-base font-bold text-white leading-snug">
+                            {generatedFunnel.landing_page.hero_headline}
+                          </h3>
+                          <p className="text-gray-300 text-xs leading-relaxed">
+                            {generatedFunnel.landing_page.hero_subheadline}
+                          </p>
+                          <div className="pt-2 flex flex-wrap items-center gap-2">
+                            <Badge className="bg-[#852533] hover:bg-[#852533] text-white px-3 py-1 text-xs">
+                              {generatedFunnel.landing_page.cta_text}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {generatedFunnel.landing_page.sections?.stats?.stats && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {generatedFunnel.landing_page.sections.stats.stats.map((st: any, i: number) => (
+                              <div key={i} className="p-2.5 rounded-lg bg-black/40 border border-[#5a1a23]/30 text-center">
+                                <div className="font-bold text-[#f8a5b2] text-xs">{st.value}</div>
+                                <div className="text-[10px] text-gray-400">{st.label}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <span className="text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Key Benefits</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {generatedFunnel.landing_page.benefits.map((b, i) => (
+                              <div key={i} className="p-3 rounded-lg bg-black/40 border border-[#5a1a23]/30">
+                                <h5 className="font-bold text-[#f8a5b2] text-xs">{b.title}</h5>
+                                <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">{b.description}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {previewSection === 'emails' && (
+                      <div className="space-y-3.5">
+                        {generatedFunnel.email_sequence.map((em, i) => (
+                          <div key={i} className="p-4 rounded-xl bg-black/50 border border-[#5a1a23]/40 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Badge variant="outline" className="text-[#f8a5b2] border-[#852533]/30 text-[10px] font-semibold uppercase">
+                                {em.type}
+                              </Badge>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${em.subject}\n\n${em.body}`);
+                                  toast.success('Email copied to clipboard!');
+                                }}
+                                className="text-xs text-gray-400 hover:text-white flex items-center gap-1 font-medium transition-colors"
+                              >
+                                <Copy className="h-3.5 w-3.5" /> Copy
+                              </button>
+                            </div>
+                            <h4 className="font-bold text-white text-xs">{em.subject}</h4>
+                            <p className="text-xs text-gray-300 whitespace-pre-line leading-relaxed font-mono bg-black/40 p-3 rounded-lg border border-white/5">
+                              {em.body}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {previewSection === 'outline' && (
+                      <div className="space-y-3 text-xs">
+                        <div className="p-3.5 rounded-lg bg-black/40 border border-[#5a1a23]/40">
+                          <span className="text-amber-400 font-bold uppercase text-[10px]">1. The Hook</span>
+                          <p className="text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.hook}</p>
+                        </div>
+                        <div className="p-3.5 rounded-lg bg-black/40 border border-[#5a1a23]/40">
+                          <span className="text-indigo-300 font-bold uppercase text-[10px]">2. Origin Story & Problem</span>
+                          <p className="text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.story}</p>
+                        </div>
+                        <div className="p-3.5 rounded-lg bg-black/40 border border-[#5a1a23]/40">
+                          <span className="text-emerald-400 font-bold uppercase text-[10px]">3. Core Content Pillars</span>
+                          <p className="text-gray-300 mt-1 whitespace-pre-line leading-relaxed">{generatedFunnel.outline.core_content}</p>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
-              ))}
-              {isChatLoading && (
-                <div className="flex gap-3 justify-start">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#6E1F32] text-white border border-[#551827] text-xs font-bold">
-                    AI
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center text-gray-400 space-y-3">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#2b0c11]/80 border border-[#6b202c] shadow-inner text-[#f8a5b2]">
+                    <Sparkles className="h-7 w-7" />
                   </div>
-                  <div className="rounded-2xl bg-[#F3DDE2] border border-[#E8BAC5] px-4 py-3 text-xs text-[#1F1F1F] flex items-center gap-2 shadow-sm font-medium">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#6E1F32]" />
-                    Thinking and synthesizing response...
-                  </div>
+                  <h3 className="text-base font-bold text-white">Your Funnel Preview will appear here</h3>
+                  <p className="text-xs max-w-sm text-[#f1d0d5]/70 leading-relaxed">
+                    Enter your webinar details on the left and click <strong>Generate</strong> to see your landing page, 5 emails, and script outline ready for 1-click launch.
+                  </p>
                 </div>
               )}
-              <div ref={chatBottomRef} />
             </div>
-
-            {/* Chat Message Input Composer - Pure Solid Black */}
-            <form
-              onSubmit={handleSendMessage}
-              className="p-3 sm:p-4 bg-black border-t border-neutral-800 flex gap-2"
-            >
-              <Input
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask your AI Agent anything (e.g. 'write a 3-day reminder sequence', 'generate high-converting webinar headlines')..."
-                className="bg-neutral-900 border-neutral-800 focus:border-neutral-700 text-white text-xs sm:text-sm placeholder:text-neutral-500"
-              />
-              <Button
-                type="submit"
-                disabled={isChatLoading || !chatInput.trim()}
-                className="bg-neutral-100 hover:bg-white text-black border border-neutral-300 px-5 font-bold text-xs shadow-md shrink-0 transition-all hover:scale-[1.02]"
-              >
-                <Send className="h-3.5 w-3.5 mr-1 text-black" />
-                Send
-              </Button>
-            </form>
           </div>
         </div>
       )}
