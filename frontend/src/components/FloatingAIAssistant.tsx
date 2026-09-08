@@ -108,7 +108,7 @@ export function FloatingAIAssistant() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          className="relative block w-36 sm:w-44 md:w-48 aspect-[663/630] focus:outline-none transition-all drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)] hover:drop-shadow-[0_16px_36px_rgba(236,72,153,0.35)]"
+          className="relative block w-36 sm:w-44 md:w-48 aspect-[620/574] focus:outline-none transition-all drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)] hover:drop-shadow-[0_16px_36px_rgba(236,72,153,0.35)]"
           title="WebinarFlow AI+ Assistant — Click to open"
           aria-label="WebinarFlow AI+ Assistant"
         >
@@ -123,10 +123,10 @@ export function FloatingAIAssistant() {
           <motion.div
             className="absolute pointer-events-none"
             style={{
-              left: `${(245 / 663) * 100}%`,
-              top: `${(330 / 630) * 100}%`,
-              width: `${(85 / 663) * 100}%`,
-              height: `${(85 / 630) * 100}%`,
+              left: `${(232 / 620) * 100}%`,
+              top: `${(320 / 574) * 100}%`,
+              width: `${(85 / 620) * 100}%`,
+              height: `${(85 / 574) * 100}%`,
               transformOrigin: '50% 12%',
             }}
             animate={{
@@ -149,10 +149,10 @@ export function FloatingAIAssistant() {
           <motion.div
             className="absolute pointer-events-none"
             style={{
-              left: `${(325 / 663) * 100}%`,
-              top: `${(330 / 630) * 100}%`,
-              width: `${(95 / 663) * 100}%`,
-              height: `${(95 / 630) * 100}%`,
+              left: `${(312 / 620) * 100}%`,
+              top: `${(325 / 574) * 100}%`,
+              width: `${(90 / 620) * 100}%`,
+              height: `${(90 / 574) * 100}%`,
               transformOrigin: '50% 12%',
             }}
             animate={{
