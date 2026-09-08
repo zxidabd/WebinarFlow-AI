@@ -43,7 +43,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Customers', href: '/dashboard/customers', icon: Users, matchPrefix: '/dashboard/customers' },
   { label: 'Webinars', href: '/dashboard/webinars', icon: Video, matchPrefix: '/dashboard/webinars' },
   { label: 'Payments', href: '/dashboard/payments', icon: CreditCard, matchPrefix: '/dashboard/payments' },
-  { label: 'AI Agent', href: '/dashboard#ai-hero', icon: Sparkles, isHeroAnchor: true },
+  { label: 'AI Agent', href: '/dashboard/ai-agent', icon: Sparkles, matchPrefix: '/dashboard/ai-agent' },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings, matchPrefix: '/dashboard/settings' },
 ];
 
@@ -52,7 +52,6 @@ export function DashboardSidebar() {
   const basePath = pathname?.split('#')[0] ?? '/dashboard';
 
   const isActive = (item: NavItem): boolean => {
-    if (item.isHeroAnchor) return false;
     if (item.matchPrefix) return basePath.startsWith(item.matchPrefix);
     return basePath === item.href;
   };

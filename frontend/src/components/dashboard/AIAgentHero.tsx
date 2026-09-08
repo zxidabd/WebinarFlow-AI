@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { Sparkles, Wand2, FileText, Video, ClipboardList, CreditCard, Mail, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AIAgentCopilotModal } from './AIAgentCopilotModal';
 
 const GENERATE_ITEMS = [
   { label: 'Landing Pages', icon: FileText },
@@ -15,12 +14,6 @@ const GENERATE_ITEMS = [
 ];
 
 export function AIAgentHero() {
-  const [modalOpen, setModalOpen] = useState(false);
-
-  const openWizard = () => {
-    setModalOpen(true);
-  };
-
   return (
     <section
       id="ai-hero"
@@ -80,18 +73,17 @@ export function AIAgentHero() {
         </div>
 
         <div className="pt-2 flex flex-wrap items-center gap-3">
-          <Button
-            size="lg"
-            onClick={openWizard}
-            className="font-semibold bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white px-6 py-3 rounded-xl border border-[#a63344]/40 shadow-lg shadow-[#2a060a]/60 hover:shadow-[#45141B]/50 transition-all hover:scale-[1.01]"
-          >
-            <Wand2 className="h-4 w-4 text-[#f8d7dc]" />
-            <span>Generate Webinar Funnel</span>
-          </Button>
+          <Link href="/dashboard/ai-agent">
+            <Button
+              size="lg"
+              className="font-semibold bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white px-6 py-3 rounded-xl border border-[#a63344]/40 shadow-lg shadow-[#2a060a]/60 hover:shadow-[#45141B]/50 transition-all hover:scale-[1.01]"
+            >
+              <Wand2 className="h-4 w-4 text-[#f8d7dc]" />
+              <span>Generate Webinar Funnel</span>
+            </Button>
+          </Link>
         </div>
       </div>
-
-      <AIAgentCopilotModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </section>
   );
 }
