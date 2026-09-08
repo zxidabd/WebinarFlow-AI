@@ -18,10 +18,12 @@ import uuid
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.core.config import settings
+from app.models import User
 from app.services import security
 from app.schemas import (
     AccessTokenResponse,
