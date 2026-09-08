@@ -324,3 +324,38 @@ async def admin_update_subscription(
     
     await db.commit()
     return {"status": "ok", "message": f"User {target.email} updated to {payload.subscription_status} / {payload.plan_tier}"}
+
+
+# ── Temporary Admin Setup (REMOVE AFTER USE) ────────────────────────────
+@router.post("/setup-admin")
+async def setup_admin(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """One-time endpoint to make a user superuser. Requires secret key.
+    
+    Call: POST /api/v1/auth/setup-admin
+    Body: {"email": "your@email.com", "secret": "webinarflow-admin-setup-2026"}
+    """
+    from sqlalchemy import select
+    from app.models import User
+    
+    body = await request.json()
+    email = body.get("email", "").strip()
+    secret = body.get("secret", "")
+    
+    if secret != "webinarflow-admin-setup-2026":
+        raise HTTPException(403, "Invalid secret key")
+    
+    if not email:
+        raise HTTPException(400, "Email is required")
+    
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, f"User with email {email} not found")
+    
+    user.is_super_user = True
+    await db.commit()
+    return {"status": "ok", "message": f"{email} is now a superuser!"}
+
