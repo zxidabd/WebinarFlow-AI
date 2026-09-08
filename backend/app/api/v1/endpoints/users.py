@@ -47,6 +47,9 @@ async def get_me(current_user: User = Depends(get_current_active_user), db: Asyn
             "email_verified": current_user.email_verified,
             "is_super_user": current_user.is_super_user,
             "last_login_at": current_user.last_login_at,
+            "trial_ends_at": current_user.trial_ends_at,
+            "subscription_status": current_user.subscription_status,
+            "plan_tier": current_user.plan_tier,
             "organizations": [_to_user_org(m) for m in memberships],
         }
     )

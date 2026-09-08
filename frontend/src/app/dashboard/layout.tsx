@@ -22,12 +22,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isAiAgent = pathname?.startsWith('/dashboard/ai-agent');
   const user = useAuthStore((s) => s.user);
 
-  // Check if trial has expired (subscription_status is not 'active' and trial_ends_at is in the past)
+  // Check if trial/subscription has expired or been canceled (superusers bypass)
   const isTrialExpired =
     user &&
-    user.subscription_status !== 'active' &&
-    user.trial_ends_at &&
-    new Date(user.trial_ends_at) < new Date();
+    !user.is_super_user &&
+    (user.subscription_status === 'expired' ||
+      user.subscription_status === 'canceled' ||
+      (user.subscription_status !== 'active' &&
+        user.trial_ends_at &&
+        new Date(user.trial_ends_at) < new Date()));
 
   // Calculate days remaining in trial
   const trialDaysLeft =

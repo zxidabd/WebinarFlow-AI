@@ -38,6 +38,17 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
             });
             setHasAuth(true);
             setChecking(false);
+
+            // Re-sync user state from /users/me in the background to catch admin status updates
+            import('@/lib/api').then(({ api }) => {
+              api.get('/users/me')
+                .then((res) => {
+                  if (res.data) {
+                    useAuthStore.getState().setUser(res.data);
+                  }
+                })
+                .catch(() => {});
+            });
             return;
           }
         }
