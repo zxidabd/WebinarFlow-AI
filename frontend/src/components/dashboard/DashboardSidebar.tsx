@@ -22,10 +22,12 @@ import {
   CreditCard,
   Sparkles,
   Settings,
+  Shield,
   Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/auth';
 
 type NavItem = {
   label: string;
@@ -35,6 +37,8 @@ type NavItem = {
   matchPrefix?: string;
   /** AI Agent links to the on-page hero anchor instead of a route. */
   isHeroAnchor?: boolean;
+  /** Only show for superusers */
+  superuserOnly?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -45,16 +49,20 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Payments', href: '/dashboard/payments', icon: CreditCard, matchPrefix: '/dashboard/payments' },
   { label: 'AI Agent', href: '/dashboard/ai-agent', icon: Sparkles, matchPrefix: '/dashboard/ai-agent' },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings, matchPrefix: '/dashboard/settings' },
+  { label: 'Admin', href: '/dashboard/admin', icon: Shield, matchPrefix: '/dashboard/admin', superuserOnly: true },
 ];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const basePath = pathname?.split('#')[0] ?? '/dashboard';
+  const user = useAuthStore((s) => s.user);
 
   const isActive = (item: NavItem): boolean => {
     if (item.matchPrefix) return basePath.startsWith(item.matchPrefix);
     return basePath === item.href;
   };
+
+  const visibleItems = NAV_ITEMS.filter((item) => !item.superuserOnly || user?.is_super_user);
 
   return (
     <aside className="flex h-full w-60 flex-col border-r border-border bg-card">
@@ -70,7 +78,7 @@ export function DashboardSidebar() {
       </Link>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
           return (

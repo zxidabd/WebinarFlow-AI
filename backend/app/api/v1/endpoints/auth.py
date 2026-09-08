@@ -327,6 +327,64 @@ async def admin_update_subscription(
     return {"status": "ok", "message": f"User {target.email} updated to {payload.subscription_status} / {payload.plan_tier}"}
 
 
+@router.get("/admin/users")
+async def admin_list_users(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    search: str = "",
+):
+    """Superuser-only: list all users with subscription info."""
+    from sqlalchemy import select, func
+    from app.models import User
+
+    creds = await _bearer(request)
+    if creds is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+    token_payload = security.decode_token(creds.credentials)
+    admin_user = (await db.execute(select(User).where(User.id == uuid.UUID(token_payload["sub"])))).scalar_one_or_none()
+    if not admin_user or not admin_user.is_super_user:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Superuser access required")
+
+    query = select(User).order_by(User.created_at.desc())
+    if search:
+        query = query.where(User.email.ilike(f"%{search}%"))
+
+    result = await db.execute(query)
+    users = result.scalars().all()
+
+    # Stats
+    all_users = await db.execute(select(func.count()).select_from(User))
+    total = all_users.scalar() or 0
+    active_count = await db.execute(select(func.count()).select_from(User).where(User.subscription_status == "active"))
+    trialing_count = await db.execute(select(func.count()).select_from(User).where(User.subscription_status == "trialing"))
+    expired_count = await db.execute(select(func.count()).select_from(User).where(User.subscription_status == "expired"))
+
+    return {
+        "stats": {
+            "total": total,
+            "active": active_count.scalar() or 0,
+            "trialing": trialing_count.scalar() or 0,
+            "expired": expired_count.scalar() or 0,
+        },
+        "users": [
+            {
+                "id": str(u.id),
+                "email": u.email,
+                "full_name": u.full_name,
+                "is_active": u.is_active,
+                "is_super_user": u.is_super_user,
+                "email_verified": u.email_verified,
+                "subscription_status": u.subscription_status,
+                "plan_tier": u.plan_tier,
+                "trial_ends_at": u.trial_ends_at.isoformat() if u.trial_ends_at else None,
+                "created_at": u.created_at.isoformat() if u.created_at else None,
+                "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
+            }
+            for u in users
+        ],
+    }
+
+
 # ── Temporary Admin Setup (REMOVE AFTER USE) ────────────────────────────
 @router.post("/setup-admin")
 async def setup_admin(
