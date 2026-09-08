@@ -703,16 +703,16 @@ export default function AIAgentFullPage() {
           </button>
         </div>
 
-        {/* Right: + New Chat CTA */}
+        {/* Right: Return to Main Dashboard */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <Button
-            size="sm"
-            onClick={handleCreateNewChat}
-            className="bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 text-xs h-8 px-2 sm:px-3 rounded-xl font-semibold shadow-sm flex items-center gap-1 transition-all hover:scale-[1.02]"
+          <Link
+            href="/dashboard"
+            className="bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 text-xs h-8 px-2.5 sm:px-3 rounded-xl font-semibold shadow-sm flex items-center gap-1.5 transition-all hover:scale-[1.02]"
+            title="Go to Main Dashboard"
           >
-            <Plus className="h-3.5 w-3.5 text-[#f8d7dc]" />
-            <span className="hidden sm:inline">New Chat</span>
-          </Button>
+            <ArrowLeft className="h-3.5 w-3.5 text-[#f8d7dc]" />
+            <span>Dashboard</span>
+          </Link>
         </div>
       </header>
 
