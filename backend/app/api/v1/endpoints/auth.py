@@ -16,6 +16,7 @@ from __future__ import annotations
 import secrets
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
