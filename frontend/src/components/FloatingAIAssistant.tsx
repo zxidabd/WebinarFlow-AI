@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { Sparkles, Wand2, MessageSquare, ArrowRight, X } from 'lucide-react';
 
 export function FloatingAIAssistant() {
@@ -15,15 +16,15 @@ export function FloatingAIAssistant() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none select-none">
+    <div className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end pointer-events-none select-none">
       {/* Quick Launch Popover Card */}
       {isOpen && (
-        <div className="pointer-events-auto mb-3 w-80 sm:w-88 rounded-2xl border border-purple-500/30 bg-neutral-950/95 backdrop-blur-xl p-4 shadow-2xl shadow-purple-950/50 text-white animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="flex items-center justify-between pb-3 border-b border-purple-500/20">
+        <div className="pointer-events-auto mb-3 w-80 sm:w-88 rounded-2xl border border-border/80 bg-neutral-950/95 backdrop-blur-xl p-4 shadow-2xl shadow-black/60 text-white animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <div className="flex items-center gap-2.5">
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-full overflow-hidden shadow-md bg-white border border-neutral-700/60 p-0.5">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-black/40 border border-white/10 p-0.5 shadow-inner">
                 <img
-                  src="/logo.png"
+                  src="/ai-robot-clean.png"
                   alt="WebinarFlow AI+"
                   className="h-full w-full object-contain"
                 />
@@ -99,40 +100,77 @@ export function FloatingAIAssistant() {
         </div>
       )}
 
-      {/* Floating Button with Spiral WF Emblem & Larger 'AI+' Badge */}
-      <div className="pointer-events-auto flex items-center gap-3 group cursor-pointer">
-        {/* Floating pill badge - enlarged */}
-        <Link
-          href="/dashboard/ai-agent"
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-neutral-950/95 text-white border border-neutral-700/80 hover:border-neutral-500 shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105"
-        >
-          <Sparkles className="h-4 w-4 text-[#f8a5b2] animate-pulse shrink-0" />
-          <span className="text-sm sm:text-base font-black tracking-wide text-white">
-            AI+
-          </span>
-        </Link>
-
-        {/* Floating Spiral WF Emblem Button */}
-        <button
+      {/* Floating Robot Sitting on the AI+ Button with Gently Swinging Legs */}
+      <div className="pointer-events-auto group cursor-pointer">
+        <motion.button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="relative flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-full transition-transform duration-300 active:scale-95 group-hover:scale-110 focus:outline-none"
-          title="WebinarFlow AI+"
-          aria-label="WebinarFlow AI+"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          className="relative block w-36 sm:w-44 md:w-48 aspect-[663/630] focus:outline-none transition-all drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)] hover:drop-shadow-[0_16px_36px_rgba(236,72,153,0.35)]"
+          title="WebinarFlow AI+ Assistant — Click to open"
+          aria-label="WebinarFlow AI+ Assistant"
         >
-          {/* Subtle elegant aura */}
-          <div className="absolute inset-0 rounded-full bg-black/20 dark:bg-white/15 blur-md" />
-          <div className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-[#852533]/40 to-neutral-400/40 opacity-70 blur-sm" />
-          
-          {/* Circular Emblem Frame with Spiral WF Logo */}
-          <div className="relative h-full w-full rounded-full p-1.5 overflow-hidden ring-2 ring-neutral-300/80 dark:ring-neutral-700/90 shadow-2xl bg-white flex items-center justify-center">
+          {/* Stationary Layer: Robot Torso, Face, Head, Arms & AI+ Pill Button */}
+          <img
+            src="/ai-robot-body.png"
+            alt="WebinarFlow AI+ Robot"
+            className="w-full h-full object-contain pointer-events-none select-none"
+          />
+
+          {/* Left Leg: Gently swings forward and backward in cute idle motion */}
+          <motion.div
+            className="absolute pointer-events-none"
+            style={{
+              left: `${(245 / 663) * 100}%`,
+              top: `${(330 / 630) * 100}%`,
+              width: `${(85 / 663) * 100}%`,
+              height: `${(85 / 630) * 100}%`,
+              transformOrigin: '50% 12%',
+            }}
+            animate={{
+              rotate: [-7, 7, -7],
+            }}
+            transition={{
+              duration: 2.2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
             <img
-              src="/logo.png"
-              alt="WebinarFlow AI+"
-              className="h-full w-full object-contain rounded-full"
+              src="/leg-left.png"
+              alt=""
+              className="w-full h-full object-contain pointer-events-none select-none"
             />
-          </div>
-        </button>
+          </motion.div>
+
+          {/* Right Leg: Gently swings in opposition for natural adorable idle rhythm */}
+          <motion.div
+            className="absolute pointer-events-none"
+            style={{
+              left: `${(325 / 663) * 100}%`,
+              top: `${(330 / 630) * 100}%`,
+              width: `${(95 / 663) * 100}%`,
+              height: `${(95 / 630) * 100}%`,
+              transformOrigin: '50% 12%',
+            }}
+            animate={{
+              rotate: [7, -7, 7],
+            }}
+            transition={{
+              duration: 2.2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            <img
+              src="/leg-right.png"
+              alt=""
+              className="w-full h-full object-contain pointer-events-none select-none"
+            />
+          </motion.div>
+        </motion.button>
       </div>
     </div>
   );
