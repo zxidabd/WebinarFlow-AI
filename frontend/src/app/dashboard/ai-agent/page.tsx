@@ -507,7 +507,7 @@ export default function AIAgentFullPage() {
 
   return (
     // Full Edge-to-Edge Container: fills 100% of viewport, zero page scroll!
-    <div className="h-full w-full flex flex-col bg-[#0b0305] text-white overflow-hidden select-none">
+    <div className="h-full w-full flex flex-col bg-background text-foreground dark:bg-[#0b0305] dark:text-white overflow-hidden select-none transition-colors">
       {/* ChatGPT-Style Slide-over Chat History Drawer */}
       {showHistoryDrawer && (
         <div className="fixed inset-0 z-50 flex">
@@ -518,38 +518,38 @@ export default function AIAgentFullPage() {
           />
 
           {/* Drawer Panel */}
-          <aside className="relative z-50 w-72 sm:w-80 h-full bg-[#120406] border-r border-[#5a1a23]/60 flex flex-col text-white shadow-2xl animate-in slide-in-from-left duration-200">
+          <aside className="relative z-50 w-72 sm:w-80 h-full bg-card border-r border-border flex flex-col text-foreground dark:bg-[#120406] dark:border-[#5a1a23]/60 dark:text-white shadow-2xl animate-in slide-in-from-left duration-200">
             {/* Drawer Header */}
-            <div className="p-3.5 border-b border-[#5a1a23]/50 flex items-center justify-between gap-2 bg-[#1a0609]">
+            <div className="p-3.5 border-b border-border flex items-center justify-between gap-2 bg-muted/40 dark:bg-[#1a0609] dark:border-[#5a1a23]/50">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-[#f8a5b2]" />
-                <span className="font-bold text-sm text-white">Chat History</span>
+                <MessageSquare className="h-4 w-4 text-[#852533] dark:text-[#f8a5b2]" />
+                <span className="font-bold text-sm text-foreground dark:text-white">Chat History</span>
               </div>
               <button
                 onClick={() => setShowHistoryDrawer(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* New Chat Button */}
-            <div className="p-3 border-b border-[#5a1a23]/40">
+            <div className="p-3 border-b border-border dark:border-[#5a1a23]/40">
               <Button
                 onClick={handleCreateNewChat}
-                className="w-full bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/50 shadow-md font-semibold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+                className="w-full bg-[#852533] hover:bg-[#6b1e28] text-white shadow-md font-semibold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
               >
-                <Plus className="h-4 w-4 text-[#f8d7dc]" />
+                <Plus className="h-4 w-4 text-white" />
                 <span>New Chat</span>
               </Button>
             </div>
 
-            {/* Categorized Sessions List with Bold White Headings and White Text */}
+            {/* Categorized Sessions List */}
             <div className="flex-1 overflow-y-auto p-3 space-y-4">
               {recentSessions.length > 0 && (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-                    <Clock className="h-3 w-3 text-[#f8a5b2]" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-foreground/80 dark:text-white">
+                    <Clock className="h-3 w-3 text-[#852533] dark:text-[#f8a5b2]" />
                     <span>Recent Chats</span>
                   </div>
                   <div className="space-y-0.5">
@@ -563,14 +563,14 @@ export default function AIAgentFullPage() {
                         }}
                         className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                           activeSessionId === s.id
-                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
-                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[#852533] text-white font-semibold shadow-sm'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:text-gray-200 dark:hover:bg-white/10 dark:hover:text-white'
                         }`}
                       >
-                        <span className="truncate text-white font-medium">{s.title}</span>
+                        <span className="truncate font-medium">{s.title}</span>
                         <button
                           onClick={(e) => handleDeleteChat(s.id, e)}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-rose-500 dark:text-gray-400 dark:hover:text-rose-400"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -582,8 +582,8 @@ export default function AIAgentFullPage() {
 
               {funnelSessions.length > 0 && (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-                    <Wand2 className="h-3 w-3 text-amber-400" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-foreground/80 dark:text-white">
+                    <Wand2 className="h-3 w-3 text-amber-500" />
                     <span>Funnel Discussions</span>
                   </div>
                   <div className="space-y-0.5">
@@ -597,14 +597,14 @@ export default function AIAgentFullPage() {
                         }}
                         className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                           activeSessionId === s.id
-                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
-                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[#852533] text-white font-semibold shadow-sm'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:text-gray-200 dark:hover:bg-white/10 dark:hover:text-white'
                         }`}
                       >
-                        <span className="truncate text-white font-medium">{s.title}</span>
+                        <span className="truncate font-medium">{s.title}</span>
                         <button
                           onClick={(e) => handleDeleteChat(s.id, e)}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-rose-500 dark:text-gray-400 dark:hover:text-rose-400"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -616,8 +616,8 @@ export default function AIAgentFullPage() {
 
               {copySessions.length > 0 && (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-                    <Sparkles className="h-3 w-3 text-pink-400" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-foreground/80 dark:text-white">
+                    <Sparkles className="h-3 w-3 text-pink-500" />
                     <span>Marketing & Copy</span>
                   </div>
                   <div className="space-y-0.5">
@@ -631,14 +631,14 @@ export default function AIAgentFullPage() {
                         }}
                         className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                           activeSessionId === s.id
-                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
-                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[#852533] text-white font-semibold shadow-sm'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:text-gray-200 dark:hover:bg-white/10 dark:hover:text-white'
                         }`}
                       >
-                        <span className="truncate text-white font-medium">{s.title}</span>
+                        <span className="truncate font-medium">{s.title}</span>
                         <button
                           onClick={(e) => handleDeleteChat(s.id, e)}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-rose-500 dark:text-gray-400 dark:hover:text-rose-400"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -649,16 +649,10 @@ export default function AIAgentFullPage() {
               )}
             </div>
 
-            <div className="p-3 border-t border-[#5a1a23]/50 flex items-center justify-between text-[11px]">
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-1.5 text-[#f8d7dc]/80 hover:text-white font-medium transition-colors"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Exit to Dashboard</span>
-              </Link>
-              <span className="flex items-center gap-1.5 text-[#f8d7dc]/70">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            {/* Drawer Footer */}
+            <div className="p-3 border-t border-border dark:border-[#5a1a23]/40 flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 <span>Memory Saved</span>
               </span>
             </div>
@@ -667,26 +661,26 @@ export default function AIAgentFullPage() {
       )}
 
       {/* TOP HEADER IN A SINGLE CLEAN LINE */}
-      <header className="h-14 px-3 sm:px-6 border-b border-[#5a1a23]/60 bg-[#140507] flex items-center justify-between gap-2 shrink-0 z-20">
+      <header className="h-14 px-3 sm:px-6 border-b border-border bg-card/90 dark:border-[#5a1a23]/60 dark:bg-[#140507] flex items-center justify-between gap-2 shrink-0 z-20">
         {/* Left: Menu toggle */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowHistoryDrawer(true)}
-            className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center gap-1.5 transition-colors shrink-0"
+            className="p-1.5 sm:p-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground dark:bg-white/5 dark:hover:bg-white/10 dark:text-white flex items-center gap-1.5 transition-colors shrink-0"
             title="Open Chat History"
           >
-            <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-[#f8a5b2]" />
+            <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-[#852533] dark:text-[#f8a5b2]" />
           </button>
         </div>
 
         {/* Center: Simple Mode Switcher (Funnel Builder / AI Chat) */}
-        <div className="flex items-center bg-black/60 p-0.5 sm:p-1 rounded-xl border border-[#5a1a23]/60 shrink-0">
+        <div className="flex items-center bg-muted/80 dark:bg-black/60 p-0.5 sm:p-1 rounded-xl border border-border dark:border-[#5a1a23]/60 shrink-0">
           <button
             onClick={() => setActiveTab('chat')}
             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'chat'
                 ? 'bg-[#852533] text-white shadow-sm ring-1 ring-[#a63344]/50'
-                : 'text-gray-400 hover:text-white'
+                : 'text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-white'
             }`}
           >
             💬 Chat
@@ -696,7 +690,7 @@ export default function AIAgentFullPage() {
             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'funnel'
                 ? 'bg-[#852533] text-white shadow-sm ring-1 ring-[#a63344]/50'
-                : 'text-gray-400 hover:text-white'
+                : 'text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-white'
             }`}
           >
             🚀 Funnel Builder
@@ -707,10 +701,10 @@ export default function AIAgentFullPage() {
         <div className="flex items-center gap-1.5 shrink-0">
           <Link
             href="/dashboard"
-            className="bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 text-xs h-8 px-2.5 sm:px-3 rounded-xl font-semibold shadow-sm flex items-center gap-1.5 transition-all hover:scale-[1.02]"
+            className="bg-[#852533] hover:bg-[#6b1e28] text-white border border-[#a63344]/40 text-xs h-8 px-2.5 sm:px-3 rounded-xl font-semibold shadow-sm flex items-center gap-1.5 transition-all hover:scale-[1.02]"
             title="Go to Main Dashboard"
           >
-            <ArrowLeft className="h-3.5 w-3.5 text-[#f8d7dc]" />
+            <ArrowLeft className="h-3.5 w-3.5 text-white" />
             <span>Dashboard</span>
           </Link>
         </div>
@@ -718,7 +712,7 @@ export default function AIAgentFullPage() {
 
       {/* MODE 1: FULL-PAGE CHATGPT-STYLE AI AGENT (Zero outer scroll, 100% full screen) */}
       {activeTab === 'chat' && (
-        <div className="flex-1 flex flex-col min-h-0 relative bg-[#0c0305]">
+        <div className="flex-1 flex flex-col min-h-0 relative bg-muted/20 dark:bg-[#0c0305]">
           {/* Messages Scroll Area */}
           <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4 max-w-4xl w-full mx-auto">
             {activeSession.messages.map((msg, i) => (
@@ -764,10 +758,10 @@ export default function AIAgentFullPage() {
           </div>
 
           {/* ChatGPT-Style Bottom Input Bar: Pinned & 16px font to NEVER zoom on iOS Safari */}
-          <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[#120406]/95 border-t border-[#5a1a23]/40 shrink-0">
+          <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-card/95 border-t border-border dark:bg-[#120406]/95 dark:border-[#5a1a23]/40 shrink-0">
             <form
               onSubmit={handleSendMessage}
-              className="max-w-4xl mx-auto flex items-center gap-2 bg-black/70 border border-[#5a1a23]/60 focus-within:border-[#a63344] rounded-2xl px-3 py-1.5 shadow-inner transition-all"
+              className="max-w-4xl mx-auto flex items-center gap-2 bg-background border border-border focus-within:border-[#852533] dark:bg-black/70 dark:border-[#5a1a23]/60 dark:focus-within:border-[#a63344] rounded-2xl px-3 py-1.5 shadow-inner transition-all"
             >
               {/* Note: text-[16px] is MANDATORY on mobile to completely disable iOS Safari auto-zoom */}
               <input
@@ -775,15 +769,15 @@ export default function AIAgentFullPage() {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Ask WebinarFlow AI anything..."
-                className="flex-1 bg-transparent border-0 text-white text-[16px] sm:text-sm placeholder:text-gray-400 focus:outline-none focus:ring-0 py-1.5 px-1 min-w-0"
+                className="flex-1 bg-transparent border-0 text-foreground dark:text-white text-[16px] sm:text-sm placeholder:text-muted-foreground dark:placeholder:text-gray-400 focus:outline-none focus:ring-0 py-1.5 px-1 min-w-0"
               />
               <Button
                 type="submit"
                 size="sm"
                 disabled={isChatLoading || !chatInput.trim()}
-                className="h-9 w-9 p-0 rounded-xl bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 shadow-sm shrink-0 flex items-center justify-center transition-all disabled:opacity-40"
+                className="h-9 w-9 p-0 rounded-xl bg-[#852533] hover:bg-[#6b1e28] text-white border border-[#a63344]/40 shadow-sm shrink-0 flex items-center justify-center transition-all disabled:opacity-40"
               >
-                <Send className="h-4 w-4 text-[#f8d7dc]" />
+                <Send className="h-4 w-4 text-white" />
               </Button>
             </form>
           </div>
@@ -792,16 +786,16 @@ export default function AIAgentFullPage() {
 
       {/* MODE 2: FULL-PAGE FUNNEL BUILDER */}
       {activeTab === 'funnel' && (
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-7xl w-full mx-auto">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-7xl w-full mx-auto bg-muted/20 dark:bg-[#0b0305]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
             {/* Configuration Form */}
-            <div className="lg:col-span-5 flex flex-col space-y-4 bg-[#140507]/90 border border-[#5a1a23]/50 rounded-2xl p-5 sm:p-6 shadow-sm">
+            <div className="lg:col-span-5 flex flex-col space-y-4 bg-card border border-border dark:bg-[#140507]/90 dark:border-[#5a1a23]/50 rounded-2xl p-5 sm:p-6 shadow-sm">
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-foreground dark:text-white flex items-center gap-2">
                   <Zap className="h-4 w-4 text-amber-500" />
                   Configure Webinar Funnel
                 </h2>
-                <p className="text-xs text-[#f1d0d5]/70 mt-0.5">
+                <p className="text-xs text-muted-foreground dark:text-[#f1d0d5]/70 mt-0.5">
                   Generate full landing page, 5-email sequence, and webinar outline in seconds.
                 </p>
               </div>
@@ -809,7 +803,7 @@ export default function AIAgentFullPage() {
               <form onSubmit={handleGenerateFunnel} className="space-y-4 flex-1 flex flex-col justify-between">
                 <div className="space-y-3.5">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    <label className="block text-xs font-semibold text-foreground/90 dark:text-gray-300 mb-1">
                       Webinar Topic or Main Title *
                     </label>
                     <Input
@@ -817,29 +811,29 @@ export default function AIAgentFullPage() {
                       value={topic}
                       onChange={(e) => setTopic(e.target.value)}
                       placeholder="e.g. AI Automation for Students & Creators"
-                      className="bg-black/60 border-[#5a1a23]/60 text-white text-[16px] sm:text-sm"
+                      className="bg-background border-input text-foreground dark:bg-black/60 dark:border-[#5a1a23]/60 dark:text-white text-[16px] sm:text-sm"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    <label className="block text-xs font-semibold text-foreground/90 dark:text-gray-300 mb-1">
                       Target Audience
                     </label>
                     <Input
                       value={targetAudience}
                       onChange={(e) => setTargetAudience(e.target.value)}
                       placeholder="e.g. Students, Freelancers, Creators"
-                      className="bg-black/60 border-[#5a1a23]/60 text-white text-[16px] sm:text-sm"
+                      className="bg-background border-input text-foreground dark:bg-black/60 dark:border-[#5a1a23]/60 dark:text-white text-[16px] sm:text-sm"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-300 mb-1">Pricing Model</label>
+                      <label className="block text-xs font-semibold text-foreground/90 dark:text-gray-300 mb-1">Pricing Model</label>
                       <select
                         value={isPaid ? 'paid' : 'free'}
                         onChange={(e) => setIsPaid(e.target.value === 'paid')}
-                        className="w-full h-9 rounded-md bg-black/60 border border-[#5a1a23]/60 px-3 text-xs text-white focus:outline-none"
+                        className="w-full h-9 rounded-md bg-background border border-input text-foreground dark:bg-black/60 dark:border-[#5a1a23]/60 dark:text-white px-3 text-xs focus:outline-none"
                       >
                         <option value="free">Free Training</option>
                         <option value="paid">Paid Masterclass</option>
@@ -848,22 +842,22 @@ export default function AIAgentFullPage() {
 
                     {isPaid && (
                       <div>
-                        <label className="block text-xs font-semibold text-gray-300 mb-1">Ticket Price ($)</label>
+                        <label className="block text-xs font-semibold text-foreground/90 dark:text-gray-300 mb-1">Ticket Price ($)</label>
                         <Input
                           type="number"
                           value={priceDollars}
                           onChange={(e) => setPriceDollars(e.target.value)}
                           placeholder="47"
-                          className="bg-black/60 border-[#5a1a23]/60 text-white text-[16px] sm:text-sm h-9"
+                          className="bg-background border-input text-foreground dark:bg-black/60 dark:border-[#5a1a23]/60 dark:text-white text-[16px] sm:text-sm h-9"
                         />
                       </div>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-foreground/90 dark:text-gray-300 mb-1.5 flex items-center justify-between">
                       <span>Landing Page Template</span>
-                      <span className="text-[11px] text-[#f8a5b2] font-normal">Choose 1 of 3</span>
+                      <span className="text-[11px] text-[#852533] dark:text-[#f8a5b2] font-normal">Choose 1 of 3</span>
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       <button
@@ -871,13 +865,13 @@ export default function AIAgentFullPage() {
                         onClick={() => setSelectedTemplate('modern-saas')}
                         className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
                           selectedTemplate === 'modern-saas'
-                            ? 'border-[#852533] bg-[#45141B]/70 text-white ring-2 ring-[#852533]/50'
-                            : 'border-[#5a1a23]/60 bg-black/40 text-gray-400 hover:border-[#852533]'
+                            ? 'border-[#852533] bg-[#852533]/10 dark:bg-[#45141B]/70 text-[#852533] dark:text-white ring-2 ring-[#852533]/50'
+                            : 'border-border bg-background dark:border-[#5a1a23]/60 dark:bg-black/40 text-muted-foreground dark:text-gray-400 hover:border-[#852533]'
                         }`}
                       >
                         <span className="text-base mb-0.5">🚀</span>
                         <span className="text-[11px] font-bold">Modern SaaS</span>
-                        <span className="text-[9px] text-[#f8d7dc]/70">Stripe / Linear</span>
+                        <span className="text-[9px] opacity-70">Stripe / Linear</span>
                       </button>
 
                       <button
@@ -885,13 +879,13 @@ export default function AIAgentFullPage() {
                         onClick={() => setSelectedTemplate('corporate')}
                         className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
                           selectedTemplate === 'corporate'
-                            ? 'border-[#852533] bg-[#45141B]/70 text-white ring-2 ring-[#852533]/50'
-                            : 'border-[#5a1a23]/60 bg-black/40 text-gray-400 hover:border-[#852533]'
+                            ? 'border-[#852533] bg-[#852533]/10 dark:bg-[#45141B]/70 text-[#852533] dark:text-white ring-2 ring-[#852533]/50'
+                            : 'border-border bg-background dark:border-[#5a1a23]/60 dark:bg-black/40 text-muted-foreground dark:text-gray-400 hover:border-[#852533]'
                         }`}
                       >
                         <span className="text-base mb-0.5">🏢</span>
                         <span className="text-[11px] font-bold">Corporate</span>
-                        <span className="text-[9px] text-[#f8d7dc]/70">Executive B2B</span>
+                        <span className="text-[9px] opacity-70">Executive B2B</span>
                       </button>
 
                       <button
@@ -899,19 +893,19 @@ export default function AIAgentFullPage() {
                         onClick={() => setSelectedTemplate('education')}
                         className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
                           selectedTemplate === 'education'
-                            ? 'border-[#852533] bg-[#45141B]/70 text-white ring-2 ring-[#852533]/50'
-                            : 'border-[#5a1a23]/60 bg-black/40 text-gray-400 hover:border-[#852533]'
+                            ? 'border-[#852533] bg-[#852533]/10 dark:bg-[#45141B]/70 text-[#852533] dark:text-white ring-2 ring-[#852533]/50'
+                            : 'border-border bg-background dark:border-[#5a1a23]/60 dark:bg-black/40 text-muted-foreground dark:text-gray-400 hover:border-[#852533]'
                         }`}
                       >
                         <span className="text-base mb-0.5">🎓</span>
                         <span className="text-[11px] font-bold">Education</span>
-                        <span className="text-[9px] text-[#f8d7dc]/70">Academy</span>
+                        <span className="text-[9px] opacity-70">Academy</span>
                       </button>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    <label className="block text-xs font-semibold text-foreground/90 dark:text-gray-300 mb-1">
                       Custom Instructions (Optional)
                     </label>
                     <Textarea
@@ -919,7 +913,7 @@ export default function AIAgentFullPage() {
                       value={customInstructions}
                       onChange={(e) => setCustomInstructions(e.target.value)}
                       placeholder="e.g. Focus on portfolio projects students can show to universities or employers, include live practical case studies"
-                      className="bg-black/60 border-[#5a1a23]/60 text-white text-[16px] sm:text-xs"
+                      className="bg-background border-input text-foreground dark:bg-black/60 dark:border-[#5a1a23]/60 dark:text-white text-[16px] sm:text-xs"
                     />
                   </div>
                 </div>
@@ -927,16 +921,16 @@ export default function AIAgentFullPage() {
                 <Button
                   type="submit"
                   disabled={isGenerating || !topic.trim()}
-                  className="w-full bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white font-semibold py-3 rounded-xl border border-[#a63344]/50 shadow-lg shadow-[#45141B]/20 transition-all hover:scale-[1.01] mt-2"
+                  className="w-full bg-[#852533] hover:bg-[#6b1e28] text-white font-semibold py-3 rounded-xl shadow-lg shadow-[#852533]/20 transition-all hover:scale-[1.01] mt-2"
                 >
                   {isGenerating ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#f8d7dc]" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
                       Generating Funnel with AI...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="mr-2 h-4 w-4 text-[#f8d7dc]" />
+                      <Sparkles className="mr-2 h-4 w-4 text-white" />
                       Generate Complete Funnel
                     </>
                   )}
@@ -947,11 +941,11 @@ export default function AIAgentFullPage() {
             {/* Generated Output Preview */}
             <div
               ref={previewContainerRef}
-              className="lg:col-span-7 flex flex-col bg-[#140507]/80 border border-[#5a1a23]/50 rounded-2xl overflow-hidden shadow-sm min-h-[500px]"
+              className="lg:col-span-7 flex flex-col bg-card border border-border dark:bg-[#140507]/80 dark:border-[#5a1a23]/50 rounded-2xl overflow-hidden shadow-sm min-h-[500px]"
             >
               {generatedFunnel ? (
                 <div className="flex flex-col h-full">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-black/60 border-b border-[#5a1a23]/40">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-muted/40 border-b border-border dark:bg-black/60 dark:border-[#5a1a23]/40">
                     <div className="flex flex-wrap gap-1.5">
                       <button
                         type="button"
@@ -959,7 +953,7 @@ export default function AIAgentFullPage() {
                         className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                           previewSection === 'landing'
                             ? 'bg-[#852533] text-white shadow-sm'
-                            : 'text-gray-400 hover:text-white bg-white/5'
+                            : 'text-muted-foreground hover:text-foreground bg-muted dark:text-gray-400 dark:hover:text-white dark:bg-white/5'
                         }`}
                       >
                         🎨 Landing Page
@@ -970,7 +964,7 @@ export default function AIAgentFullPage() {
                         className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                           previewSection === 'emails'
                             ? 'bg-[#852533] text-white shadow-sm'
-                            : 'text-gray-400 hover:text-white bg-white/5'
+                            : 'text-muted-foreground hover:text-foreground bg-muted dark:text-gray-400 dark:hover:text-white dark:bg-white/5'
                         }`}
                       >
                         ✉️ 5-Email Sequence
@@ -981,7 +975,7 @@ export default function AIAgentFullPage() {
                         className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                           previewSection === 'outline'
                             ? 'bg-[#852533] text-white shadow-sm'
-                            : 'text-gray-400 hover:text-white bg-white/5'
+                            : 'text-muted-foreground hover:text-foreground bg-muted dark:text-gray-400 dark:hover:text-white dark:bg-white/5'
                         }`}
                       >
                         🎙️ Outline
@@ -1002,17 +996,17 @@ export default function AIAgentFullPage() {
                   <div className="flex-1 overflow-y-auto p-5 space-y-4">
                     {previewSection === 'landing' && (
                       <div className="space-y-4 text-xs">
-                        <div className="p-4 rounded-xl bg-black/50 border border-[#5a1a23]/40 space-y-1.5">
+                        <div className="p-4 rounded-xl bg-muted/40 border border-border dark:bg-black/50 dark:border-[#5a1a23]/40 space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Hero Section</span>
-                            <Badge variant="outline" className="border-[#a63344]/40 text-[#f8d7dc] text-[10px]">
+                            <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Hero Section</span>
+                            <Badge variant="outline" className="border-border text-foreground dark:border-[#a63344]/40 dark:text-[#f8d7dc] text-[10px]">
                               {generatedFunnel.landing_page.sections?.navbar?.logo_text || 'WebinarFlow'}
                             </Badge>
                           </div>
-                          <h3 className="text-base font-bold text-white leading-snug">
+                          <h3 className="text-base font-bold text-foreground dark:text-white leading-snug">
                             {generatedFunnel.landing_page.hero_headline}
                           </h3>
-                          <p className="text-gray-300 text-xs leading-relaxed">
+                          <p className="text-muted-foreground dark:text-gray-300 text-xs leading-relaxed">
                             {generatedFunnel.landing_page.hero_subheadline}
                           </p>
                           <div className="pt-2 flex flex-wrap items-center gap-2">
@@ -1025,21 +1019,21 @@ export default function AIAgentFullPage() {
                         {generatedFunnel.landing_page.sections?.stats?.stats && (
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {generatedFunnel.landing_page.sections.stats.stats.map((st: any, i: number) => (
-                              <div key={i} className="p-2.5 rounded-lg bg-black/40 border border-[#5a1a23]/30 text-center">
-                                <div className="font-bold text-[#f8a5b2] text-xs">{st.value}</div>
-                                <div className="text-[10px] text-gray-400">{st.label}</div>
+                              <div key={i} className="p-2.5 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30 text-center">
+                                <div className="font-bold text-[#852533] dark:text-[#f8a5b2] text-xs">{st.value}</div>
+                                <div className="text-[10px] text-muted-foreground dark:text-gray-400">{st.label}</div>
                               </div>
                             ))}
                           </div>
                         )}
 
                         <div className="space-y-2">
-                          <span className="text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Key Benefits</span>
+                          <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Key Benefits</span>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {generatedFunnel.landing_page.benefits.map((b, i) => (
-                              <div key={i} className="p-3 rounded-lg bg-black/40 border border-[#5a1a23]/30">
-                                <h5 className="font-bold text-[#f8a5b2] text-xs">{b.title}</h5>
-                                <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">{b.description}</p>
+                              <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30">
+                                <h5 className="font-bold text-[#852533] dark:text-[#f8a5b2] text-xs">{b.title}</h5>
+                                <p className="text-[10px] text-muted-foreground dark:text-gray-400 mt-1 leading-relaxed">{b.description}</p>
                               </div>
                             ))}
                           </div>
@@ -1050,9 +1044,9 @@ export default function AIAgentFullPage() {
                     {previewSection === 'emails' && (
                       <div className="space-y-3.5">
                         {generatedFunnel.email_sequence.map((em, i) => (
-                          <div key={i} className="p-4 rounded-xl bg-black/50 border border-[#5a1a23]/40 space-y-2">
+                          <div key={i} className="p-4 rounded-xl bg-muted/40 border border-border dark:bg-black/50 dark:border-[#5a1a23]/40 space-y-2">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-[#f8a5b2] border-[#852533]/30 text-[10px] font-semibold uppercase">
+                              <Badge variant="outline" className="text-[#852533] dark:text-[#f8a5b2] border-[#852533]/30 text-[10px] font-semibold uppercase">
                                 {em.type}
                               </Badge>
                               <button
@@ -1060,13 +1054,13 @@ export default function AIAgentFullPage() {
                                   navigator.clipboard.writeText(`${em.subject}\n\n${em.body}`);
                                   toast.success('Email copied to clipboard!');
                                 }}
-                                className="text-xs text-gray-400 hover:text-white flex items-center gap-1 font-medium transition-colors"
+                                className="text-xs text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-white flex items-center gap-1 font-medium transition-colors"
                               >
                                 <Copy className="h-3.5 w-3.5" /> Copy
                               </button>
                             </div>
-                            <h4 className="font-bold text-white text-xs">{em.subject}</h4>
-                            <p className="text-xs text-gray-300 whitespace-pre-line leading-relaxed font-mono bg-black/40 p-3 rounded-lg border border-white/5">
+                            <h4 className="font-bold text-foreground dark:text-white text-xs">{em.subject}</h4>
+                            <p className="text-xs text-muted-foreground dark:text-gray-300 whitespace-pre-line leading-relaxed font-mono bg-background dark:bg-black/40 p-3 rounded-lg border border-border dark:border-white/5">
                               {em.body}
                             </p>
                           </div>
@@ -1076,29 +1070,29 @@ export default function AIAgentFullPage() {
 
                     {previewSection === 'outline' && (
                       <div className="space-y-3 text-xs">
-                        <div className="p-3.5 rounded-lg bg-black/40 border border-[#5a1a23]/40">
-                          <span className="text-amber-400 font-bold uppercase text-[10px]">1. The Hook</span>
-                          <p className="text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.hook}</p>
+                        <div className="p-3.5 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/40">
+                          <span className="text-amber-600 dark:text-amber-400 font-bold uppercase text-[10px]">1. The Hook</span>
+                          <p className="text-muted-foreground dark:text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.hook}</p>
                         </div>
-                        <div className="p-3.5 rounded-lg bg-black/40 border border-[#5a1a23]/40">
-                          <span className="text-indigo-300 font-bold uppercase text-[10px]">2. Origin Story & Problem</span>
-                          <p className="text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.story}</p>
+                        <div className="p-3.5 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/40">
+                          <span className="text-indigo-600 dark:text-indigo-300 font-bold uppercase text-[10px]">2. Origin Story & Problem</span>
+                          <p className="text-muted-foreground dark:text-gray-300 mt-1 leading-relaxed">{generatedFunnel.outline.story}</p>
                         </div>
-                        <div className="p-3.5 rounded-lg bg-black/40 border border-[#5a1a23]/40">
-                          <span className="text-emerald-400 font-bold uppercase text-[10px]">3. Core Content Pillars</span>
-                          <p className="text-gray-300 mt-1 whitespace-pre-line leading-relaxed">{generatedFunnel.outline.core_content}</p>
+                        <div className="p-3.5 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/40">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase text-[10px]">3. Core Content Pillars</span>
+                          <p className="text-muted-foreground dark:text-gray-300 mt-1 whitespace-pre-line leading-relaxed">{generatedFunnel.outline.core_content}</p>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center text-gray-400 space-y-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#2b0c11]/80 border border-[#6b202c] shadow-inner text-[#f8a5b2]">
+                <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center text-muted-foreground dark:text-gray-400 space-y-3">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#852533]/10 border border-[#852533]/20 shadow-inner text-[#852533] dark:bg-[#2b0c11]/80 dark:border-[#6b202c] dark:text-[#f8a5b2]">
                     <Sparkles className="h-7 w-7" />
                   </div>
-                  <h3 className="text-base font-bold text-white">Your Funnel Preview will appear here</h3>
-                  <p className="text-xs max-w-sm text-[#f1d0d5]/70 leading-relaxed">
+                  <h3 className="text-base font-bold text-foreground dark:text-white">Your Funnel Preview will appear here</h3>
+                  <p className="text-xs max-w-sm text-muted-foreground dark:text-[#f1d0d5]/70 leading-relaxed">
                     Enter your webinar details on the left and click <strong>Generate</strong> to see your landing page, 5 emails, and script outline ready for 1-click launch.
                   </p>
                 </div>

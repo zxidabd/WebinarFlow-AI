@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (isAiAgent) {
     return (
       <RequireAuth>
-        <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#0b0305] text-white">
+        <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-background text-foreground dark:bg-[#0b0305] dark:text-white transition-colors">
           {children}
         </div>
       </RequireAuth>
