@@ -41,7 +41,7 @@ function ChatMessageContent({ content }: { content: string }) {
   const parts = content.split(/(```[\s\S]*?```)/g);
 
   return (
-    <div className="space-y-2 text-xs leading-relaxed">
+    <div className="space-y-2 text-xs leading-relaxed text-[#1E1B4B]">
       {parts.map((part, index) => {
         if (part.startsWith('```') && part.endsWith('```')) {
           const firstLineEnd = part.indexOf('\n');
@@ -152,27 +152,27 @@ function renderMarkdownBlocks(text: string, partIndex: number) {
 
     if (trimmed.startsWith('### ')) {
       elements.push(
-        <h4 key={`h3-${lIdx}`} className="text-sm font-bold text-amber-300 mt-2.5 mb-1 flex items-center gap-1.5">
-          <span>▸</span>
+        <h4 key={`h3-${lIdx}`} className="text-sm font-bold text-[#1E1B4B] mt-2.5 mb-1 flex items-center gap-1.5">
+          <span className="text-[#4F46E5]">▸</span>
           {renderInlineMarkdown(trimmed.slice(4))}
         </h4>
       );
     } else if (trimmed.startsWith('## ')) {
       elements.push(
-        <h3 key={`h2-${lIdx}`} className="text-base font-bold text-white mt-3 mb-1 border-b border-[#5a1a23]/40 pb-1">
+        <h3 key={`h2-${lIdx}`} className="text-base font-bold text-[#1E1B4B] mt-3 mb-1 border-b border-[#C7D2FE] pb-1">
           {renderInlineMarkdown(trimmed.slice(3))}
         </h3>
       );
     } else if (trimmed.startsWith('# ')) {
       elements.push(
-        <h2 key={`h1-${lIdx}`} className="text-lg font-extrabold text-[#f8a5b2] mt-3.5 mb-1.5">
+        <h2 key={`h1-${lIdx}`} className="text-lg font-extrabold text-[#1E1B4B] mt-3.5 mb-1.5">
           {renderInlineMarkdown(trimmed.slice(2))}
         </h2>
       );
     } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       elements.push(
-        <div key={`li-${lIdx}`} className="flex items-start gap-2 ml-1 text-gray-200">
-          <span className="text-[#f8a5b2] font-bold mt-0.5">•</span>
+        <div key={`li-${lIdx}`} className="flex items-start gap-2 ml-1 text-[#1E1B4B]">
+          <span className="text-[#4F46E5] font-bold mt-0.5">•</span>
           <span>{renderInlineMarkdown(trimmed.slice(2))}</span>
         </div>
       );
@@ -180,8 +180,8 @@ function renderMarkdownBlocks(text: string, partIndex: number) {
       const match = trimmed.match(/^(\d+)\.\s(.*)/);
       if (match) {
         elements.push(
-          <div key={`ol-${lIdx}`} className="flex items-start gap-2 ml-1 text-gray-200">
-            <span className="text-amber-400 font-bold text-[10px] bg-amber-400/10 px-1 rounded border border-amber-400/20">
+          <div key={`ol-${lIdx}`} className="flex items-start gap-2 ml-1 text-[#1E1B4B]">
+            <span className="text-[#4F46E5] font-bold text-[10px] bg-[#E0E7FF] px-1.5 py-0.5 rounded border border-[#C7D2FE]">
               {match[1]}
             </span>
             <span>{renderInlineMarkdown(match[2])}</span>
@@ -190,7 +190,7 @@ function renderMarkdownBlocks(text: string, partIndex: number) {
       }
     } else if (trimmed.length > 0) {
       elements.push(
-        <p key={`p-${lIdx}`} className="text-gray-300 leading-relaxed">
+        <p key={`p-${lIdx}`} className="text-[#1E1B4B] leading-relaxed">
           {renderInlineMarkdown(trimmed)}
         </p>
       );
@@ -210,21 +210,21 @@ function renderInlineMarkdown(text: string): React.ReactNode {
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
-        <strong key={i} className="text-white font-bold">
+        <strong key={i} className="text-[#0F172A] font-extrabold">
           {part.slice(2, -2)}
         </strong>
       );
     }
     if (part.startsWith('*') && part.endsWith('*') && !part.startsWith('**')) {
       return (
-        <em key={i} className="text-amber-200/90 italic">
+        <em key={i} className="text-[#3730A3] italic">
           {part.slice(1, -1)}
         </em>
       );
     }
     if (part.startsWith('`') && part.endsWith('`')) {
       return (
-        <code key={i} className="px-1.5 py-0.5 bg-[#2b0c11] text-[#f8a5b2] rounded font-mono text-[11px] border border-[#a63344]/30">
+        <code key={i} className="px-1.5 py-0.5 bg-[#E0E7FF] text-[#3730A3] rounded font-mono text-[11px] border border-[#C7D2FE]">
           {part.slice(1, -1)}
         </code>
       );
@@ -840,7 +840,7 @@ export default function AIAgentFullPage() {
                 className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.role === 'assistant' && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#45141B] text-[#f8a5b2] border border-[#6b202c] text-xs font-bold shadow-sm">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#4F46E5] text-white border border-[#4338CA] text-xs font-bold shadow-sm">
                     AI
                   </div>
                 )}
@@ -848,24 +848,26 @@ export default function AIAgentFullPage() {
                   className={`max-w-2xl rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                     msg.role === 'user'
                       ? 'bg-[#852533] text-white border border-[#a63344]/40 shadow-sm'
-                      : 'bg-neutral-50 dark:bg-[#170508]/90 border border-neutral-200 dark:border-[#5a1a23]/60 text-neutral-800 dark:text-gray-200 shadow-sm'
+                      : 'bg-[#EEF2FF] text-[#1E1B4B] border border-[#C7D2FE] shadow-sm'
                   }`}
                 >
                   {msg.role === 'user' ? (
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                   ) : (
-                    <ChatMessageContent content={msg.content} />
+                    <div className="text-[#1E1B4B]">
+                      <ChatMessageContent content={msg.content} />
+                    </div>
                   )}
                 </div>
               </div>
             ))}
             {isChatLoading && (
               <div className="flex gap-3 justify-start">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#45141B] text-[#f8a5b2] border border-[#6b202c] text-xs font-bold">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#4F46E5] text-white border border-[#4338CA] text-xs font-bold">
                   AI
                 </div>
-                <div className="rounded-2xl bg-neutral-50 dark:bg-[#170508]/90 border border-neutral-200 dark:border-[#5a1a23]/60 px-4 py-3 text-xs text-neutral-500 dark:text-gray-400 flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#852533] dark:text-[#f8a5b2]" />
+                <div className="rounded-2xl bg-[#EEF2FF] border border-[#C7D2FE] px-4 py-3 text-xs text-[#1E1B4B] flex items-center gap-2 shadow-sm font-medium">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#4F46E5]" />
                   Thinking and synthesizing response...
                 </div>
               </div>

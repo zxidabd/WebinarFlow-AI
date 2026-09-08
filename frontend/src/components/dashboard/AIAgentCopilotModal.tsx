@@ -883,7 +883,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                     className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     {msg.role === 'assistant' && (
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#45141B] text-[#f8a5b2] border border-[#6b202c] text-xs font-bold shadow-sm">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#4F46E5] text-white border border-[#4338CA] text-xs font-bold shadow-sm">
                         AI
                       </div>
                     )}
@@ -891,24 +891,26 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
                       className={`max-w-2xl rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                         msg.role === 'user'
                           ? 'bg-[#852533] text-white border border-[#a63344]/40 shadow-sm'
-                          : 'bg-[#170508]/90 border border-[#5a1a23]/60 text-gray-200 shadow-sm'
+                          : 'bg-[#EEF2FF] text-[#1E1B4B] border border-[#C7D2FE] shadow-sm'
                       }`}
                     >
                       {msg.role === 'user' ? (
                         <p>{msg.content}</p>
                       ) : (
-                        <ChatMessageContent content={msg.content} />
+                        <div className="text-[#1E1B4B]">
+                          <ChatMessageContent content={msg.content} />
+                        </div>
                       )}
                     </div>
                   </div>
                 ))}
                 {isChatLoading && (
                   <div className="flex gap-3 justify-start">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#45141B] text-[#f8a5b2] border border-[#6b202c] text-xs font-bold">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#4F46E5] text-white border border-[#4338CA] text-xs font-bold">
                       AI
                     </div>
-                    <div className="rounded-2xl bg-[#170508]/90 border border-[#5a1a23]/60 px-4 py-3 text-xs text-gray-400 flex items-center gap-2">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#f8a5b2]" />
+                    <div className="rounded-2xl bg-[#EEF2FF] border border-[#C7D2FE] px-4 py-3 text-xs text-[#1E1B4B] flex items-center gap-2 shadow-sm font-medium">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#4F46E5]" />
                       Thinking and crafting response...
                     </div>
                   </div>
