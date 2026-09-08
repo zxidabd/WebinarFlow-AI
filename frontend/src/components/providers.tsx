@@ -10,6 +10,22 @@ function ThemedToaster() {
   return <Toaster theme={theme as 'light' | 'dark' | 'system'} position="top-right" richColors closeButton />;
 }
 
+function DefaultThemeEnforcer() {
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userExplicitTheme = localStorage.getItem('wf_theme_user_set');
+      // If the user hasn't explicitly chosen a theme in Settings, default to light
+      if (!userExplicitTheme && theme !== 'light') {
+        setTheme('light');
+      }
+    }
+  }, [theme, setTheme]);
+
+  return null;
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -36,7 +52,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <DefaultThemeEnforcer />
         {children}
         <ThemedToaster />
       </ThemeProvider>

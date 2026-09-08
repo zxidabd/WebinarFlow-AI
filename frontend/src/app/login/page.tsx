@@ -48,6 +48,14 @@ export default function LoginPage() {
         localStorage.setItem('wf_remember_me', rememberMe ? 'true' : 'false');
       }
       await login(values);
+      if (typeof window !== 'undefined') {
+        const userSetTheme = localStorage.getItem('wf_theme_user_set');
+        if (!userSetTheme) {
+          localStorage.setItem('theme', 'light');
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        }
+      }
       toast.success('Welcome back');
       router.push('/dashboard');
     } catch (error: any) {

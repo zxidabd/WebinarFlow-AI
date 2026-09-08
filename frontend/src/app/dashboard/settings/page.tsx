@@ -381,7 +381,12 @@ export default function SettingsPage() {
               <Button
                 variant={theme === 'light' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setTheme('light')}
+                onClick={() => {
+                  setTheme('light');
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('wf_theme_user_set', 'true');
+                  }
+                }}
                 className="flex items-center gap-2"
               >
                 <Sun className="h-4 w-4" />
@@ -390,7 +395,12 @@ export default function SettingsPage() {
               <Button
                 variant={theme === 'dark' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setTheme('dark')}
+                onClick={() => {
+                  setTheme('dark');
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('wf_theme_user_set', 'true');
+                  }
+                }}
                 className="flex items-center gap-2"
               >
                 <Moon className="h-4 w-4" />

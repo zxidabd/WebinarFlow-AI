@@ -37,6 +37,12 @@ export default function RegisterPage() {
         password: values.password,
         full_name: values.full_name || undefined,
       });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('theme', 'light');
+        localStorage.removeItem('wf_theme_user_set');
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      }
       setPendingEmail(values.email);
       setPhase('check-email');
       toast.success('Account created — please check your email to verify it.');
