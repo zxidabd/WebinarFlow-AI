@@ -108,7 +108,7 @@ export function FloatingAIAssistant() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          className="relative block w-36 sm:w-44 md:w-48 aspect-[620/574] focus:outline-none transition-all drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)] hover:drop-shadow-[0_16px_36px_rgba(236,72,153,0.35)]"
+          className="relative block w-[115px] sm:w-[140px] md:w-[150px] aspect-[620/574] focus:outline-none transition-all drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)] hover:drop-shadow-[0_14px_30px_rgba(236,72,153,0.35)]"
           title="WebinarFlow AI+ Assistant — Click to open"
           aria-label="WebinarFlow AI+ Assistant"
         >
