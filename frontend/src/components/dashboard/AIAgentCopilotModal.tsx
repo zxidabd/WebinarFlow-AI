@@ -449,7 +449,7 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 WebinarFlow AI Agent
               </h2>
-              <p className="text-xs text-[#f1d0d5]/80">Autonomous Technical Assistant & Funnel Co-pilot</p>
+              <p className="text-xs text-[#f1d0d5]/80">Funnel Assistant & Co-pilot</p>
             </div>
           </div>
 

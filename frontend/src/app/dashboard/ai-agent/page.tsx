@@ -546,36 +546,14 @@ export default function AIAgentFullPage() {
               <Sparkles className="h-6 w-6 text-[#f8d7dc]" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#7a222f]/60 bg-[#2b0c11]/80 px-2.5 py-0.5 text-[11px] font-semibold text-[#f8d7dc] mb-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Autonomous AI Agent</span>
-              </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
                 WebinarFlow AI Agent
               </h1>
-              <p className="text-xs sm:text-sm text-[#f1d0d5]/80 mt-0.5">
+              <p className="text-xs sm:text-sm text-[#f1d0d5]/80 mt-1">
                 Generate high-converting webinar funnels, landing pages, and email sequences in seconds.
               </p>
             </div>
           </div>
-
-          {/* Model Selector badge */}
-          {models.length > 0 && (
-            <div className="flex items-center gap-2 self-start sm:self-auto bg-black/40 border border-[#5a1a23]/60 rounded-xl px-3 py-1.5 text-xs">
-              <span className="text-gray-400 text-[11px]">Model:</span>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="bg-transparent text-[#f8d7dc] font-medium text-xs focus:outline-none cursor-pointer"
-              >
-                {models.map((m) => (
-                  <option key={m.id} value={m.id} className="bg-[#1c080b] text-white">
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
         {/* Tab Switcher */}
@@ -1164,7 +1142,7 @@ export default function AIAgentFullPage() {
                     {activeSession.title}
                   </h3>
                   <span className="text-[10px] text-neutral-500 dark:text-[#f8d7dc]/70 font-medium">
-                    {activeSession.messages.length} messages · Model: {selectedModel}
+                    {activeSession.messages.length} messages
                   </span>
                 </div>
               </div>
