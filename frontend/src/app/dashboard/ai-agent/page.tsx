@@ -995,45 +995,45 @@ export default function AIAgentFullPage() {
 
       {/* Tab 2: AI Co-Pilot Chat with ChatGPT-Style Chat History Sidebar */}
       {activeTab === 'chat' && (
-        <div className="relative flex flex-col md:flex-row bg-[#120406] border border-[#5a1a23]/60 rounded-2xl overflow-hidden shadow-2xl min-h-[650px] h-[78vh]">
-          {/* Fullscreen Mobile History Modal */}
+        <div className="relative flex flex-col md:flex-row bg-white border border-neutral-300 rounded-2xl overflow-hidden shadow-2xl min-h-[650px] h-[78vh]">
+          {/* Fullscreen Mobile History Modal - White Background with Black Text */}
           {showMobileHistory && (
-            <div className="fixed inset-0 z-[100] flex flex-col bg-[#120406] text-white animate-in fade-in duration-150 md:hidden">
+            <div className="fixed inset-0 z-[100] flex flex-col bg-white text-neutral-900 animate-in fade-in duration-150 md:hidden">
               {/* Mobile History Header */}
-              <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#5a1a23]/60 bg-[#1c080b]">
+              <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-200 bg-neutral-50">
                 <div className="flex items-center gap-2">
-                  <History className="h-4 w-4 text-[#f8a5b2]" />
-                  <span className="font-bold text-sm text-white">All Chat History</span>
-                  <span className="text-[11px] text-[#f8d7dc]/70">({sessions.length} chats)</span>
+                  <History className="h-4 w-4 text-neutral-800" />
+                  <span className="font-bold text-sm text-neutral-900">All Chat History</span>
+                  <span className="text-[11px] text-neutral-500 font-medium">({sessions.length} chats)</span>
                 </div>
                 <button
                   onClick={() => setShowMobileHistory(false)}
-                  className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+                  className="p-1.5 rounded-lg bg-neutral-200 text-neutral-800 hover:bg-neutral-300 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Mobile History New Chat CTA */}
-              <div className="p-3.5 border-b border-[#5a1a23]/40 bg-[#140507]">
+              <div className="p-3.5 border-b border-neutral-200 bg-white">
                 <Button
                   onClick={() => {
                     handleCreateNewChat();
                     setShowMobileHistory(false);
                   }}
-                  className="w-full bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white font-bold text-xs py-2.5 rounded-xl border border-[#a63344]/50 shadow-md flex items-center justify-center gap-2"
+                  className="w-full bg-neutral-900 hover:bg-black text-white font-bold text-xs py-2.5 rounded-xl border border-neutral-800 shadow-md flex items-center justify-center gap-2"
                 >
-                  <Plus className="h-4 w-4 text-[#f8d7dc]" />
+                  <Plus className="h-4 w-4 text-white" />
                   <span>+ Start New Chat</span>
                 </Button>
               </div>
 
               {/* Categorized Sessions List for Mobile */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
                 {recentSessions.length > 0 && (
                   <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-                      <Clock className="h-3.5 w-3.5 text-[#f8a5b2]" />
+                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
+                      <Clock className="h-3.5 w-3.5 text-neutral-700" />
                       <span>Recent Chats</span>
                     </div>
                     <div className="space-y-1">
@@ -1047,20 +1047,20 @@ export default function AIAgentFullPage() {
                           }}
                           className={`flex items-center justify-between p-3 rounded-xl text-xs cursor-pointer border transition-all ${
                             activeSessionId === s.id
-                              ? 'bg-[#45141B] text-white font-bold border-[#a63344] shadow-md ring-1 ring-[#a63344]'
-                              : 'bg-black/30 border-[#5a1a23]/40 text-gray-200 hover:bg-white/10 hover:text-white'
+                              ? 'bg-neutral-100 text-black font-bold border-neutral-300 shadow-sm ring-1 ring-neutral-400'
+                              : 'bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:text-black'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 truncate flex-1 min-w-0 mr-2">
-                            <MessageSquare className={`h-4 w-4 shrink-0 ${activeSessionId === s.id ? 'text-[#f8a5b2]' : 'text-gray-400'}`} />
+                            <MessageSquare className={`h-4 w-4 shrink-0 ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-400'}`} />
                             <div className="truncate">
-                              <div className="truncate text-white font-semibold text-xs">{s.title}</div>
-                              <div className="text-[10px] text-gray-400">{s.messages.length} messages</div>
+                              <div className={`truncate font-semibold text-xs ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-900'}`}>{s.title}</div>
+                              <div className="text-[10px] text-neutral-500">{s.messages.length} messages</div>
                             </div>
                           </div>
                           <button
                             onClick={(e) => handleDeleteChat(s.id, e)}
-                            className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-white/10 rounded-lg"
+                            className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 rounded-lg"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -1072,8 +1072,8 @@ export default function AIAgentFullPage() {
 
                 {funnelSessions.length > 0 && (
                   <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-                      <Wand2 className="h-3.5 w-3.5 text-amber-400" />
+                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
+                      <Wand2 className="h-3.5 w-3.5 text-amber-600" />
                       <span>Funnel Discussions</span>
                     </div>
                     <div className="space-y-1">
@@ -1087,20 +1087,20 @@ export default function AIAgentFullPage() {
                           }}
                           className={`flex items-center justify-between p-3 rounded-xl text-xs cursor-pointer border transition-all ${
                             activeSessionId === s.id
-                              ? 'bg-[#45141B] text-white font-bold border-[#a63344] shadow-md ring-1 ring-[#a63344]'
-                              : 'bg-black/30 border-[#5a1a23]/40 text-gray-200 hover:bg-white/10 hover:text-white'
+                              ? 'bg-neutral-100 text-black font-bold border-neutral-300 shadow-sm ring-1 ring-neutral-400'
+                              : 'bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:text-black'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 truncate flex-1 min-w-0 mr-2">
-                            <Zap className={`h-4 w-4 shrink-0 ${activeSessionId === s.id ? 'text-amber-400' : 'text-gray-400'}`} />
+                            <Zap className={`h-4 w-4 shrink-0 ${activeSessionId === s.id ? 'text-amber-600' : 'text-neutral-400'}`} />
                             <div className="truncate">
-                              <div className="truncate text-white font-semibold text-xs">{s.title}</div>
-                              <div className="text-[10px] text-gray-400">{s.messages.length} messages</div>
+                              <div className={`truncate font-semibold text-xs ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-900'}`}>{s.title}</div>
+                              <div className="text-[10px] text-neutral-500">{s.messages.length} messages</div>
                             </div>
                           </div>
                           <button
                             onClick={(e) => handleDeleteChat(s.id, e)}
-                            className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-white/10 rounded-lg"
+                            className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 rounded-lg"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -1112,8 +1112,8 @@ export default function AIAgentFullPage() {
 
                 {copySessions.length > 0 && (
                   <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-                      <Sparkles className="h-3.5 w-3.5 text-pink-400" />
+                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
+                      <Sparkles className="h-3.5 w-3.5 text-rose-600" />
                       <span>Marketing & Copy</span>
                     </div>
                     <div className="space-y-1">
@@ -1127,20 +1127,20 @@ export default function AIAgentFullPage() {
                           }}
                           className={`flex items-center justify-between p-3 rounded-xl text-xs cursor-pointer border transition-all ${
                             activeSessionId === s.id
-                              ? 'bg-[#45141B] text-white font-bold border-[#a63344] shadow-md ring-1 ring-[#a63344]'
-                              : 'bg-black/30 border-[#5a1a23]/40 text-gray-200 hover:bg-white/10 hover:text-white'
+                              ? 'bg-neutral-100 text-black font-bold border-neutral-300 shadow-sm ring-1 ring-neutral-400'
+                              : 'bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:text-black'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 truncate flex-1 min-w-0 mr-2">
-                            <FileText className={`h-4 w-4 shrink-0 ${activeSessionId === s.id ? 'text-pink-400' : 'text-gray-400'}`} />
+                            <FileText className={`h-4 w-4 shrink-0 ${activeSessionId === s.id ? 'text-rose-600' : 'text-neutral-400'}`} />
                             <div className="truncate">
-                              <div className="truncate text-white font-semibold text-xs">{s.title}</div>
-                              <div className="text-[10px] text-gray-400">{s.messages.length} messages</div>
+                              <div className={`truncate font-semibold text-xs ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-900'}`}>{s.title}</div>
+                              <div className="text-[10px] text-neutral-500">{s.messages.length} messages</div>
                             </div>
                           </div>
                           <button
                             onClick={(e) => handleDeleteChat(s.id, e)}
-                            className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-white/10 rounded-lg"
+                            className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 rounded-lg"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -1153,26 +1153,26 @@ export default function AIAgentFullPage() {
             </div>
           )}
 
-          {/* Desktop Persistent Chat History Sidebar */}
-          <aside className="hidden md:flex w-64 lg:w-72 flex-col bg-[#120406] border-r border-[#5a1a23]/60 text-white shrink-0">
+          {/* Desktop Persistent Chat History Sidebar - Clean White Background with Black Text */}
+          <aside className="hidden md:flex w-64 lg:w-72 flex-col bg-white border-r border-neutral-200 text-neutral-900 shrink-0">
             {/* Sidebar Top: New Chat CTA */}
-            <div className="p-3.5 border-b border-[#5a1a23]/50 flex items-center justify-between gap-2">
+            <div className="p-3.5 border-b border-neutral-200 flex items-center justify-between gap-2 bg-white">
               <Button
                 onClick={handleCreateNewChat}
-                className="flex-1 bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/50 shadow-md font-semibold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all hover:scale-[1.01]"
+                className="flex-1 bg-neutral-900 hover:bg-black text-white border border-neutral-800 shadow-md font-semibold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all hover:scale-[1.01]"
               >
-                <Plus className="h-4 w-4 text-[#f8d7dc]" />
+                <Plus className="h-4 w-4 text-white" />
                 <span>New Chat</span>
               </Button>
             </div>
 
-            {/* Chat Sessions Grouped into Categorized Sections with Clear Headings and White Text */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+            {/* Chat Sessions Grouped into Categorized Sections with Clear Headings and Black Text */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-4 bg-white">
               {/* Section 1: Recent Chats */}
               {recentSessions.length > 0 && (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-                    <Clock className="h-3 w-3 text-[#f8a5b2]" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
+                    <Clock className="h-3.5 w-3.5 text-neutral-700" />
                     <span>Recent Chats</span>
                   </div>
                   <div className="space-y-0.5">
@@ -1182,18 +1182,18 @@ export default function AIAgentFullPage() {
                         onClick={() => setActiveSessionId(s.id)}
                         className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                           activeSessionId === s.id
-                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
-                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                            ? 'bg-neutral-100 text-black font-bold border border-neutral-300 shadow-sm'
+                            : 'text-neutral-700 hover:bg-neutral-50 hover:text-black'
                         }`}
                       >
                         <div className="flex items-center gap-2 truncate">
-                          <MessageSquare className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-[#f8a5b2]' : 'text-gray-400'}`} />
-                          <span className="truncate text-white font-medium">{s.title}</span>
+                          <MessageSquare className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-400'}`} />
+                          <span className={`truncate ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-700 group-hover:text-black font-medium'}`}>{s.title}</span>
                         </div>
                         <button
                           onClick={(e) => handleDeleteChat(s.id, e)}
                           title="Delete chat"
-                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-rose-600 transition-opacity"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -1206,8 +1206,8 @@ export default function AIAgentFullPage() {
               {/* Section 2: Funnel Discussions */}
               {funnelSessions.length > 0 && (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-                    <Wand2 className="h-3 w-3 text-amber-400" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
+                    <Wand2 className="h-3.5 w-3.5 text-amber-600" />
                     <span>Funnel Discussions</span>
                   </div>
                   <div className="space-y-0.5">
@@ -1217,18 +1217,18 @@ export default function AIAgentFullPage() {
                         onClick={() => setActiveSessionId(s.id)}
                         className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                           activeSessionId === s.id
-                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
-                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                            ? 'bg-neutral-100 text-black font-bold border border-neutral-300 shadow-sm'
+                            : 'text-neutral-700 hover:bg-neutral-50 hover:text-black'
                         }`}
                       >
                         <div className="flex items-center gap-2 truncate">
-                          <Zap className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-amber-400' : 'text-gray-400'}`} />
-                          <span className="truncate text-white font-medium">{s.title}</span>
+                          <Zap className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-amber-600' : 'text-neutral-400'}`} />
+                          <span className={`truncate ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-700 group-hover:text-black font-medium'}`}>{s.title}</span>
                         </div>
                         <button
                           onClick={(e) => handleDeleteChat(s.id, e)}
                           title="Delete chat"
-                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-rose-600 transition-opacity"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -1241,8 +1241,8 @@ export default function AIAgentFullPage() {
               {/* Section 3: Marketing & Copy */}
               {copySessions.length > 0 && (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-                    <Sparkles className="h-3 w-3 text-pink-400" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-neutral-900">
+                    <Sparkles className="h-3.5 w-3.5 text-rose-600" />
                     <span>Marketing & Copy</span>
                   </div>
                   <div className="space-y-0.5">
@@ -1252,18 +1252,18 @@ export default function AIAgentFullPage() {
                         onClick={() => setActiveSessionId(s.id)}
                         className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                           activeSessionId === s.id
-                            ? 'bg-[#45141B] text-white font-semibold border border-[#a63344]/60 shadow-sm'
-                            : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                            ? 'bg-neutral-100 text-black font-bold border border-neutral-300 shadow-sm'
+                            : 'text-neutral-700 hover:bg-neutral-50 hover:text-black'
                         }`}
                       >
                         <div className="flex items-center gap-2 truncate">
-                          <FileText className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-pink-400' : 'text-gray-400'}`} />
-                          <span className="truncate text-white font-medium">{s.title}</span>
+                          <FileText className={`h-3.5 w-3.5 shrink-0 ${activeSessionId === s.id ? 'text-rose-600' : 'text-neutral-400'}`} />
+                          <span className={`truncate ${activeSessionId === s.id ? 'text-black font-bold' : 'text-neutral-700 group-hover:text-black font-medium'}`}>{s.title}</span>
                         </div>
                         <button
                           onClick={(e) => handleDeleteChat(s.id, e)}
                           title="Delete chat"
-                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-400 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-rose-600 transition-opacity"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -1275,25 +1275,25 @@ export default function AIAgentFullPage() {
             </div>
 
             {/* Sidebar Bottom Footer */}
-            <div className="p-3 border-t border-[#5a1a23]/50 text-[11px] text-[#f8d7dc]/70 flex items-center justify-between">
-              <span className="font-semibold text-white">Chat Memory Saved</span>
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <div className="p-3 border-t border-neutral-200 text-[11px] text-neutral-600 flex items-center justify-between bg-neutral-50">
+              <span className="font-semibold text-neutral-800">Chat Memory Saved</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
             </div>
           </aside>
 
-          {/* Right Main Chat Area */}
-          <div className="flex-1 flex flex-col min-w-0 bg-[#0c0305] relative">
-            {/* Top Chat Bar: Always Sticky at Top, High Contrast, Prominent Mobile History Controls */}
-            <div className="sticky top-0 z-20 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#190609] border-b border-[#5a1a23]/60 flex items-center justify-between gap-2 sm:gap-3 text-white shadow-md">
+          {/* Right Main Chat Area - Pure Black Background */}
+          <div className="flex-1 flex flex-col min-w-0 bg-black relative">
+            {/* Top Chat Bar: Always Sticky at Top, High Contrast, Pure Black with White Text */}
+            <div className="sticky top-0 z-20 px-3 sm:px-4 py-2.5 sm:py-3 bg-black border-b border-neutral-800 flex items-center justify-between gap-2 sm:gap-3 text-white shadow-md">
               <div className="flex items-center gap-2 truncate flex-1 min-w-0">
                 {/* Mobile Button to open Full History Modal */}
                 <Button
                   size="sm"
                   onClick={() => setShowMobileHistory(true)}
-                  className="md:hidden bg-gradient-to-r from-[#6b1e28] to-[#852533] hover:from-[#7d232f] hover:to-[#992c3c] text-white border border-[#a63344] text-xs px-2.5 h-8 flex items-center gap-1.5 shrink-0 shadow-md font-semibold active:scale-95 transition-all"
+                  className="md:hidden bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 text-xs px-2.5 h-8 flex items-center gap-1.5 shrink-0 shadow-md font-semibold active:scale-95 transition-all"
                   title="Open Chat History"
                 >
-                  <History className="h-4 w-4 text-[#f8a5b2]" />
+                  <History className="h-4 w-4 text-white" />
                   <span>History ({sessions.length})</span>
                 </Button>
 
@@ -1306,10 +1306,10 @@ export default function AIAgentFullPage() {
                       const title = sessions.find((s) => s.id === e.target.value)?.title;
                       if (title) toast.success(`Loaded: ${title}`);
                     }}
-                    className="w-full bg-[#2a0b11] text-white text-xs font-semibold border border-[#a63344]/60 rounded-lg px-2.5 py-1.5 truncate focus:outline-none focus:ring-1 focus:ring-[#a63344]"
+                    className="w-full bg-neutral-900 text-white text-xs font-semibold border border-neutral-700 rounded-lg px-2.5 py-1.5 truncate focus:outline-none focus:ring-1 focus:ring-neutral-500"
                   >
                     {sessions.map((s) => (
-                      <option key={s.id} value={s.id} className="bg-[#190609] text-white">
+                      <option key={s.id} value={s.id} className="bg-neutral-900 text-white">
                         💬 {s.title}
                       </option>
                     ))}
@@ -1321,7 +1321,7 @@ export default function AIAgentFullPage() {
                   <h3 className="text-xs sm:text-sm font-bold text-white truncate">
                     {activeSession.title}
                   </h3>
-                  <span className="text-[10px] text-[#f8d7dc]/70 font-medium">
+                  <span className="text-[10px] text-neutral-400 font-medium">
                     {activeSession.messages.length} messages
                   </span>
                 </div>
@@ -1331,15 +1331,15 @@ export default function AIAgentFullPage() {
               <Button
                 size="sm"
                 onClick={handleCreateNewChat}
-                className="bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 text-xs h-8 px-3 font-semibold shadow-sm shrink-0 flex items-center gap-1 active:scale-95 transition-transform"
+                className="bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 text-xs h-8 px-3 font-semibold shadow-sm shrink-0 flex items-center gap-1 active:scale-95 transition-transform"
               >
-                <Plus className="h-3.5 w-3.5 text-[#f8d7dc]" />
+                <Plus className="h-3.5 w-3.5 text-white" />
                 <span className="hidden xs:inline">New Chat</span>
               </Button>
             </div>
 
-            {/* Chat Messages Feed */}
-            <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            {/* Chat Messages Feed - Pure Solid Black */}
+            <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-black">
               {activeSession.messages.map((msg, i) => (
                 <div
                   key={i}
@@ -1385,30 +1385,30 @@ export default function AIAgentFullPage() {
             <button
               type="button"
               onClick={() => setShowMobileHistory(true)}
-              className="md:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#45141B] text-white font-bold text-xs shadow-2xl border border-[#a63344] transition-all duration-200 active:scale-90 hover:scale-105"
+              className="md:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-white text-black font-bold text-xs shadow-2xl border border-neutral-300 transition-all duration-200 active:scale-90 hover:scale-105"
               aria-label="Open Chat History"
             >
-              <History className="h-4 w-4 text-[#f8a5b2] animate-pulse" />
+              <History className="h-4 w-4 text-black animate-pulse" />
               <span>History ({sessions.length})</span>
             </button>
 
-            {/* Chat Message Input Composer */}
+            {/* Chat Message Input Composer - Pure Solid Black */}
             <form
               onSubmit={handleSendMessage}
-              className="p-3 sm:p-4 bg-[#140507] border-t border-[#5a1a23]/60 flex gap-2"
+              className="p-3 sm:p-4 bg-black border-t border-neutral-800 flex gap-2"
             >
               <Input
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Ask your AI Agent anything (e.g. 'write a 3-day reminder sequence', 'generate high-converting webinar headlines')..."
-                className="bg-black/70 border-[#5a1a23]/70 focus:border-[#a63344] text-white text-xs sm:text-sm placeholder:text-gray-400"
+                className="bg-neutral-900 border-neutral-800 focus:border-neutral-700 text-white text-xs sm:text-sm placeholder:text-neutral-500"
               />
               <Button
                 type="submit"
                 disabled={isChatLoading || !chatInput.trim()}
-                className="bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/40 px-5 font-semibold text-xs shadow-md shrink-0 transition-all hover:scale-[1.02]"
+                className="bg-neutral-100 hover:bg-white text-black border border-neutral-300 px-5 font-bold text-xs shadow-md shrink-0 transition-all hover:scale-[1.02]"
               >
-                <Send className="h-3.5 w-3.5 mr-1 text-[#f8d7dc]" />
+                <Send className="h-3.5 w-3.5 mr-1 text-black" />
                 Send
               </Button>
             </form>
