@@ -21,17 +21,17 @@ export function FloatingAIAssistant() {
         <div className="pointer-events-auto mb-3 w-80 sm:w-88 rounded-2xl border border-purple-500/30 bg-neutral-950/95 backdrop-blur-xl p-4 shadow-2xl shadow-purple-950/50 text-white animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-center justify-between pb-3 border-b border-purple-500/20">
             <div className="flex items-center gap-2.5">
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-full overflow-hidden shadow-md shadow-purple-500/40">
+              <div className="relative flex h-8 w-8 items-center justify-center rounded-full overflow-hidden shadow-md bg-white border border-neutral-700/60 p-0.5">
                 <img
-                  src="/ai-orb.png"
-                  alt="AI+"
-                  className="h-full w-full object-cover"
+                  src="/logo.png"
+                  alt="WebinarFlow AI+"
+                  className="h-full w-full object-contain"
                 />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-extrabold text-sm tracking-wide text-white">
-                    WebinarFlow <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-300 bg-clip-text text-transparent">AI+</span>
+                    WebinarFlow <span className="text-[#f8a5b2] font-black">AI+</span>
                   </span>
                 </div>
                 <p className="text-[10px] text-neutral-400">Next-gen autonomous AI co-pilot</p>
@@ -99,20 +99,20 @@ export function FloatingAIAssistant() {
         </div>
       )}
 
-      {/* Floating Glowing Orb Button with 'AI+' Label */}
-      <div className="pointer-events-auto flex items-center gap-2.5 group cursor-pointer">
-        {/* Floating pill badge sentence */}
+      {/* Floating Button with Spiral WF Emblem & Larger 'AI+' Badge */}
+      <div className="pointer-events-auto flex items-center gap-3 group cursor-pointer">
+        {/* Floating pill badge - enlarged */}
         <Link
           href="/dashboard/ai-agent"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-950/90 text-white border border-purple-500/40 shadow-xl shadow-purple-950/40 backdrop-blur-md transition-all duration-300 hover:border-purple-400 hover:scale-105"
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-neutral-950/95 text-white border border-neutral-700/80 hover:border-neutral-500 shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105"
         >
-          <Sparkles className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
-          <span className="text-xs font-bold tracking-wide bg-gradient-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-transparent">
+          <Sparkles className="h-4 w-4 text-[#f8a5b2] animate-pulse shrink-0" />
+          <span className="text-sm sm:text-base font-black tracking-wide text-white">
             AI+
           </span>
         </Link>
 
-        {/* Floating Glowing Orb Button */}
+        {/* Floating Spiral WF Emblem Button */}
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
@@ -120,16 +120,16 @@ export function FloatingAIAssistant() {
           title="WebinarFlow AI+"
           aria-label="WebinarFlow AI+"
         >
-          {/* Animated Purple Glowing Aura Rings */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-purple-600 via-fuchsia-500 to-indigo-600 opacity-70 blur-md animate-pulse" />
-          <div className="absolute -inset-1 rounded-full bg-purple-500/30 blur-lg" />
+          {/* Subtle elegant aura */}
+          <div className="absolute inset-0 rounded-full bg-black/20 dark:bg-white/15 blur-md" />
+          <div className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-[#852533]/40 to-neutral-400/40 opacity-70 blur-sm" />
           
-          {/* Glowing Glass Sphere Image */}
-          <div className="relative h-full w-full rounded-full p-0.5 overflow-hidden ring-2 ring-purple-400/50 shadow-2xl shadow-purple-600/60 bg-black">
+          {/* Circular Emblem Frame with Spiral WF Logo */}
+          <div className="relative h-full w-full rounded-full p-1.5 overflow-hidden ring-2 ring-neutral-300/80 dark:ring-neutral-700/90 shadow-2xl bg-white flex items-center justify-center">
             <img
-              src="/ai-orb.png"
-              alt="AI+"
-              className="h-full w-full object-cover rounded-full"
+              src="/logo.png"
+              alt="WebinarFlow AI+"
+              className="h-full w-full object-contain rounded-full"
             />
           </div>
         </button>
