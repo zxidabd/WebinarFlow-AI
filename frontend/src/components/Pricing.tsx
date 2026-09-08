@@ -18,45 +18,32 @@ interface Plan {
 const PLANS: Plan[] = [
   {
     name: 'Starter',
-    price: { monthly: 29, yearly: 23 },
+    price: { monthly: 9.99, yearly: 6.66 },
     description: 'For solo creators running their first webinar funnels.',
     features: [
-      'Up to 3 funnels',
-      'AI webinar generator',
-      'Email automation (5k/mo)',
-      '1 workspace',
+      '3 Webinars',
+      '2 Funnels per webinar',
+      '15 AI Agent chats/month',
+      '300 Registrants per webinar',
       'Basic analytics',
+      'Normal support',
     ],
-    cta: 'Start Free Trial',
+    cta: 'Start 3-Day Free Trial',
   },
   {
-    name: 'Growth',
-    price: { monthly: 79, yearly: 63 },
-    description: 'For teams scaling webinars and multi-channel follow-up.',
+    name: 'Pro',
+    price: { monthly: 19.99, yearly: 15.00 },
+    description: 'For creators scaling webinars and maximizing conversions.',
     features: [
-      'Unlimited funnels',
-      'WhatsApp + Email automation',
-      'CRM with deal pipeline',
-      '5 workspaces',
-      'Advanced analytics & attribution',
+      '7 Webinars',
+      '4 Funnels per webinar',
+      '50 AI Agent chats/month',
+      '600 Registrants per webinar',
+      'Advanced analytics & customer views',
       'Priority support',
     ],
     popular: true,
-    cta: 'Start Free Trial',
-  },
-  {
-    name: 'Enterprise',
-    price: { monthly: 199, yearly: 159 },
-    description: 'For organizations with custom workflow & security needs.',
-    features: [
-      'Everything in Growth',
-      'Custom AI agents',
-      'SSO & advanced security',
-      'Unlimited workspaces',
-      'Dedicated success manager',
-      'SLA & onboarding',
-    ],
-    cta: 'Book Demo',
+    cta: 'Start 3-Day Free Trial',
   },
 ];
 
@@ -126,7 +113,7 @@ export default function Pricing() {
         initial="hidden"
         whileInView="show"
         viewport={viewportOnce}
-        className="relative mt-14 grid grid-cols-1 items-start gap-6 lg:grid-cols-3"
+        className="relative mt-14 grid grid-cols-1 items-start gap-6 lg:grid-cols-2 max-w-4xl mx-auto"
       >
         {PLANS.map((plan) => (
           <motion.div
@@ -173,7 +160,9 @@ export default function Pricing() {
                 <span className="mb-1 text-sm text-[#B8B8B8]/50">/mo</span>
               </div>
               <p className="mt-1 text-xs text-[#B8B8B8]/40">
-                {cycle === 'yearly' ? 'billed annually' : 'billed monthly'}
+                {cycle === 'yearly'
+                  ? `$${plan.name === 'Starter' ? '79.9' : '179.9'}/year — save ${plan.name === 'Starter' ? '33%' : '25%'}`
+                  : 'billed monthly'}
               </p>
 
               {/* CTA button */}

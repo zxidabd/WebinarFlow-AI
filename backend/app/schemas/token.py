@@ -28,6 +28,9 @@ class AuthUser(BaseModel):
     email_verified: bool = False
     is_super_user: bool
     last_login_at: datetime | None = None
+    trial_ends_at: datetime | None = None
+    subscription_status: str = "trialing"
+    plan_tier: str = "free_trial"
 
 
 class OrganizationRole(BaseModel):

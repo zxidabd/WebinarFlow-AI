@@ -282,3 +282,45 @@ async def linkedin_callback(
 
     _set_refresh_cookie(response, raw_refresh)
     return _auth_response(user, membership, access)
+
+class UpdateSubscriptionRequest(BaseModel):
+    subscription_status: str  # "active", "trialing", "expired", "canceled"
+    plan_tier: str = "starter"  # "free_trial", "starter", "pro"
+    extend_trial_days: int = 0
+
+from app.api.deps import _bearer
+@router.patch("/admin/users/{user_id}/subscription")
+async def admin_update_subscription(
+    user_id: uuid.UUID,
+    payload: UpdateSubscriptionRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Superuser-only: manually update a user's subscription status."""
+    # Check if current user is superuser
+    creds = await _bearer(request)
+    if creds is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+    from app.core import security
+    token_payload = security.decode_token(creds.credentials)
+    admin_user = (await db.execute(select(User).where(User.id == uuid.UUID(token_payload["sub"])))).scalar_one_or_none()
+    if not admin_user or not admin_user.is_super_user:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Superuser access required")
+    
+    target = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+    
+    target.subscription_status = payload.subscription_status
+    target.plan_tier = payload.plan_tier
+    if payload.extend_trial_days > 0:
+        from datetime import timedelta, datetime, timezone
+        base = target.trial_ends_at or datetime.now(timezone.utc)
+        if base.tzinfo is None:
+            base = base.replace(tzinfo=timezone.utc)
+        target.trial_ends_at = base + timedelta(days=payload.extend_trial_days)
+    elif payload.subscription_status == "active":
+        target.trial_ends_at = None
+    
+    await db.commit()
+    return {"status": "ok", "message": f"User {target.email} updated to {payload.subscription_status} / {payload.plan_tier}"}

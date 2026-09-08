@@ -60,6 +60,17 @@ async def get_current_user(
             "Please verify your email before accessing this resource.",
         )
 
+    # Trial / subscription enforcement
+    if not user.is_super_user and user.subscription_status not in ("active",):
+        if user.trial_ends_at:
+            from datetime import datetime, timezone
+            trial_end = user.trial_ends_at if user.trial_ends_at.tzinfo else user.trial_ends_at.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > trial_end:
+                raise HTTPException(
+                    status_code=402,
+                    detail="Your 3-day free trial has expired. Please subscribe to continue.",
+                )
+
     return user
 
 

@@ -89,6 +89,21 @@ async def create_webinar(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a webinar in the active organization."""
+    from sqlalchemy import func
+    from app.core.plan_limits import get_limits
+
+    webinar_count_result = await db.execute(
+        select(func.count()).select_from(Webinar).where(Webinar.organization_id == membership.organization_id)
+    )
+    webinar_count = webinar_count_result.scalar() or 0
+    current_user_obj = membership.user
+    limits = get_limits(current_user_obj.plan_tier)
+    if webinar_count >= limits["max_webinars"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"You've reached your webinar limit ({webinar_count}/{limits['max_webinars']}). Upgrade your plan to create more webinars.",
+        )
+
     webinar = await webinar_service.create_webinar(
         db,
         organization_id=membership.organization_id,

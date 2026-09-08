@@ -59,7 +59,7 @@ export default function CTA() {
             variants={slideUp}
             className="mt-6 text-xs text-[#B8B8B8]/40"
           >
-            No credit card required · 14-day free trial · Cancel anytime
+            No credit card required · 3-day free trial · Cancel anytime
           </motion.p>
         </div>
       </motion.div>

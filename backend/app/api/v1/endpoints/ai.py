@@ -92,16 +92,38 @@ async def chat_with_agent_endpoint(
     payload: ChatRequest,
     current_user: User = Depends(get_current_active_user),
     membership = Depends(get_current_membership),
+    db: AsyncSession = Depends(get_db),
 ):
     """Chat interactively with your WebinarFlow AI Agent."""
     if not payload.messages:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Messages list is required")
+
+    from app.core.plan_limits import get_limits
+    from datetime import datetime, timezone
+
+    # Reset monthly counter if needed
+    now = datetime.now(timezone.utc)
+    if current_user.ai_chat_count_reset_at is None or current_user.ai_chat_count_reset_at.month != now.month or current_user.ai_chat_count_reset_at.year != now.year:
+        current_user.ai_chat_count = 0
+        current_user.ai_chat_count_reset_at = now
+
+    limits = get_limits(current_user.plan_tier)
+    if current_user.ai_chat_count >= limits["max_ai_chats_per_month"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"You've used all {limits['max_ai_chats_per_month']} AI chats this month. Upgrade your plan for more.",
+        )
 
     result = await ai_service.chat_with_agent(
         messages=payload.messages,
         model=payload.model,
         system_persona=payload.system_persona,
     )
+    
+    current_user.ai_chat_count += 1
+    db.add(current_user)
+    await db.commit()
+    
     return result
 
 

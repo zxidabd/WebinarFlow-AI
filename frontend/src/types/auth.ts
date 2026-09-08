@@ -12,6 +12,9 @@ export interface AuthUser {
   email_verified?: boolean;
   is_super_user: boolean;
   last_login_at: string | null;
+  trial_ends_at: string | null;
+  subscription_status: 'trialing' | 'active' | 'expired' | 'canceled';
+  plan_tier: string;
 }
 
 export interface OrganizationRole {

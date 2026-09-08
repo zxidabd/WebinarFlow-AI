@@ -182,6 +182,21 @@ async def create_landing_page(
     ).scalar_one_or_none()
     if webinar is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Webinar not found or access denied")
+
+    from sqlalchemy import func
+    from app.core.plan_limits import get_limits
+
+    lp_count_result = await db.execute(
+        select(func.count()).select_from(LandingPage).where(LandingPage.webinar_id == payload.webinar_id)
+    )
+    lp_count = lp_count_result.scalar() or 0
+    limits = get_limits(membership.user.plan_tier)
+    if lp_count >= limits["max_funnels_per_webinar"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"You've reached your funnel limit ({lp_count}/{limits['max_funnels_per_webinar']}) for this webinar. Upgrade your plan for more.",
+        )
+
     lp = await landing_page_service.create_landing_page(
         db,
         webinar_id=payload.webinar_id,
@@ -508,6 +523,24 @@ async def register_via_public_page(
     if resolved is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
     lp, webinar = resolved
+
+    from sqlalchemy import select, func
+    from app.core.plan_limits import get_limits
+    from app.models import Registrant, Organization
+
+    registrant_count_result = await db.execute(
+        select(func.count()).select_from(Registrant).where(Registrant.webinar_id == webinar.id)
+    )
+    registrant_count = registrant_count_result.scalar() or 0
+
+    org = (await db.execute(select(Organization).where(Organization.id == webinar.organization_id))).scalar_one_or_none()
+    if org and org.owner:
+        limits = get_limits(org.owner.plan_tier)
+        if registrant_count >= limits["max_registrants_per_webinar"]:
+            raise HTTPException(
+                status_code=403,
+                detail="This webinar has reached its registration capacity.",
+            )
 
     from app.services import registration_service
 

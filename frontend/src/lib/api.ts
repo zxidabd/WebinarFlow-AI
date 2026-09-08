@@ -89,6 +89,26 @@ api.interceptors.response.use(
   (r) => r,
   async (error: AxiosError) => {
     const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+
+    // 402 Payment Required — trial expired, mark user as expired in auth store
+    if (error.response?.status === 402) {
+      try {
+        const raw = localStorage.getItem('webinarflow-auth');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.state?.user) {
+            parsed.state.user.subscription_status = 'expired';
+            localStorage.setItem('webinarflow-auth', JSON.stringify(parsed));
+          }
+        }
+      } catch {}
+      // Force a page reload to trigger the paywall
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/payment')) {
+        window.location.reload();
+      }
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && original && !original._retry && !original.url?.includes('/auth/')) {
       original._retry = true;
       const next = await refresh();

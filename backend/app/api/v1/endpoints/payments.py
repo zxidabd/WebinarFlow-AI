@@ -98,6 +98,22 @@ async def stripe_webhook(
         return {"status": "ignored", "event": event.get("type")}
 
     session_obj = event.get("data", {}).get("object", {})
+    
+    metadata = session_obj.get("metadata", {}) or {}
+    if metadata.get("type") == "subscription":
+        user_id = metadata.get("user_id")
+        plan_tier = metadata.get("plan_tier", "starter")
+        if user_id:
+            from app.models import User
+            user_result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
+            sub_user = user_result.scalar_one_or_none()
+            if sub_user:
+                sub_user.subscription_status = "active"
+                sub_user.plan_tier = plan_tier
+                sub_user.trial_ends_at = None
+                await db.commit()
+        return {"status": "ok"}
+    
     registrant_id_str = session_obj.get("client_reference_id")
     if not registrant_id_str:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Missing client_reference_id")
@@ -149,7 +165,23 @@ async def razorpay_webhook(
         return {"status": "ignored", "event": payload.get("event")}
 
     payment_entity = payload.get("payload", {}).get("payment", {}).get("entity", {})
-    registrant_id_str = payment_entity.get("notes", {}).get("registrant_id")
+    notes = payment_entity.get("notes", {}) or {}
+    
+    if notes.get("type") == "subscription":
+        user_id = notes.get("user_id")
+        plan_tier = notes.get("plan_tier", "starter")
+        if user_id:
+            from app.models import User
+            user_result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
+            sub_user = user_result.scalar_one_or_none()
+            if sub_user:
+                sub_user.subscription_status = "active"
+                sub_user.plan_tier = plan_tier
+                sub_user.trial_ends_at = None
+                await db.commit()
+        return {"status": "ok"}
+        
+    registrant_id_str = notes.get("registrant_id")
     if not registrant_id_str:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Missing registrant_id in notes")
 
@@ -331,5 +363,126 @@ async def verify_session(
     except payment_service.PaymentError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, e.message)
 
+
+# ── Subscription Checkout ──────────────────────────────────────────────────
+
+from pydantic import BaseModel
+
+class SubscribeRequest(BaseModel):
+    plan_tier: str  # "starter" or "pro"
+    billing_cycle: str = "monthly"  # "monthly" or "yearly"
+
+PLAN_PRICES = {
+    "starter": {"monthly": 999, "yearly": 7990},   # cents
+    "pro": {"monthly": 1999, "yearly": 17990},      # cents
+}
+
+PLAN_PRICES_INR = {
+    "starter": {"monthly": 84900, "yearly": 679900},  # paise (approx conversion)
+    "pro": {"monthly": 169900, "yearly": 1529900},     # paise
+}
+
+@router.post("/subscribe/stripe")
+async def subscribe_stripe(
+    payload: SubscribeRequest,
+    membership: Membership = Depends(get_current_membership),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a Stripe Checkout Session for a platform subscription."""
+    import os
+    import stripe as stripe_sdk
+    
+    user = membership.user
+    org = membership.organization
+    settings = org.settings or {}
+    
+    sk = (settings.get("stripe_secret_key") or os.getenv("STRIPE_SECRET_KEY", "")).strip()
+    if not sk:
+        raise HTTPException(400, "Stripe is not configured. Please add your Stripe keys in Settings.")
+    
+    stripe_sdk.api_key = sk
+    
+    prices = PLAN_PRICES.get(payload.plan_tier)
+    if not prices:
+        raise HTTPException(400, f"Invalid plan: {payload.plan_tier}")
+    
+    amount = prices.get(payload.billing_cycle, prices["monthly"])
+    frontend_url = os.getenv("FRONTEND_URL", "https://webinarflow-ai.vercel.app")
+    
+    session = stripe_sdk.checkout.Session.create(
+        payment_method_types=["card"],
+        mode="payment",
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "unit_amount": amount,
+                "product_data": {
+                    "name": f"WebinarFlow {payload.plan_tier.title()} Plan ({payload.billing_cycle})",
+                },
+            },
+            "quantity": 1,
+        }],
+        metadata={
+            "type": "subscription",
+            "user_id": str(user.id),
+            "plan_tier": payload.plan_tier,
+            "billing_cycle": payload.billing_cycle,
+        },
+        customer_email=user.email,
+        success_url=f"{frontend_url}/payment/success?type=subscription&plan={payload.plan_tier}",
+        cancel_url=f"{frontend_url}/payment/cancel?type=subscription",
+    )
+    
+    return {"url": session.url, "session_id": session.id}
+
+
+@router.post("/subscribe/razorpay")
+async def subscribe_razorpay(
+    payload: SubscribeRequest,
+    membership: Membership = Depends(get_current_membership),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a Razorpay order for a platform subscription."""
+    import os
+    
+    user = membership.user
+    org = membership.organization
+    settings = org.settings or {}
+    
+    rzp_key = (settings.get("razorpay_key_id") or os.getenv("RAZORPAY_KEY_ID", "")).strip()
+    rzp_secret = (settings.get("razorpay_key_secret") or os.getenv("RAZORPAY_KEY_SECRET", "")).strip()
+    
+    if not rzp_key or not rzp_secret:
+        raise HTTPException(400, "Razorpay is not configured. Please add your Razorpay keys in Settings.")
+    
+    prices = PLAN_PRICES_INR.get(payload.plan_tier)
+    if not prices:
+        raise HTTPException(400, f"Invalid plan: {payload.plan_tier}")
+    
+    amount = prices.get(payload.billing_cycle, prices["monthly"])
+    
+    try:
+        import razorpay as rzp_sdk
+        client = rzp_sdk.Client(auth=(rzp_key, rzp_secret))
+        order = client.order.create({
+            "amount": amount,
+            "currency": "INR",
+            "notes": {
+                "type": "subscription",
+                "user_id": str(user.id),
+                "plan_tier": payload.plan_tier,
+                "billing_cycle": payload.billing_cycle,
+            },
+        })
+        return {
+            "order_id": order["id"],
+            "amount": amount,
+            "currency": "INR",
+            "key_id": rzp_key,
+            "user_email": user.email,
+            "user_name": user.full_name or "",
+        }
+    except Exception as e:
+        raise HTTPException(500, f"Razorpay order creation failed: {e}")
 
 __all__ = ["router"]

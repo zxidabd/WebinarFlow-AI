@@ -11,12 +11,14 @@ from __future__ import annotations
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.plan_limits import TRIAL_DURATION_DAYS
 from app.models import (
     EmailVerificationToken,
     Membership,
@@ -180,6 +182,9 @@ async def register(
         is_active=True,
         email_verified=False,
         is_verified=False,
+        trial_ends_at=datetime.now(timezone.utc) + timedelta(days=TRIAL_DURATION_DAYS),
+        subscription_status="trialing",
+        plan_tier="free_trial",
     )
     session.add(user)
     await session.flush()
@@ -406,6 +411,9 @@ async def google_signin(
             email_verified=is_google_verified,
             is_verified=is_google_verified,
             is_active=True,
+            trial_ends_at=datetime.now(timezone.utc) + timedelta(days=TRIAL_DURATION_DAYS),
+            subscription_status="trialing",
+            plan_tier="free_trial",
         )
         session.add(user)
         await session.flush()
@@ -444,6 +452,9 @@ async def linkedin_signin(
             email_verified=is_verified,
             is_verified=is_verified,
             is_active=True,
+            trial_ends_at=datetime.now(timezone.utc) + timedelta(days=TRIAL_DURATION_DAYS),
+            subscription_status="trialing",
+            plan_tier="free_trial",
         )
         session.add(user)
         await session.flush()

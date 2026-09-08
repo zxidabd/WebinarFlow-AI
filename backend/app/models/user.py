@@ -28,6 +28,12 @@ class User(UUIDMixin, TimestampMixin, Base):
     is_super_user: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    subscription_status: Mapped[str] = mapped_column(String(20), default="trialing", server_default="trialing", nullable=False)
+    plan_tier: Mapped[str] = mapped_column(String(20), default="free_trial", server_default="free_trial", nullable=False)
+    ai_chat_count: Mapped[int] = mapped_column(default=0, server_default="0", nullable=False)
+    ai_chat_count_reset_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     memberships: Mapped[list["Membership"]] = relationship(  # type: ignore[name-defined]
         "Membership", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )

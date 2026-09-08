@@ -325,7 +325,7 @@ export default function Hero() {
               variants={fadeIn}
               className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[#9a9a9e] lg:justify-start"
             >
-              {['No credit card required', '14-day free trial', 'Cancel anytime'].map((t) => (
+              {['No credit card required', '3-day free trial', 'Cancel anytime'].map((t) => (
                 <span key={t} className="flex items-center gap-1.5">
                   <Check className="h-3.5 w-3.5 text-white/35" />
                   {t}
