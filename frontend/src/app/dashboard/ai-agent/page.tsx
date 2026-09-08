@@ -540,7 +540,7 @@ export default function AIAgentFullPage() {
                 className="w-full bg-gradient-to-r from-[#6b1e28] via-[#852533] to-[#731f2b] hover:from-[#7d232f] hover:to-[#8a2635] text-white border border-[#a63344]/50 shadow-md font-semibold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
               >
                 <Plus className="h-4 w-4 text-[#f8d7dc]" />
-                <span>+ New Chat</span>
+                <span>New Chat</span>
               </Button>
             </div>
 
