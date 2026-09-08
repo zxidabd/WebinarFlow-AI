@@ -401,9 +401,10 @@ async def subscribe_stripe(
     org = membership.organization
     settings = org.settings or {}
     
-    sk = (settings.get("stripe_secret_key") or os.getenv("STRIPE_SECRET_KEY", "")).strip()
+    # 1. Prioritize platform keys from Render environment variables
+    sk = os.getenv("STRIPE_SECRET_KEY", "").strip()
 
-    # If the user's personal organization doesn't have keys configured, fallback to the superuser's keys
+    # 2. Fallback to superuser's keys in database
     if not sk:
         super_res = await db.execute(
             select(Organization)
@@ -417,8 +418,12 @@ async def subscribe_stripe(
                 sk = s_sk
                 break
 
+    # 3. Fallback to current workspace settings
     if not sk:
-        raise HTTPException(400, "Stripe is not configured. Please add your Stripe keys in Dashboard Settings or Render environment variables.")
+        sk = (settings.get("stripe_secret_key") or "").strip()
+
+    if not sk:
+        raise HTTPException(400, "Stripe is not configured. Please add your Stripe keys in Render environment variables or Dashboard Settings.")
     
     stripe_sdk.api_key = sk
     
@@ -497,10 +502,11 @@ async def subscribe_razorpay(
     org = membership.organization
     settings = org.settings or {}
     
-    rzp_key = (settings.get("razorpay_key_id") or os.getenv("RAZORPAY_KEY_ID", "")).strip()
-    rzp_secret = (settings.get("razorpay_key_secret") or os.getenv("RAZORPAY_KEY_SECRET", "")).strip()
+    # 1. Prioritize platform keys from Render environment variables
+    rzp_key = os.getenv("RAZORPAY_KEY_ID", "").strip()
+    rzp_secret = os.getenv("RAZORPAY_KEY_SECRET", "").strip()
 
-    # If the user's personal organization doesn't have keys configured, fallback to the superuser's keys
+    # 2. Fallback to superuser's keys in database
     if not rzp_key or not rzp_secret:
         super_res = await db.execute(
             select(Organization)
@@ -516,8 +522,13 @@ async def subscribe_razorpay(
                 rzp_secret = s_s
                 break
 
+    # 3. Fallback to current workspace settings
     if not rzp_key or not rzp_secret:
-        raise HTTPException(400, "Razorpay is not configured. Please add your Razorpay keys in Dashboard Settings or Render environment variables.")
+        rzp_key = (settings.get("razorpay_key_id") or "").strip()
+        rzp_secret = (settings.get("razorpay_key_secret") or "").strip()
+
+    if not rzp_key or not rzp_secret:
+        raise HTTPException(400, "Razorpay is not configured. Please add your Razorpay keys in Render environment variables or Dashboard Settings.")
     
     prices = PLAN_PRICES_INR.get(payload.plan_tier)
     if not prices:
