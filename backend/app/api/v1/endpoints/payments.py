@@ -18,7 +18,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_active_user, get_current_membership, get_db
+from app.api.deps import (
+    get_current_active_user,
+    get_current_membership,
+    get_current_membership_unrestricted,
+    get_db,
+)
 from app.models import Membership, Payment, PaymentStatus, Registrant, Webinar
 from app.api.v1.endpoints.organizations import (
     PaymentKeysPayload,
@@ -385,7 +390,7 @@ PLAN_PRICES_INR = {
 @router.post("/subscribe/stripe")
 async def subscribe_stripe(
     payload: SubscribeRequest,
-    membership: Membership = Depends(get_current_membership),
+    membership: Membership = Depends(get_current_membership_unrestricted),
     db: AsyncSession = Depends(get_db),
 ):
     """Create a Stripe Checkout Session for a platform subscription."""
@@ -397,8 +402,23 @@ async def subscribe_stripe(
     settings = org.settings or {}
     
     sk = (settings.get("stripe_secret_key") or os.getenv("STRIPE_SECRET_KEY", "")).strip()
+
+    # If the user's personal organization doesn't have keys configured, fallback to the superuser's keys
     if not sk:
-        raise HTTPException(400, "Stripe is not configured. Please add your Stripe keys in Settings.")
+        super_res = await db.execute(
+            select(Organization)
+            .join(User, Organization.owner_user_id == User.id)
+            .where(User.is_super_user.is_(True))
+        )
+        super_orgs = super_res.scalars().all()
+        for s_org in super_orgs:
+            s_sk = ((s_org.settings or {}).get("stripe_secret_key") or "").strip()
+            if s_sk:
+                sk = s_sk
+                break
+
+    if not sk:
+        raise HTTPException(400, "Stripe is not configured. Please add your Stripe keys in Dashboard Settings or Render environment variables.")
     
     stripe_sdk.api_key = sk
     
@@ -439,7 +459,7 @@ async def subscribe_stripe(
 @router.post("/subscribe/razorpay")
 async def subscribe_razorpay(
     payload: SubscribeRequest,
-    membership: Membership = Depends(get_current_membership),
+    membership: Membership = Depends(get_current_membership_unrestricted),
     db: AsyncSession = Depends(get_db),
 ):
     """Create a Razorpay order for a platform subscription."""
@@ -451,9 +471,25 @@ async def subscribe_razorpay(
     
     rzp_key = (settings.get("razorpay_key_id") or os.getenv("RAZORPAY_KEY_ID", "")).strip()
     rzp_secret = (settings.get("razorpay_key_secret") or os.getenv("RAZORPAY_KEY_SECRET", "")).strip()
-    
+
+    # If the user's personal organization doesn't have keys configured, fallback to the superuser's keys
     if not rzp_key or not rzp_secret:
-        raise HTTPException(400, "Razorpay is not configured. Please add your Razorpay keys in Settings.")
+        super_res = await db.execute(
+            select(Organization)
+            .join(User, Organization.owner_user_id == User.id)
+            .where(User.is_super_user.is_(True))
+        )
+        super_orgs = super_res.scalars().all()
+        for s_org in super_orgs:
+            s_k = ((s_org.settings or {}).get("razorpay_key_id") or "").strip()
+            s_s = ((s_org.settings or {}).get("razorpay_key_secret") or "").strip()
+            if s_k and s_s:
+                rzp_key = s_k
+                rzp_secret = s_s
+                break
+
+    if not rzp_key or not rzp_secret:
+        raise HTTPException(400, "Razorpay is not configured. Please add your Razorpay keys in Dashboard Settings or Render environment variables.")
     
     prices = PLAN_PRICES_INR.get(payload.plan_tier)
     if not prices:

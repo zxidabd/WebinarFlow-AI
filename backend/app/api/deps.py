@@ -80,6 +80,70 @@ async def get_current_user(
     return user
 
 
+async def get_current_user_unrestricted(
+    db: AsyncSession = Depends(get_db),
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> User:
+    """Authenticates the user without blocking for 402 expired subscription (used by checkout endpoints)."""
+    if creds is None or creds.scheme.lower() != "bearer":
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            "Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    try:
+        payload = security.decode_token(creds.credentials)
+    except security.TokenDecodeError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired access token")
+
+    if payload.get("type") != "access":
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Wrong token type")
+
+    user = (
+        await db.execute(select(User).where(User.id == uuid.UUID(payload["sub"])))
+    ).scalar_one_or_none()
+    if user is None or not user.is_active:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found or disabled")
+
+    return user
+
+
+async def get_current_membership_unrestricted(
+    current_user: User = Depends(get_current_user_unrestricted),
+    db: AsyncSession = Depends(get_db),
+    x_organization_id: str | None = Header(default=None, alias="X-Organization-Id"),
+) -> Membership:
+    """Resolves membership without checking trial expiration (allowing subscription checkout)."""
+    stmt_base = lambda: (
+        select(Membership)
+        .where(Membership.user_id == current_user.id)
+        .options(selectinload(Membership.organization), selectinload(Membership.role))
+    )
+
+    if x_organization_id:
+        try:
+            org_id = uuid.UUID(x_organization_id)
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid X-Organization-Id") from exc
+        membership = (await db.execute(stmt_base().where(Membership.organization_id == org_id))).scalar_one_or_none()
+        if membership is None:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "You do not have access to this organization")
+        return membership
+
+    membership = (
+        await db.execute(
+            stmt_base().where(Membership.is_default.is_(True))
+        )
+    ).scalar_one_or_none()
+    if membership is None:
+        membership = (
+            await db.execute(stmt_base().order_by(Membership.created_at.desc()))
+        ).scalars().first()
+    if membership is None:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "You are not a member of any organization")
+    return membership
+
+
 async def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:

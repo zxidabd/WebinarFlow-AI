@@ -102,8 +102,12 @@ api.interceptors.response.use(
           }
         }
       } catch {}
-      // Force a page reload to trigger the paywall
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/payment')) {
+      // Only reload to show paywall if not already checking out or on a payment page
+      if (
+        typeof window !== 'undefined' &&
+        !window.location.pathname.startsWith('/payment') &&
+        !original?.url?.includes('/payments/subscribe')
+      ) {
         window.location.reload();
       }
       return Promise.reject(error);
