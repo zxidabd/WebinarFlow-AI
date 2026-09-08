@@ -24,7 +24,7 @@ export function FloatingAIAssistant() {
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-black/40 border border-white/10 p-0.5 shadow-inner">
                 <img
-                  src="/ai-robot-clean.png"
+                  src="/ai-robot-clean.png?v=4"
                   alt="WebinarFlow AI+"
                   className="h-full w-full object-contain"
                 />
@@ -114,7 +114,7 @@ export function FloatingAIAssistant() {
         >
           {/* Stationary Layer: Robot Torso, Face, Head, Arms & AI+ Pill Button */}
           <img
-            src="/ai-robot-body.png"
+            src="/ai-robot-body.png?v=4"
             alt="WebinarFlow AI+ Robot"
             className="w-full h-full object-contain pointer-events-none select-none"
           />
@@ -139,7 +139,7 @@ export function FloatingAIAssistant() {
             }}
           >
             <img
-              src="/leg-left.png"
+              src="/leg-left.png?v=4"
               alt=""
               className="w-full h-full object-contain pointer-events-none select-none"
             />
@@ -165,7 +165,7 @@ export function FloatingAIAssistant() {
             }}
           >
             <img
-              src="/leg-right.png"
+              src="/leg-right.png?v=4"
               alt=""
               className="w-full h-full object-contain pointer-events-none select-none"
             />

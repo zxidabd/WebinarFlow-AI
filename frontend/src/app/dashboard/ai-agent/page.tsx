@@ -50,34 +50,6 @@ const INITIAL_SESSIONS: ChatSession[] = [
       },
     ],
   },
-  {
-    id: 'session-funnel-strategy',
-    title: 'High-Converting Webinar Funnel Strategy',
-    category: 'funnels',
-    createdAt: Date.now() - 3600000 * 2,
-    messages: [
-      { role: 'user', content: 'What is the highest converting structure for a 45-minute webinar pitch?' },
-      {
-        role: 'assistant',
-        content:
-          '### High-Converting Webinar Structure:\n\n1. **The Hook (0-5 min)**: State the #1 bottleneck and make a big promise.\n2. **The Origin Story (5-15 min)**: Why conventional advice fails.\n3. **Core Pillars (15-35 min)**: 3 actionable frameworks with social proof.\n4. **The Offer Pitch (35-42 min)**: Value stack, bonuses, and time-sensitive CTA.\n5. **Live Q&A (42-45+ min)**: Answer technical and pricing objections.',
-      },
-    ],
-  },
-  {
-    id: 'session-email-sequence',
-    title: 'Urgent 1-Hour Reminder Email Copy',
-    category: 'copy',
-    createdAt: Date.now() - 86400000,
-    messages: [
-      { role: 'user', content: 'Write an urgent 1-hour before webinar reminder email.' },
-      {
-        role: 'assistant',
-        content:
-          '**Subject**: [STARTING IN 60 MIN] Join the live masterclass now!\n\n**Body**:\nHey there,\n\nWe are going live in exactly 60 minutes! Click the link below to enter the live room early and grab your seat before we hit capacity:\n\n👉 **[Enter Live Webinar Room]**\n\nSee you inside!',
-      },
-    ],
-  },
 ];
 
 // Formatted Chat Message Renderer with Code Highlight & Copy
@@ -332,7 +304,7 @@ export default function AIAgentFullPage() {
 
   // Load chat sessions from localStorage immediately, then sync with server for cross-device persistence
   useEffect(() => {
-    let localList: ChatSession[] = INITIAL_SESSIONS;
+    let localList: ChatSession[] = [];
     try {
       const saved = localStorage.getItem('webinarflow_ai_chat_sessions');
       if (saved) {
@@ -347,15 +319,42 @@ export default function AIAgentFullPage() {
       // Handled gracefully
     }
 
-    // Cross-device sync: merges chats made on desktop and mobile into one unified history
-    aiApi.syncChatSessions(localList).then((synced) => {
+    const applySynced = (synced: ChatSession[]) => {
       if (Array.isArray(synced) && synced.length > 0) {
         setSessions(synced);
         try {
           localStorage.setItem('webinarflow_ai_chat_sessions', JSON.stringify(synced));
         } catch {}
+
+        // If currently on default welcome session, automatically switch to user's real newest chat
+        setActiveSessionId((prev) => {
+          if (!prev || prev === 'session-welcome' || !synced.some((s) => s.id === prev)) {
+            return synced[0].id;
+          }
+          return prev;
+        });
       }
-    }).catch(() => {});
+    };
+
+    // Cross-device sync: merges chats made on desktop and mobile into one unified history
+    aiApi.syncChatSessions(localList).then(applySynced).catch(() => {});
+
+    // Reactively refresh chat history whenever user refocuses tab or returns to app on mobile/desktop
+    const handleFocus = () => {
+      aiApi.fetchChatSessions().then(applySynced).catch(() => {});
+    };
+    window.addEventListener('focus', handleFocus);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleFocus();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const saveSessions = (updated: ChatSession[], sessionToSync?: ChatSession) => {
@@ -422,6 +421,12 @@ export default function AIAgentFullPage() {
     const userText = chatInput.trim();
     setChatInput('');
 
+    // If starting from session-welcome, upgrade to a unique timestamped session ID
+    const targetSessionId = activeSession.id === 'session-welcome' ? `session-${Date.now()}` : activeSession.id;
+    if (targetSessionId !== activeSession.id) {
+      setActiveSessionId(targetSessionId);
+    }
+
     const currentTitle = activeSession.title;
     const shouldRename = currentTitle === 'New Conversation' || currentTitle === 'Getting Started with AI Agent';
     const newTitle = shouldRename ? userText.slice(0, 32) + (userText.length > 32 ? '...' : '') : currentTitle;
@@ -441,6 +446,7 @@ export default function AIAgentFullPage() {
 
     const updatedSessionObj: ChatSession = {
       ...activeSession,
+      id: targetSessionId,
       title: newTitle,
       category,
       messages: newConvo,
@@ -468,7 +474,7 @@ export default function AIAgentFullPage() {
       };
 
       const withAssistantReply = updatedSessions.map((s) =>
-        s.id === activeSession.id ? completedSessionObj : s
+        s.id === targetSessionId ? completedSessionObj : s
       );
       saveSessions(withAssistantReply, completedSessionObj);
     } catch {
@@ -484,7 +490,7 @@ export default function AIAgentFullPage() {
         messages: fallbackConvo,
       };
       const withFallback = updatedSessions.map((s) =>
-        s.id === activeSession.id ? fallbackSessionObj : s
+        s.id === targetSessionId ? fallbackSessionObj : s
       );
       saveSessions(withFallback, fallbackSessionObj);
     } finally {

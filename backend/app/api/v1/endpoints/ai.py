@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 import httpx
 
 from app.api.deps import get_current_active_user, get_current_membership, get_db
@@ -207,6 +208,8 @@ async def upsert_chat_session(
         session.title = payload.title
         session.category = payload.category
         session.messages = payload.messages
+        session.updated_at = datetime.now(timezone.utc)
+        flag_modified(session, "messages")
         if payload.createdAt:
             session.created_at_ms = payload.createdAt
     await db.commit()
@@ -249,6 +252,8 @@ async def sync_chat_sessions(
                 existing.title = s.title
                 existing.category = s.category
                 existing.messages = s.messages
+                existing.updated_at = datetime.now(timezone.utc)
+                flag_modified(existing, "messages")
     await db.commit()
 
     stmt = (
