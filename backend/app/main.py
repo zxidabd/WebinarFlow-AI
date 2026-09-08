@@ -75,6 +75,20 @@ async def _run_startup_seeding() -> None:
                     "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS total_spent_cents INTEGER DEFAULT 0;",
                     # users
                     "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;",
+                    # ai_chat_sessions
+                    """
+                    CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+                        id VARCHAR(100) PRIMARY KEY,
+                        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        title VARCHAR(255) NOT NULL DEFAULT 'New Chat',
+                        category VARCHAR(50) NOT NULL DEFAULT 'recent',
+                        messages JSON NOT NULL DEFAULT '[]'::json,
+                        created_at_ms BIGINT,
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                    """,
+                    "CREATE INDEX IF NOT EXISTS ix_ai_chat_sessions_user_id ON ai_chat_sessions (user_id);",
                 ]
                 for stmt in migration_statements:
                     try:

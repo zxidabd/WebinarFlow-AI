@@ -743,3 +743,51 @@ export async function applyFunnel(funnel: GeneratedFunnel): Promise<{
     };
   }
 }
+
+export interface ClientChatSession {
+  id: string;
+  title: string;
+  category: 'recent' | 'funnels' | 'copy';
+  createdAt: number;
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+}
+
+export async function fetchChatSessions(): Promise<ClientChatSession[]> {
+  try {
+    const res = await api.get('/ai/sessions');
+    return res.data || [];
+  } catch (err) {
+    console.warn('Could not fetch server chat sessions:', err);
+    return [];
+  }
+}
+
+export async function saveChatSession(session: ClientChatSession): Promise<ClientChatSession | null> {
+  try {
+    const res = await api.post('/ai/sessions', session);
+    return res.data;
+  } catch (err) {
+    console.warn('Could not save chat session to server:', err);
+    return null;
+  }
+}
+
+export async function syncChatSessions(sessions: ClientChatSession[]): Promise<ClientChatSession[]> {
+  try {
+    const res = await api.post('/ai/sessions/sync', { sessions });
+    return res.data || [];
+  } catch (err) {
+    console.warn('Could not sync chat sessions with server:', err);
+    return sessions;
+  }
+}
+
+export async function deleteChatSession(sessionId: string): Promise<boolean> {
+  try {
+    await api.delete(`/ai/sessions/${sessionId}`);
+    return true;
+  } catch (err) {
+    console.warn('Could not delete chat session on server:', err);
+    return false;
+  }
+}

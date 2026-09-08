@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from datetime import datetime
 import uuid
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import httpx
 
 from app.api.deps import get_current_active_user, get_current_membership, get_db
-from app.models import User
+from app.models import User, AIChatSession
 from app.services import ai_service
 from app.core.config import settings
 
@@ -34,6 +36,18 @@ class ChatRequest(BaseModel):
     messages: list[dict[str, str]]
     model: str | None = None
     system_persona: str | None = None
+
+
+class ChatSessionItem(BaseModel):
+    id: str
+    title: str = "New Chat"
+    category: str = "recent"
+    createdAt: int | None = None
+    messages: list[dict[str, Any]] = []
+
+
+class SyncSessionsRequest(BaseModel):
+    sessions: list[ChatSessionItem]
 
 
 @router.get("/status")
@@ -139,3 +153,137 @@ async def apply_funnel_endpoint(
         "landing_page_slug": landing_page.slug,
         "published_url": f"/r/{landing_page.slug}",
     }
+
+
+@router.get("/sessions")
+async def list_chat_sessions(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all AI chat sessions for current user across all devices."""
+    stmt = (
+        select(AIChatSession)
+        .where(AIChatSession.user_id == current_user.id)
+        .order_by(AIChatSession.updated_at.desc())
+    )
+    res = await db.execute(stmt)
+    sessions = res.scalars().all()
+    return [
+        {
+            "id": s.id,
+            "title": s.title,
+            "category": s.category,
+            "createdAt": s.created_at_ms or (int(s.created_at.timestamp() * 1000) if s.created_at else int(datetime.utcnow().timestamp() * 1000)),
+            "messages": s.messages or [],
+        }
+        for s in sessions
+    ]
+
+
+@router.post("/sessions")
+async def upsert_chat_session(
+    payload: ChatSessionItem,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Save or update an individual chat session for cross-device sync."""
+    stmt = select(AIChatSession).where(
+        AIChatSession.id == payload.id,
+        AIChatSession.user_id == current_user.id,
+    )
+    res = await db.execute(stmt)
+    session = res.scalar_one_or_none()
+    if not session:
+        session = AIChatSession(
+            id=payload.id,
+            user_id=current_user.id,
+            title=payload.title,
+            category=payload.category,
+            messages=payload.messages,
+            created_at_ms=payload.createdAt,
+        )
+        db.add(session)
+    else:
+        session.title = payload.title
+        session.category = payload.category
+        session.messages = payload.messages
+        if payload.createdAt:
+            session.created_at_ms = payload.createdAt
+    await db.commit()
+    await db.refresh(session)
+    return {
+        "id": session.id,
+        "title": session.title,
+        "category": session.category,
+        "createdAt": session.created_at_ms or int(session.created_at.timestamp() * 1000),
+        "messages": session.messages or [],
+    }
+
+
+@router.post("/sessions/sync")
+async def sync_chat_sessions(
+    payload: SyncSessionsRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Sync client sessions with server and return unified cross-device chat history."""
+    for s in payload.sessions:
+        stmt = select(AIChatSession).where(
+            AIChatSession.id == s.id,
+            AIChatSession.user_id == current_user.id,
+        )
+        res = await db.execute(stmt)
+        existing = res.scalar_one_or_none()
+        if not existing:
+            new_s = AIChatSession(
+                id=s.id,
+                user_id=current_user.id,
+                title=s.title,
+                category=s.category,
+                messages=s.messages,
+                created_at_ms=s.createdAt,
+            )
+            db.add(new_s)
+        else:
+            if len(s.messages) >= len(existing.messages or []):
+                existing.title = s.title
+                existing.category = s.category
+                existing.messages = s.messages
+    await db.commit()
+
+    stmt = (
+        select(AIChatSession)
+        .where(AIChatSession.user_id == current_user.id)
+        .order_by(AIChatSession.updated_at.desc())
+    )
+    res = await db.execute(stmt)
+    all_sessions = res.scalars().all()
+    return [
+        {
+            "id": s.id,
+            "title": s.title,
+            "category": s.category,
+            "createdAt": s.created_at_ms or (int(s.created_at.timestamp() * 1000) if s.created_at else int(datetime.utcnow().timestamp() * 1000)),
+            "messages": s.messages or [],
+        }
+        for s in all_sessions
+    ]
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_chat_session(
+    session_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete a chat session across all devices."""
+    stmt = select(AIChatSession).where(
+        AIChatSession.id == session_id,
+        AIChatSession.user_id == current_user.id,
+    )
+    res = await db.execute(stmt)
+    session = res.scalar_one_or_none()
+    if session:
+        await db.delete(session)
+        await db.commit()
+    return {"deleted": True, "id": session_id}

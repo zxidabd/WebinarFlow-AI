@@ -311,28 +311,44 @@ export default function AIAgentFullPage() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  // Load chat sessions from localStorage on mount
+  // Load chat sessions from localStorage immediately, then sync with server for cross-device persistence
   useEffect(() => {
+    let localList: ChatSession[] = INITIAL_SESSIONS;
     try {
       const saved = localStorage.getItem('webinarflow_ai_chat_sessions');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          localList = parsed;
           setSessions(parsed);
           setActiveSessionId(parsed[0].id);
         }
       }
     } catch {
-      // Graceful fallback
+      // Handled gracefully
     }
+
+    // Cross-device sync: merges chats made on desktop and mobile into one unified history
+    aiApi.syncChatSessions(localList).then((synced) => {
+      if (Array.isArray(synced) && synced.length > 0) {
+        setSessions(synced);
+        try {
+          localStorage.setItem('webinarflow_ai_chat_sessions', JSON.stringify(synced));
+        } catch {}
+      }
+    }).catch(() => {});
   }, []);
 
-  const saveSessions = (updated: ChatSession[]) => {
+  const saveSessions = (updated: ChatSession[], sessionToSync?: ChatSession) => {
     setSessions(updated);
     try {
       localStorage.setItem('webinarflow_ai_chat_sessions', JSON.stringify(updated));
     } catch {
       // Handled gracefully
+    }
+
+    if (sessionToSync) {
+      aiApi.saveChatSession(sessionToSync).catch(() => {});
     }
   };
 
@@ -359,7 +375,7 @@ export default function AIAgentFullPage() {
       ],
     };
     const updated = [newChat, ...sessions];
-    saveSessions(updated);
+    saveSessions(updated, newChat);
     setActiveSessionId(newId);
     setShowHistoryDrawer(false);
     toast.success('Started a new chat session');
@@ -373,6 +389,7 @@ export default function AIAgentFullPage() {
     }
     const updated = sessions.filter((s) => s.id !== sessionId);
     saveSessions(updated);
+    aiApi.deleteChatSession(sessionId).catch(() => {});
     if (activeSessionId === sessionId) {
       setActiveSessionId(updated[0].id);
     }
@@ -403,12 +420,17 @@ export default function AIAgentFullPage() {
       { role: 'user', content: userText },
     ];
 
+    const updatedSessionObj: ChatSession = {
+      ...activeSession,
+      title: newTitle,
+      category,
+      messages: newConvo,
+    };
+
     const updatedSessions = sessions.map((s) =>
-      s.id === activeSession.id
-        ? { ...s, title: newTitle, category, messages: newConvo }
-        : s
+      s.id === activeSession.id ? updatedSessionObj : s
     );
-    saveSessions(updatedSessions);
+    saveSessions(updatedSessions, updatedSessionObj);
     setIsChatLoading(true);
 
     try {
@@ -421,10 +443,15 @@ export default function AIAgentFullPage() {
         { role: 'assistant', content: res.reply },
       ];
 
+      const completedSessionObj: ChatSession = {
+        ...updatedSessionObj,
+        messages: finalConvo,
+      };
+
       const withAssistantReply = updatedSessions.map((s) =>
-        s.id === activeSession.id ? { ...s, messages: finalConvo } : s
+        s.id === activeSession.id ? completedSessionObj : s
       );
-      saveSessions(withAssistantReply);
+      saveSessions(withAssistantReply, completedSessionObj);
     } catch {
       const fallbackConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
         ...newConvo,
@@ -433,10 +460,14 @@ export default function AIAgentFullPage() {
           content: 'I have analyzed your request. You can configure your campaign in the "Funnel Builder" tab or ask any follow-up question!',
         },
       ];
+      const fallbackSessionObj: ChatSession = {
+        ...updatedSessionObj,
+        messages: fallbackConvo,
+      };
       const withFallback = updatedSessions.map((s) =>
-        s.id === activeSession.id ? { ...s, messages: fallbackConvo } : s
+        s.id === activeSession.id ? fallbackSessionObj : s
       );
-      saveSessions(withFallback);
+      saveSessions(withFallback, fallbackSessionObj);
     } finally {
       setIsChatLoading(false);
     }
