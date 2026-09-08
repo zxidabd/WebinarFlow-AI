@@ -117,7 +117,7 @@ async def get_current_membership_unrestricted(
     stmt_base = lambda: (
         select(Membership)
         .where(Membership.user_id == current_user.id)
-        .options(selectinload(Membership.organization), selectinload(Membership.role))
+        .options(selectinload(Membership.organization), selectinload(Membership.role), selectinload(Membership.user))
     )
 
     if x_organization_id:
@@ -128,6 +128,7 @@ async def get_current_membership_unrestricted(
         membership = (await db.execute(stmt_base().where(Membership.organization_id == org_id))).scalar_one_or_none()
         if membership is None:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "You do not have access to this organization")
+        membership.user = current_user
         return membership
 
     membership = (
@@ -141,6 +142,7 @@ async def get_current_membership_unrestricted(
         ).scalars().first()
     if membership is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "You are not a member of any organization")
+    membership.user = current_user
     return membership
 
 
@@ -169,7 +171,7 @@ async def get_current_membership(
     stmt_base = lambda: (  # noqa: E731  -- builds a reusable eager-load query
         select(Membership)
         .where(Membership.user_id == current_user.id)
-        .options(selectinload(Membership.organization), selectinload(Membership.role))
+        .options(selectinload(Membership.organization), selectinload(Membership.role), selectinload(Membership.user))
     )
 
     if x_organization_id:
@@ -180,6 +182,7 @@ async def get_current_membership(
         membership = (await db.execute(stmt_base().where(Membership.organization_id == org_id))).scalar_one_or_none()
         if membership is None:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "You do not have access to this organization")
+        membership.user = current_user
         return membership
 
     # Fall back to the user's default membership, else their most active / latest membership.
@@ -194,6 +197,7 @@ async def get_current_membership(
         ).scalars().first()
     if membership is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "You are not a member of any organization")
+    membership.user = current_user
     return membership
 
 

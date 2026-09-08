@@ -579,6 +579,7 @@ async def subscribe_razorpay(
             order = client.order.create({
                 "amount": amount,
                 "currency": "INR",
+                "receipt": f"sub_{uuid.uuid4().hex[:12]}",
                 "notes": {
                     "type": "subscription",
                     "user_id": str(user.id),
