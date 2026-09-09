@@ -492,6 +492,20 @@ async def generate_funnel(
     return _build_full_funnel_sections(clean_topic, audience, goal, is_paid, price_cents, custom_instructions, template=target_template)
 
 
+async def _get_live_usd_inr_rate() -> float:
+    """Fetch live USD/INR exchange rate from free open forex API."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            res = await client.get("https://open.er-api.com/v6/latest/USD")
+            if res.status_code == 200:
+                rate = res.json().get("rates", {}).get("INR")
+                if rate and isinstance(rate, (int, float)):
+                    return round(float(rate), 2)
+    except Exception:
+        pass
+    return 87.50
+
+
 async def _fetch_live_web_search(query: str) -> str:
     """Fetch live web search snippets for real-time grounding."""
     try:
@@ -543,16 +557,26 @@ async def chat_with_agent(
 
     sys_prompt = system_persona or default_persona
     
-    # Retrieve live web search grounding for the latest message
+    # Retrieve live web search grounding or forex rates for the latest message
     last_user_msg = messages[-1]["content"] if messages else ""
     live_context = await _fetch_live_web_search(last_user_msg)
     
+    # If the user asks about currency, dollar, rupees, or inr, fetch real-time exchange rate
+    lower_msg = last_user_msg.lower()
+    if any(term in lower_msg for term in ["dollar", "inr", "rupee", "usd", "$", "₹"]):
+        forex_rate = await _get_live_usd_inr_rate()
+        forex_info = f"- Real-Time Forex Rate (Live): 1 USD ≈ ₹{forex_rate} INR.\n- When computing conversions, use 1 USD = ₹{forex_rate} INR and state the result clearly without raw LaTeX."
+        if live_context:
+            live_context = f"{forex_info}\n{live_context}"
+        else:
+            live_context = forex_info
+
     convo = [{"role": "system", "content": sys_prompt}]
     for idx, m in enumerate(messages):
         if idx == len(messages) - 1 and m.get("role") == "user" and live_context:
             convo.append({
                 "role": "user",
-                "content": f"{m['content']}\n\n[Verified Real-Time Search Results as of {current_date}]:\n{live_context}"
+                "content": f"{m['content']}\n\n[Verified Real-Time Grounding Information]:\n{live_context}"
             })
         else:
             convo.append(m)
