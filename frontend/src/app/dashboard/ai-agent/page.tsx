@@ -114,6 +114,39 @@ function ChatMessageContent({ content }: { content: string }) {
   );
 }
 
+function CopyResponseButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success('Response copied to clipboard!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#6E1F32] hover:text-[#551827] hover:bg-[#6E1F32]/10 dark:hover:bg-white/10 px-2 py-1 rounded-md transition-colors border border-[#E8BAC5]/80 bg-white/40 shadow-xs"
+      title="Copy AI response"
+    >
+      {copied ? (
+        <>
+          <Check className="h-3.5 w-3.5 text-emerald-600" />
+          <span className="text-emerald-700 font-medium">Copied</span>
+        </>
+      ) : (
+        <>
+          <Copy className="h-3.5 w-3.5" />
+          <span>Copy</span>
+        </>
+      )}
+    </button>
+  );
+}
+
 function renderMarkdownBlocks(text: string, partIndex: number) {
   const lines = text.split('\n');
   const elements: React.ReactNode[] = [];
@@ -321,8 +354,9 @@ export default function AIAgentFullPage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          localList = parsed;
-          setSessions(parsed);
+          const sorted = [...parsed].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          localList = sorted;
+          setSessions(sorted);
           // Keep activeSessionId as 'session-new' so opening tabs opens a fresh chat like ChatGPT!
         }
       }
@@ -332,9 +366,10 @@ export default function AIAgentFullPage() {
 
     const applySynced = (synced: ChatSession[]) => {
       if (Array.isArray(synced) && synced.length > 0) {
-        setSessions(synced);
+        const sorted = [...synced].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        setSessions(sorted);
         try {
-          localStorage.setItem('webinarflow_ai_chat_sessions', JSON.stringify(synced));
+          localStorage.setItem('webinarflow_ai_chat_sessions', JSON.stringify(sorted));
         } catch {}
       }
     };
@@ -437,13 +472,14 @@ export default function AIAgentFullPage() {
       id: targetSessionId,
       title: newTitle,
       category,
-      createdAt: isNew ? Date.now() : activeSession.createdAt,
+      createdAt: Date.now(),
       messages: newConvo,
     };
 
-    const updatedSessions = isNew
-      ? [updatedSessionObj, ...sessions.filter((s) => s.id !== 'session-new')]
-      : sessions.map((s) => (s.id === targetSessionId ? updatedSessionObj : s));
+    const updatedSessions = [
+      updatedSessionObj,
+      ...sessions.filter((s) => s.id !== targetSessionId && s.id !== 'session-new'),
+    ];
 
     saveSessions(updatedSessions, updatedSessionObj);
     setIsChatLoading(true);
@@ -460,12 +496,14 @@ export default function AIAgentFullPage() {
 
       const completedSessionObj: ChatSession = {
         ...updatedSessionObj,
+        createdAt: Date.now(),
         messages: finalConvo,
       };
 
-      const withAssistantReply = updatedSessions.map((s) =>
-        s.id === targetSessionId ? completedSessionObj : s
-      );
+      const withAssistantReply = [
+        completedSessionObj,
+        ...updatedSessions.filter((s) => s.id !== targetSessionId),
+      ];
       saveSessions(withAssistantReply, completedSessionObj);
     } catch (err: any) {
       console.error('AI Chat Error:', err);
@@ -483,11 +521,13 @@ export default function AIAgentFullPage() {
       ];
       const fallbackSessionObj: ChatSession = {
         ...updatedSessionObj,
+        createdAt: Date.now(),
         messages: fallbackConvo,
       };
-      const withFallback = updatedSessions.map((s) =>
-        s.id === targetSessionId ? fallbackSessionObj : s
-      );
+      const withFallback = [
+        fallbackSessionObj,
+        ...updatedSessions.filter((s) => s.id !== targetSessionId),
+      ];
       saveSessions(withFallback, fallbackSessionObj);
     } finally {
       setIsChatLoading(false);
@@ -553,13 +593,15 @@ export default function AIAgentFullPage() {
     }
   };
 
-  const recentSessions = sessions.filter((s) => s.category === 'recent');
-  const funnelSessions = sessions.filter((s) => s.category === 'funnels');
-  const copySessions = sessions.filter((s) => s.category === 'copy');
+  // Sort sessions with newest first (by createdAt / latest timestamp descending)
+  const sortedSessions = [...sessions].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const recentSessions = sortedSessions.filter((s) => s.category === 'recent');
+  const funnelSessions = sortedSessions.filter((s) => s.category === 'funnels');
+  const copySessions = sortedSessions.filter((s) => s.category === 'copy');
 
   return (
     // Full Edge-to-Edge Container: fills 100% of viewport, zero page scroll!
-    <div className="h-full w-full flex flex-col bg-background text-foreground dark:bg-[#0b0305] dark:text-white overflow-hidden select-none transition-colors">
+    <div className="h-full w-full flex flex-col bg-background text-foreground dark:bg-[#0b0305] dark:text-white overflow-hidden transition-colors">
       {/* ChatGPT-Style Slide-over Chat History Drawer */}
       {showHistoryDrawer && (
         <div className="fixed inset-0 z-50 flex">
@@ -867,6 +909,9 @@ export default function AIAgentFullPage() {
                       ) : (
                         <div className="text-[#1F1F1F]">
                           <ChatMessageContent content={msg.content} />
+                          <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-[#E8BAC5]/60">
+                            <CopyResponseButton text={msg.content} />
+                          </div>
                         </div>
                       )}
                     </div>
