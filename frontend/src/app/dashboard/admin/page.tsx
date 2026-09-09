@@ -63,11 +63,17 @@ interface SubPayment {
 
 interface SubPaymentStats {
   total_revenue: number;
+  total_revenue_inr?: number;
+  total_revenue_usd?: number;
   total_payments: number;
   stripe_revenue: number;
   razorpay_revenue: number;
   starter_revenue: number;
   pro_revenue: number;
+  starter_revenue_inr?: number;
+  starter_revenue_usd?: number;
+  pro_revenue_inr?: number;
+  pro_revenue_usd?: number;
   stripe_count: number;
   razorpay_count: number;
   starter_count: number;
@@ -315,8 +321,17 @@ export default function AdminPage() {
                 <DollarSign className="w-4 h-4 text-emerald-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-emerald-600">
-                  ${subPaymentStats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                <div className="text-2xl font-bold text-emerald-600 flex items-baseline gap-1">
+                  {subPaymentStats.total_revenue_inr && subPaymentStats.total_revenue_inr > 0 ? (
+                    <span>₹{subPaymentStats.total_revenue_inr.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  ) : (
+                    <span>${subPaymentStats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  )}
+                  {subPaymentStats.total_revenue_usd && subPaymentStats.total_revenue_usd > 0 && subPaymentStats.total_revenue_inr && subPaymentStats.total_revenue_inr > 0 ? (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      + ${subPaymentStats.total_revenue_usd.toFixed(2)}
+                    </span>
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {subPaymentStats.total_payments} total {subPaymentStats.total_payments === 1 ? 'payment' : 'payments'}
@@ -362,11 +377,23 @@ export default function AdminPage() {
               <CardContent>
                 <div className="text-sm font-semibold flex items-center justify-between">
                   <span className="text-blue-500">Starter:</span>
-                  <span>{subPaymentStats.starter_count} (${subPaymentStats.starter_revenue})</span>
+                  <span>
+                    {subPaymentStats.starter_count} (
+                    {subPaymentStats.starter_revenue_inr && subPaymentStats.starter_revenue_inr > 0
+                      ? `₹${subPaymentStats.starter_revenue_inr.toLocaleString()}`
+                      : `$${subPaymentStats.starter_revenue}`}
+                    )
+                  </span>
                 </div>
                 <div className="text-sm font-semibold flex items-center justify-between mt-1">
                   <span className="text-purple-500">Pro:</span>
-                  <span>{subPaymentStats.pro_count} (${subPaymentStats.pro_revenue})</span>
+                  <span>
+                    {subPaymentStats.pro_count} (
+                    {subPaymentStats.pro_revenue_inr && subPaymentStats.pro_revenue_inr > 0
+                      ? `₹${subPaymentStats.pro_revenue_inr.toLocaleString()}`
+                      : `$${subPaymentStats.pro_revenue}`}
+                    )
+                  </span>
                 </div>
               </CardContent>
             </Card>

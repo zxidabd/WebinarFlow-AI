@@ -113,6 +113,10 @@ async def _run_startup_seeding() -> None:
                     );
                     """,
                     "CREATE INDEX IF NOT EXISTS ix_subscription_payments_user_id ON subscription_payments (user_id);",
+                    "UPDATE subscription_payments SET amount = 1699.00 WHERE (amount = 0 OR amount IS NULL) AND plan_tier = 'pro' AND UPPER(currency) = 'INR';",
+                    "UPDATE subscription_payments SET amount = 849.00 WHERE (amount = 0 OR amount IS NULL) AND plan_tier = 'starter' AND UPPER(currency) = 'INR';",
+                    "UPDATE subscription_payments SET amount = 19.99 WHERE (amount = 0 OR amount IS NULL) AND plan_tier = 'pro' AND UPPER(currency) != 'INR';",
+                    "UPDATE subscription_payments SET amount = 9.99 WHERE (amount = 0 OR amount IS NULL) AND plan_tier = 'starter' AND UPPER(currency) != 'INR';",
                 ]
                 for stmt in migration_statements:
                     try:

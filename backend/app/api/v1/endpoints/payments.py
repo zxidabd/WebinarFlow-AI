@@ -700,12 +700,30 @@ async def verify_subscription_razorpay(
     user.subscription_status = "active"
     user.plan_tier = payload.plan_tier
     user.trial_ends_at = None
-    # Record subscription payment
+
+    # Fetch actual amount from Razorpay payment or fallback to plan pricing
+    actual_amount = Decimal("0")
+    billing_cycle = "monthly"
+    try:
+        payment_info = client.payment.fetch(payload.razorpay_payment_id)
+        if payment_info and "amount" in payment_info:
+            actual_amount = Decimal(str(payment_info["amount"])) / 100
+        notes = payment_info.get("notes", {}) if payment_info else {}
+        billing_cycle = notes.get("billing_cycle", "monthly")
+    except Exception:
+        pass
+
+    if actual_amount <= Decimal("0"):
+        prices = PLAN_PRICES_INR.get(payload.plan_tier, {})
+        paise = prices.get(billing_cycle, prices.get("monthly", 169900 if payload.plan_tier == "pro" else 84900))
+        actual_amount = Decimal(str(paise)) / 100
+
+    # Record subscription payment with real amount
     db.add(SubscriptionPayment(
         user_id=user.id,
         plan_tier=payload.plan_tier,
-        billing_cycle="monthly",
-        amount=Decimal("0"),  # Will be updated by webhook with actual amount
+        billing_cycle=billing_cycle,
+        amount=actual_amount,
         currency="INR",
         provider="razorpay",
         provider_txn_id=payload.razorpay_payment_id,
