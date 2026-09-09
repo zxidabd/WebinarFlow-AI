@@ -31,9 +31,10 @@ export default function CustomersPage() {
       search: searchQuery || undefined,
       status: statusFilter !== 'All' ? statusFilter : undefined,
     }),
+    placeholderData: (previousData) => previousData,
     refetchInterval: 8000,
     refetchOnWindowFocus: true,
-    staleTime: 4000,
+    staleTime: 10000,
   });
 
   const customers = data?.items || [];
@@ -89,7 +90,11 @@ export default function CustomersPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-foreground">{totalLeads}</p>
+            {isLoading && !data ? (
+              <div className="h-8 w-16 bg-muted/60 animate-pulse rounded my-0.5" />
+            ) : (
+              <p className="text-2xl font-bold text-foreground">{totalLeads}</p>
+            )}
           </CardContent>
         </Card>
 
@@ -103,7 +108,11 @@ export default function CustomersPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-foreground">{activeBuyers}</p>
+            {isLoading && !data ? (
+              <div className="h-8 w-16 bg-muted/60 animate-pulse rounded my-0.5" />
+            ) : (
+              <p className="text-2xl font-bold text-foreground">{activeBuyers}</p>
+            )}
           </CardContent>
         </Card>
 
@@ -113,20 +122,24 @@ export default function CustomersPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600">
                 <DollarSign className="h-4 w-4" />
               </span>
-              Avg Customer LTV
+              Average LTV
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-foreground">
-              ${avgLtv.toFixed(2)}
-            </p>
+            {isLoading && !data ? (
+              <div className="h-8 w-20 bg-muted/60 animate-pulse rounded my-0.5" />
+            ) : (
+              <p className="text-2xl font-bold text-foreground">
+                ${avgLtv.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Table */}
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="border-b border-border/40 pb-4">
+      {/* Contacts Table Card */}
+      <Card className="border-border/60 shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-border/60 bg-card/40 pb-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -157,8 +170,20 @@ export default function CustomersPage() {
 
         <CardContent className="p-0">
           {isLoading && !data ? (
-            <div className="flex items-center justify-center py-16 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading contacts…
+            <div className="p-6 space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-muted/60 animate-pulse" />
+                    <div className="space-y-1.5">
+                      <div className="h-3.5 w-32 bg-muted/60 animate-pulse rounded" />
+                      <div className="h-2.5 w-48 bg-muted/40 animate-pulse rounded" />
+                    </div>
+                  </div>
+                  <div className="h-3 w-28 bg-muted/40 animate-pulse rounded hidden sm:block" />
+                  <div className="h-6 w-20 bg-muted/60 animate-pulse rounded-full" />
+                </div>
+              ))}
             </div>
           ) : customers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">

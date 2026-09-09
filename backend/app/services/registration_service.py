@@ -122,11 +122,13 @@ async def register_for_webinar(
             f"Webinar '{webinar.title}' is full ({webinar.registration_count}/{webinar.capacity})."
         )
 
+    clean_email = email.lower().strip()
+
     # 2. Check for existing registrant (upsert pattern)
     existing_res = await db.execute(
         select(Registrant).where(
             Registrant.webinar_id == webinar.id,
-            Registrant.email == email.lower(),
+            Registrant.email == clean_email,
         )
     )
     existing = existing_res.scalar_one_or_none()
@@ -141,7 +143,7 @@ async def register_for_webinar(
         # If existing is already registered and was a paid webinar, or free
         if not is_paid_webinar and existing.status in (RegistrantStatus.cancelled, RegistrantStatus.noshow):
             webinar.registration_count += 1
-        existing.full_name = full_name or existing.full_name
+        existing.full_name = full_name.strip() if full_name else existing.full_name
         existing.status = RegistrantStatus.pending_payment if is_paid_webinar else RegistrantStatus.registered
         existing.registered_at = _utc_now()
         if custom_fields:
@@ -153,7 +155,7 @@ async def register_for_webinar(
             webinar.registration_count += 1
         registrant = Registrant(
             webinar_id=webinar.id,
-            email=email.lower().strip(),
+            email=clean_email,
             full_name=full_name.strip() if full_name else None,
             status=RegistrantStatus.pending_payment if is_paid_webinar else RegistrantStatus.registered,
             landing_page_id=landing_page_id,
@@ -189,12 +191,35 @@ async def register_for_webinar(
     )
     db.add(activity)
 
-    # 6. Email confirmation for free webinars (fire-and-forget background task so response is instant)
+    # 6. Email confirmation for free webinars (fire-and-forget background task with detached-safe primitives)
     if not is_paid_webinar:
         try:
             import asyncio
             from app.services import email_service
-            asyncio.create_task(email_service.send_registration_confirmation_email(registrant, webinar))
+
+            reg_email = str(registrant.email or "").strip()
+            reg_name = str(registrant.full_name or "")
+            web_title = str(webinar.title or "Webinar")
+            web_starts = webinar.starts_at
+            web_tz = str(webinar.timezone or "UTC")
+
+            async def _send_confirm():
+                try:
+                    name = reg_name or "there"
+                    starts_at_str = ""
+                    if web_starts:
+                        starts_at_str = f"<p><strong>Date & Time:</strong> {web_starts.strftime('%B %d, %Y at %I:%M %p')} {web_tz}</p>"
+                    body = (
+                        f"<p>Hi {name},</p>"
+                        f"<p>Your registration for <strong>{web_title}</strong> is confirmed!</p>"
+                        f"{starts_at_str}"
+                        f"<p>We look forward to seeing you there.</p>"
+                    )
+                    await email_service.send_email(reg_email, f"Registration Confirmed: {web_title} — WebinarFlow.AI", body)
+                except Exception as e:
+                    email_service.log.warning("[confirm-email-failed] to=%s err=%s", reg_email, e)
+
+            asyncio.create_task(_send_confirm())
         except Exception:
             pass
 

@@ -17,7 +17,19 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_active_user, get_current_membership, get_db
-from app.models import Payment, PaymentStatus, Registrant, RegistrantStatus, User, Webinar, WebinarStatus
+from app.models import (
+    LandingPage,
+    Membership,
+    Organization,
+    Payment,
+    PaymentStatus,
+    Registrant,
+    RegistrantStatus,
+    User,
+    Webinar,
+    WebinarActivity,
+    WebinarStatus,
+)
 from app.schemas.webinar import WebinarDetail
 from app.services import registration_service
 
@@ -26,6 +38,7 @@ router = APIRouter()
 
 @router.get("")
 async def list_org_registrants(
+    request: Request,
     search: str | None = Query(default=None),
     status: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
@@ -34,8 +47,6 @@ async def list_org_registrants(
     db: AsyncSession = Depends(get_db),
 ):
     """List all registrants/customers for the organizer's workspace."""
-    from app.models import Organization, LandingPage, WebinarActivity
-
     user_memberships = (
         await db.execute(
             select(Membership.organization_id).where(Membership.user_id == current_user.id)
@@ -47,27 +58,15 @@ async def list_org_registrants(
         )
     ).scalars().all()
     user_org_ids = list(set(list(user_memberships) + list(owned_orgs)))
+    if request:
+        if raw_header_org := request.headers.get("x-organization-id"):
+            try:
+                user_org_ids.append(uuid.UUID(raw_header_org.strip()))
+            except Exception:
+                pass
+    user_org_ids = list(set(user_org_ids))
 
-    # 1. Fetch completed payments for this user's organizations to accurately compute spent & buyer status
-    p_conditions = [Payment.user_id == current_user.id]
-    if user_org_ids:
-        p_conditions.append(Payment.organization_id.in_(user_org_ids))
-
-    payments_res = (
-        await db.execute(
-            select(Payment).where(
-                or_(*p_conditions),
-                Payment.status == PaymentStatus.completed,
-            )
-        )
-    ).scalars().all()
-
-    payments_by_registrant: dict[uuid.UUID, float] = {}
-    for p in payments_res:
-        if p.registrant_id:
-            payments_by_registrant[p.registrant_id] = payments_by_registrant.get(p.registrant_id, 0.0) + float(p.amount)
-
-    # 2. Get all user webinars & landing pages
+    # 1. Get all user webinars & landing pages
     webinar_conditions = [Webinar.created_by == current_user.id]
     if user_org_ids:
         webinar_conditions.append(Webinar.organization_id.in_(user_org_ids))
@@ -81,6 +80,9 @@ async def list_org_registrants(
         lp_conditions.append(LandingPage.webinar_id.in_(webinar_ids))
     lps = (await db.execute(select(LandingPage).where(or_(*lp_conditions)))).scalars().all()
     lp_ids = [lp.id for lp in lps]
+    for lp in lps:
+        if lp.webinar_id and lp.webinar_id not in webinar_ids:
+            webinar_ids.append(lp.webinar_id)
 
     reg_target_conditions = []
     if webinar_ids:
@@ -99,6 +101,28 @@ async def list_org_registrants(
             "avgLtv": 0.0,
             "recentActivities": [],
         }
+
+    # 2. Fetch completed payments for this user's organizations/webinars to accurately compute spent & buyer status
+    p_conditions = []
+    if user_org_ids:
+        p_conditions.append(Payment.organization_id.in_(user_org_ids))
+    if webinar_ids:
+        p_conditions.append(Payment.webinar_id.in_(webinar_ids))
+
+    payments_by_registrant: dict[uuid.UUID, float] = {}
+    if p_conditions:
+        payments_res = (
+            await db.execute(
+                select(Payment).where(
+                    or_(*p_conditions),
+                    Payment.status == PaymentStatus.completed,
+                )
+            )
+        ).scalars().all()
+
+        for p in payments_res:
+            if p.registrant_id:
+                payments_by_registrant[p.registrant_id] = payments_by_registrant.get(p.registrant_id, 0.0) + float(p.amount)
 
     query = (
         select(Registrant, Webinar, LandingPage)
@@ -160,32 +184,29 @@ async def list_org_registrants(
     avg_ltv = (total_revenue / active_buyers_count) if active_buyers_count > 0 else 0.0
 
     recent_activities = []
-    try:
-        act_conditions = [Webinar.created_by == current_user.id]
-        if user_org_ids:
-            act_conditions.append(Webinar.organization_id.in_(user_org_ids))
-
-        act_query = (
-            select(WebinarActivity, Registrant, Webinar)
-            .join(Registrant, WebinarActivity.registrant_id == Registrant.id)
-            .outerjoin(Webinar, WebinarActivity.webinar_id == Webinar.id)
-            .where(or_(*act_conditions))
-            .order_by(WebinarActivity.occurred_at.desc())
-            .limit(10)
-        )
-        act_results = (await db.execute(act_query)).all()
-        for act, reg, web in act_results:
-            recent_activities.append({
-                "id": str(act.id),
-                "type": act.event_type,
-                "userName": reg.full_name or reg.email.split("@")[0],
-                "userEmail": reg.email,
-                "webinarTitle": web.title if web else "Webinar",
-                "time": act.occurred_at.strftime("%Y-%m-%d %H:%M") if act.occurred_at else "",
-                "meta": act.meta or {},
-            })
-    except Exception:
-        pass
+    if webinar_ids:
+        try:
+            act_query = (
+                select(WebinarActivity, Registrant, Webinar)
+                .join(Registrant, WebinarActivity.registrant_id == Registrant.id)
+                .outerjoin(Webinar, WebinarActivity.webinar_id == Webinar.id)
+                .where(WebinarActivity.webinar_id.in_(webinar_ids))
+                .order_by(WebinarActivity.occurred_at.desc())
+                .limit(10)
+            )
+            act_results = (await db.execute(act_query)).all()
+            for act, reg, web in act_results:
+                recent_activities.append({
+                    "id": str(act.id),
+                    "type": act.event_type,
+                    "userName": reg.full_name or reg.email.split("@")[0],
+                    "userEmail": reg.email,
+                    "webinarTitle": web.title if web else "Webinar",
+                    "time": act.occurred_at.strftime("%Y-%m-%d %H:%M") if act.occurred_at else "",
+                    "meta": act.meta or {},
+                })
+        except Exception:
+            pass
 
     if not recent_activities and items:
         for it in items[:6]:

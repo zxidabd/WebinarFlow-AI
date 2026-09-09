@@ -160,9 +160,10 @@ export function RecentActivitySection() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-customers-overview'],
     queryFn: () => listRegistrations({ limit: 10 }),
+    placeholderData: (previousData) => previousData,
     refetchInterval: 8000,
     refetchOnWindowFocus: true,
-    staleTime: 4000,
+    staleTime: 10000,
   });
 
   const recentActivities = data?.recentActivities || [];

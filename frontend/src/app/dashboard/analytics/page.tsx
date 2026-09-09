@@ -22,9 +22,10 @@ export default function AnalyticsDashboard() {
   const { data, isLoading } = useQuery({
     queryKey: ['analytics-overview', dateRange],
     queryFn: () => getAnalyticsOverview(dateRange === 'Last 7 Days' ? '7d' : (dateRange === 'All Time' ? 'all' : '30d')),
+    placeholderData: (previousData) => previousData,
     refetchInterval: 8000,
     refetchOnWindowFocus: true,
-    staleTime: 4000,
+    staleTime: 10000,
   });
 
   const totalViews = data?.total_views ?? 0;
@@ -70,37 +71,39 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {isLoading && !data ? (
-        <div className="flex items-center justify-center py-24 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin mr-2 text-primary" />
-          <span>Loading live funnel analytics…</span>
-        </div>
-      ) : (
-        <>
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Card 1 */}
-            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Views</p>
+      <>
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Card 1 */}
+          <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Total Views</p>
+                {isLoading && !data ? (
+                  <div className="h-8 w-20 bg-muted/60 animate-pulse rounded my-1" />
+                ) : (
                   <h3 className="text-3xl font-bold text-foreground">{totalViews.toLocaleString()}</h3>
-                </div>
-                <div className="p-3 bg-indigo-500/10 rounded-lg">
-                  <BarChart3 className="h-6 w-6 text-indigo-500" />
-                </div>
+                )}
               </div>
-              <div className="mt-4 flex items-center text-sm">
-                <span className="text-muted-foreground">Live page visits</span>
+              <div className="p-3 bg-indigo-500/10 rounded-lg">
+                <BarChart3 className="h-6 w-6 text-indigo-500" />
               </div>
             </div>
+            <div className="mt-4 flex items-center text-sm">
+              <span className="text-muted-foreground">Live page visits</span>
+            </div>
+          </div>
 
             {/* Card 2 */}
             <div className="bg-card rounded-xl shadow-sm border border-border p-6">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Registrations</p>
-                  <h3 className="text-3xl font-bold text-foreground">{totalRegistrations.toLocaleString()}</h3>
+                  {isLoading && !data ? (
+                    <div className="h-8 w-16 bg-muted/60 animate-pulse rounded my-1" />
+                  ) : (
+                    <h3 className="text-3xl font-bold text-foreground">{totalRegistrations.toLocaleString()}</h3>
+                  )}
                 </div>
                 <div className="p-3 bg-blue-500/10 rounded-lg">
                   <Users className="h-6 w-6 text-blue-500" />
@@ -119,7 +122,11 @@ export default function AnalyticsDashboard() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Attendance Rate</p>
-                  <h3 className="text-3xl font-bold text-foreground">{attendanceRate.toFixed(1)}%</h3>
+                  {isLoading && !data ? (
+                    <div className="h-8 w-16 bg-muted/60 animate-pulse rounded my-1" />
+                  ) : (
+                    <h3 className="text-3xl font-bold text-foreground">{attendanceRate.toFixed(1)}%</h3>
+                  )}
                 </div>
                 <div className="p-3 bg-purple-500/10 rounded-lg">
                   <Video className="h-6 w-6 text-purple-500" />
@@ -135,7 +142,11 @@ export default function AnalyticsDashboard() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Total Sales</p>
-                  <h3 className="text-3xl font-bold text-foreground">${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                  {isLoading && !data ? (
+                    <div className="h-8 w-24 bg-muted/60 animate-pulse rounded my-1" />
+                  ) : (
+                    <h3 className="text-3xl font-bold text-foreground">${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                  )}
                 </div>
                 <div className="p-3 bg-emerald-500/10 rounded-lg">
                   <DollarSign className="h-6 w-6 text-emerald-500" />
@@ -218,7 +229,6 @@ export default function AnalyticsDashboard() {
             </div>
           </div>
         </>
-      )}
     </div>
   );
 }

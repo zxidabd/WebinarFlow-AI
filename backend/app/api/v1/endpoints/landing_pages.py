@@ -317,13 +317,11 @@ async def _resolve_public_landing_page(
     except (ValueError, AttributeError):
         pass
 
-    # Strictly require is_published=True AND status=published
-    pub_conditions = and_(
+    # Allow page to resolve if is_published is True OR status is published
+    pub_conditions = or_(
         LandingPage.is_published.is_(True),
-        or_(
-            LandingPage.status == LandingPageStatus.published,
-            LandingPage.status == "published",
-        ),
+        LandingPage.status == LandingPageStatus.published,
+        LandingPage.status == "published",
     )
 
     # 1. Match LandingPage directly by slug (case-insensitive) or UUID joined with Webinar
@@ -530,9 +528,9 @@ async def register_via_public_page(
     registrant_count = registrant_count_result.scalar() or 0
 
     org = (await db.execute(select(Organization).where(Organization.id == webinar.organization_id))).scalar_one_or_none()
-    if org and org.owner:
-        limits = get_limits(org.owner.plan_tier)
-        if registrant_count >= limits["max_registrants_per_webinar"]:
+    if org and getattr(org, "owner", None):
+        limits = get_limits(getattr(org.owner, "plan_tier", "free_trial"))
+        if registrant_count >= limits.get("max_registrants_per_webinar", 300):
             raise HTTPException(
                 status_code=403,
                 detail="This webinar has reached its registration capacity.",

@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, or_, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,6 +27,7 @@ router = APIRouter()
 
 @router.get("/overview")
 async def get_analytics_overview(
+    request: Request,
     range: str = Query(default="30d"),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
@@ -59,6 +60,13 @@ async def get_analytics_overview(
         ).scalars().all()
 
         user_org_ids = list(set(list(user_memberships) + list(owned_orgs)))
+        if request:
+            if raw_header_org := request.headers.get("x-organization-id"):
+                try:
+                    user_org_ids.append(uuid.UUID(raw_header_org.strip()))
+                except Exception:
+                    pass
+        user_org_ids = list(set(user_org_ids))
 
         # 3. Get all webinars for this user
         webinar_conditions = [Webinar.created_by == current_user.id]
@@ -85,6 +93,9 @@ async def get_analytics_overview(
             )
         ).scalars().all()
         lp_ids = [lp.id for lp in lps]
+        for lp in lps:
+            if lp.webinar_id and lp.webinar_id not in webinar_ids:
+                webinar_ids.append(lp.webinar_id)
 
         # Map webinar to landing page ids
         webinar_to_lp_ids: dict[uuid.UUID, list[uuid.UUID]] = {}
@@ -160,19 +171,21 @@ async def get_analytics_overview(
             total_cta_clicks = (await db.execute(act_query)).scalar() or 0
 
         # 8. Payments
-        p_conditions = [Payment.user_id == current_user.id]
+        p_conditions = []
         if user_org_ids:
             p_conditions.append(Payment.organization_id.in_(user_org_ids))
         if webinar_ids:
             p_conditions.append(Payment.webinar_id.in_(webinar_ids))
 
-        p_query = select(Payment).where(
-            or_(*p_conditions),
-            Payment.status == PaymentStatus.completed,
-        )
-        if start_time:
-            p_query = p_query.where(Payment.created_at >= start_time)
-        payments = (await db.execute(p_query)).scalars().all()
+        payments = []
+        if p_conditions:
+            p_query = select(Payment).where(
+                or_(*p_conditions),
+                Payment.status == PaymentStatus.completed,
+            )
+            if start_time:
+                p_query = p_query.where(Payment.created_at >= start_time)
+            payments = (await db.execute(p_query)).scalars().all()
 
         total_revenue = float(sum(p.amount for p in payments))
         paying_registrant_ids = {p.registrant_id for p in payments if p.registrant_id}
