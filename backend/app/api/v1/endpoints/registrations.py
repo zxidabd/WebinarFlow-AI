@@ -67,20 +67,44 @@ async def list_org_registrants(
         if p.registrant_id:
             payments_by_registrant[p.registrant_id] = payments_by_registrant.get(p.registrant_id, 0.0) + float(p.amount)
 
-    # 2. Query registrants joined with webinars & landing pages
-    reg_conditions = [
-        Webinar.created_by == current_user.id,
-        LandingPage.created_by == current_user.id,
-    ]
+    # 2. Get all user webinars & landing pages
+    webinar_conditions = [Webinar.created_by == current_user.id]
     if user_org_ids:
-        reg_conditions.append(Webinar.organization_id.in_(user_org_ids))
-        reg_conditions.append(LandingPage.organization_id.in_(user_org_ids))
+        webinar_conditions.append(Webinar.organization_id.in_(user_org_ids))
+    webinars = (await db.execute(select(Webinar).where(or_(*webinar_conditions)))).scalars().all()
+    webinar_ids = [w.id for w in webinars]
+
+    lp_conditions = [LandingPage.created_by == current_user.id]
+    if user_org_ids:
+        lp_conditions.append(LandingPage.organization_id.in_(user_org_ids))
+    if webinar_ids:
+        lp_conditions.append(LandingPage.webinar_id.in_(webinar_ids))
+    lps = (await db.execute(select(LandingPage).where(or_(*lp_conditions)))).scalars().all()
+    lp_ids = [lp.id for lp in lps]
+
+    reg_target_conditions = []
+    if webinar_ids:
+        reg_target_conditions.append(Registrant.webinar_id.in_(webinar_ids))
+    if lp_ids:
+        reg_target_conditions.append(Registrant.landing_page_id.in_(lp_ids))
+
+    if not reg_target_conditions:
+        # User has no webinars or landing pages yet
+        return {
+            "items": [],
+            "total": 0,
+            "totalLeads": 0,
+            "activeBuyers": 0,
+            "totalRevenue": 0.0,
+            "avgLtv": 0.0,
+            "recentActivities": [],
+        }
 
     query = (
         select(Registrant, Webinar, LandingPage)
         .outerjoin(Webinar, Registrant.webinar_id == Webinar.id)
         .outerjoin(LandingPage, Registrant.landing_page_id == LandingPage.id)
-        .where(or_(*reg_conditions))
+        .where(or_(*reg_target_conditions))
         .order_by(Registrant.created_at.desc())
     )
 

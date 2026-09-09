@@ -189,12 +189,13 @@ async def register_for_webinar(
     )
     db.add(activity)
 
-    # 6. Email confirmation for free webinars
+    # 6. Email confirmation for free webinars (fire-and-forget background task so response is instant)
     if not is_paid_webinar:
         try:
+            import asyncio
             from app.services import email_service
-            await email_service.send_registration_confirmation_email(registrant, webinar)
-        except Exception as e:
+            asyncio.create_task(email_service.send_registration_confirmation_email(registrant, webinar))
+        except Exception:
             pass
 
     await db.flush()

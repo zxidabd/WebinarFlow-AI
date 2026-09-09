@@ -36,6 +36,33 @@ export function getBgStyle(data: any, fallbackClass: string = 'bg-white') {
   return { className: bg, style: {} };
 }
 
+function scrollToRegister(e?: React.MouseEvent, ctaLink?: string) {
+  if (ctaLink && ctaLink.startsWith('http')) {
+    return; // Allow external navigation if explicitly set
+  }
+  if (e) {
+    e.preventDefault();
+  }
+  const target = document.getElementById('register') || document.querySelector('section[id="register"]');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Auto focus the email input immediately
+    setTimeout(() => {
+      const emailInput = target.querySelector('input[type="email"]') as HTMLInputElement | null;
+      if (emailInput) {
+        emailInput.focus();
+      }
+    }, 350);
+  } else {
+    // Fallback: search for any email input on the page
+    const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement | null;
+    if (emailInput) {
+      emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      emailInput.focus();
+    }
+  }
+}
+
 export function HeroSection({ data, isPaid, priceCents, currency }: { data: any; isPaid?: boolean; priceCents?: number; currency?: string }) {
   const bg = getBgStyle(data, 'bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-500');
 
@@ -60,7 +87,13 @@ export function HeroSection({ data, isPaid, priceCents, currency }: { data: any;
             <h1 className="text-4xl font-bold leading-tight md:text-5xl lg:text-6xl">{headline}</h1>
             {subtitle && <p className="text-lg text-white/80 md:text-xl">{subtitle}</p>}
             <div className="flex flex-wrap items-center gap-4">
-              <a href={data.cta_link || '#register'} className="inline-flex items-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-gray-900 shadow-lg hover:shadow-xl transition-all">{ctaLabel}</a>
+              <a
+                href={data.cta_link || '#register'}
+                onClick={(e) => scrollToRegister(e, data.cta_link)}
+                className="inline-flex items-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-gray-900 shadow-lg hover:shadow-xl transition-all cursor-pointer"
+              >
+                {ctaLabel}
+              </a>
               {priceDisplay ? (
                 <span className="inline-flex items-center rounded-full bg-amber-400/20 border border-amber-300/40 px-4 py-1.5 text-sm font-semibold text-amber-200">
                   🎟️ {priceDisplay}
@@ -640,7 +673,13 @@ export function NavbarSection({ data, isPaid, priceCents, currency }: { data: an
               {priceDisplay}
             </span>
           )}
-          <a href={data?.cta_link || '#register'} className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition-colors">{ctaText}</a>
+          <a
+            href={data?.cta_link || '#register'}
+            onClick={(e) => scrollToRegister(e, data?.cta_link)}
+            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition-colors cursor-pointer"
+          >
+            {ctaText}
+          </a>
         </div>
       </div>
     </nav>
@@ -683,7 +722,13 @@ export function HeroV2Section({ data, isPaid, priceCents, currency }: { data: an
           {data.registrations && <span>👥 {data.registrations}</span>}
         </div>
         <div className="mt-8">
-          <a href={data.cta_link || '#register'} className="inline-flex items-center rounded-xl bg-indigo-600 px-8 py-4 text-base font-semibold shadow-lg hover:bg-indigo-700 transition-colors">{ctaText}</a>
+          <a
+            href={data.cta_link || '#register'}
+            onClick={(e) => scrollToRegister(e, data.cta_link)}
+            className="inline-flex items-center rounded-xl bg-indigo-600 px-8 py-4 text-base font-semibold shadow-lg hover:bg-indigo-700 transition-colors cursor-pointer"
+          >
+            {ctaText}
+          </a>
         </div>
       </div>
     </section>

@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 
 from datetime import datetime, timezone
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy import func, or_, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -326,48 +326,41 @@ async def _resolve_public_landing_page(
         ),
     )
 
-    # 1. Match LandingPage directly by slug (case-insensitive) or UUID
+    # 1. Match LandingPage directly by slug (case-insensitive) or UUID joined with Webinar
     conditions = [func.lower(LandingPage.slug) == clean_slug]
     if parsed_uuid is not None:
         conditions.append(LandingPage.id == parsed_uuid)
 
     query = (
-        select(LandingPage)
+        select(LandingPage, Webinar)
+        .join(Webinar, LandingPage.webinar_id == Webinar.id)
         .where(
             or_(*conditions),
             pub_conditions,
         )
         .order_by(LandingPage.created_at.desc())
     )
-    lp = (await db.execute(query)).scalars().first()
+    result = (await db.execute(query)).first()
+    if result is not None:
+        return result[0], result[1]
 
-    if lp is not None:
-        webinar = (
-            await db.execute(select(Webinar).where(Webinar.id == lp.webinar_id))
-        ).scalar_one_or_none()
-        if webinar is not None:
-            return lp, webinar
-
-    # 2. Fallback: match by Webinar.slug (case-insensitive) or Webinar UUID if published LP exists
+    # 2. Fallback: match by Webinar.slug (case-insensitive) or Webinar UUID joined with published LandingPage
     w_conditions = [func.lower(Webinar.slug) == clean_slug]
     if parsed_uuid is not None:
         w_conditions.append(Webinar.id == parsed_uuid)
 
-    webinar_query = select(Webinar).where(or_(*w_conditions))
-    webinar = (await db.execute(webinar_query)).scalars().first()
-    if webinar is not None:
-        lp = (
-            await db.execute(
-                select(LandingPage)
-                .where(
-                    LandingPage.webinar_id == webinar.id,
-                    pub_conditions,
-                )
-                .order_by(LandingPage.created_at.desc())
-            )
-        ).scalars().first()
-        if lp is not None:
-            return lp, webinar
+    webinar_query = (
+        select(LandingPage, Webinar)
+        .join(Webinar, LandingPage.webinar_id == Webinar.id)
+        .where(
+            or_(*w_conditions),
+            pub_conditions,
+        )
+        .order_by(LandingPage.created_at.desc())
+    )
+    w_result = (await db.execute(webinar_query)).first()
+    if w_result is not None:
+        return w_result[0], w_result[1]
 
     return None
 

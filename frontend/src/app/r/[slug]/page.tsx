@@ -4,7 +4,7 @@ import PublicPageClient from './PublicPageClient';
 /**
  * Public landing page route — renders a published landing page by slug.
  */
-export const dynamic = 'force-dynamic';
+export const revalidate = 15;
 
 function getApiUrl(): string {
   const raw = (process.env.NEXT_PUBLIC_API_URL || 'https://webinarflow-ai.onrender.com').replace(/\/$/, '');
@@ -14,7 +14,9 @@ function getApiUrl(): string {
 async function getLandingPage(slug: string) {
   try {
     const apiUrl = getApiUrl();
-    const res = await fetch(`${apiUrl}/landing-pages/public/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+    const res = await fetch(`${apiUrl}/landing-pages/public/${encodeURIComponent(slug)}`, {
+      next: { revalidate: 15 },
+    });
     if (!res.ok) return null;
     return res.json();
   } catch {
