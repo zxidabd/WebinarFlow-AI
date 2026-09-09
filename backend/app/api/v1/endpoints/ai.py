@@ -59,21 +59,51 @@ async def get_ai_status():
     api_key = settings.OPENAI_API_KEY
     test_result = "not_tested"
     test_error = None
-    
+    available_models = []
+    working_model = None
+
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
+        async with httpx.AsyncClient(timeout=8.0) as client:
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-            payload = {
-                "model": "llama-3.3-70b-versatile",
-                "messages": [{"role": "user", "content": "hi"}],
-                "max_tokens": 5,
-            }
-            res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
-            if res.status_code == 200:
-                test_result = "connected_ok"
-            else:
-                test_result = f"http_{res.status_code}"
-                test_error = res.text[:200]
+            
+            # 1. Fetch available models from provider
+            try:
+                m_res = await client.get(f"{base_url}/models", headers=headers)
+                if m_res.status_code == 200:
+                    available_models = [m["id"] for m in m_res.json().get("data", []) if "id" in m]
+            except Exception:
+                pass
+
+            # 2. Build candidate list prioritizing reliable models
+            candidates = []
+            if available_models:
+                candidates.extend(available_models)
+            candidates.extend([
+                "llama-3.1-8b-instant",
+                "llama3-8b-8192",
+                "llama-3.1-70b-versatile",
+                "gemma2-9b-it",
+                "llama-3.3-70b-versatile",
+                settings.OPENAI_MODEL,
+            ])
+            candidates = [c for i, c in enumerate(candidates) if c and c not in candidates[:i]]
+
+            # 3. Test completions on candidates until one succeeds
+            for try_model in candidates:
+                payload = {
+                    "model": try_model,
+                    "messages": [{"role": "user", "content": "hi"}],
+                    "max_tokens": 5,
+                }
+                res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
+                if res.status_code == 200:
+                    test_result = "connected_ok"
+                    test_error = None
+                    working_model = try_model
+                    break
+                else:
+                    test_result = f"http_{res.status_code}"
+                    test_error = f"{try_model}: {res.text[:150]}"
     except Exception as exc:
         test_result = "exception"
         test_error = str(exc)
@@ -81,11 +111,13 @@ async def get_ai_status():
     return {
         "status": "ready",
         "provider": settings.AI_PROVIDER,
-        "model": settings.OPENAI_MODEL,
+        "model": working_model or settings.OPENAI_MODEL,
+        "working_model": working_model,
         "base_url": settings.OPENAI_BASE_URL,
         "has_api_key": bool(api_key and len(api_key) > 5),
         "key_prefix": api_key[:8] if api_key else "",
         "live_test": test_result,
+        "available_models": available_models[:12],
         "live_error": test_error,
     }
 
@@ -97,11 +129,11 @@ async def list_ai_models():
     
     if "groq.com" in base_url:
         models_list = [
-            {"id": "openai/gpt-oss-120b", "name": "AI Agent 1", "provider": "groq"},
-            {"id": "qwen/qwen3.6-27b", "name": "AI Agent 2", "provider": "groq"},
-            {"id": "openai/gpt-oss-20b", "name": "AI Agent 3", "provider": "groq"},
-            {"id": "qwen/qwen3.8-27b", "name": "AI Agent 4", "provider": "groq"},
-            {"id": "groq/compound", "name": "AI Agent 5", "provider": "groq"},
+            {"id": "llama-3.1-8b-instant", "name": "AI Agent 1 (Llama 3.1 Instant)", "provider": "groq"},
+            {"id": "llama-3.1-70b-versatile", "name": "AI Agent 2 (Llama 3.1 70B)", "provider": "groq"},
+            {"id": "llama3-8b-8192", "name": "AI Agent 3 (Llama 3 8B)", "provider": "groq"},
+            {"id": "gemma2-9b-it", "name": "AI Agent 4 (Gemma 2 9B)", "provider": "groq"},
+            {"id": "llama-3.3-70b-versatile", "name": "AI Agent 5 (Llama 3.3 70B)", "provider": "groq"},
         ]
     else:
         models_list = [

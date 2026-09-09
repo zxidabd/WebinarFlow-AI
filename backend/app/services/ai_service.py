@@ -596,16 +596,50 @@ async def chat_with_agent(
         else:
             convo.append(m)
 
-    candidate_models = [
-        target_model,
-        "llama-3.3-70b-versatile",
+    # Dynamically discover active models from the provider endpoint
+    available_api_models: list[str] = []
+    try:
+        async with httpx.AsyncClient(timeout=4.0) as m_client:
+            m_headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            m_res = await m_client.get(f"{base_url}/models", headers=m_headers)
+            if m_res.status_code == 200:
+                available_api_models = [m["id"] for m in m_res.json().get("data", []) if "id" in m]
+    except Exception:
+        pass
+
+    candidate_models: list[str] = []
+    # If the caller specifically asked for a model, try it first
+    if model:
+        candidate_models.append(model)
+
+    # Prioritize well-known fast and high-quality active models
+    preferred_models = [
         "llama-3.1-8b-instant",
-        "qwen/qwen3.6-27b",
-        "openai/gpt-oss-120b",
-        "openai/gpt-oss-20b",
-        "groq/compound",
-        settings.OPENAI_MODEL or "gpt-4o",
+        "llama-3.1-70b-versatile",
+        "llama3-8b-8192",
+        "llama3-70b-8192",
+        "gemma2-9b-it",
+        "mixtral-8x7b-32768",
+        "llama-3.3-70b-versatile",
     ]
+    for pref in preferred_models:
+        if pref in available_api_models:
+            candidate_models.append(pref)
+
+    # Add any remaining models discovered from the provider
+    for avail in available_api_models:
+        if avail not in candidate_models:
+            candidate_models.append(avail)
+
+    # Add standard fallback candidates
+    candidate_models.extend([
+        "llama-3.1-8b-instant",
+        "llama3-8b-8192",
+        "llama-3.1-70b-versatile",
+        "gemma2-9b-it",
+        "llama-3.3-70b-versatile",
+        settings.OPENAI_MODEL or "gpt-4o",
+    ])
     # Remove duplicates preserving order
     seen = set()
     models_to_try = [m for m in candidate_models if m and not (m in seen or seen.add(m))]
