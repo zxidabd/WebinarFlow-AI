@@ -15,7 +15,7 @@ const PLANS = [
     features: [
       '3 Webinars',
       '2 Funnels per webinar',
-      '15 AI Agent chats/month',
+      '100 AI Agent chats/month',
       '300 Registrants per webinar',
       'Basic analytics',
       'Normal support',
@@ -30,7 +30,7 @@ const PLANS = [
     features: [
       '7 Webinars',
       '4 Funnels per webinar',
-      '50 AI Agent chats/month',
+      '200 AI Agent chats/month',
       '600 Registrants per webinar',
       'Advanced analytics & customer views',
       'Priority support',
