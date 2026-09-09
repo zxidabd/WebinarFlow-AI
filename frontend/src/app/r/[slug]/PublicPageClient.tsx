@@ -26,13 +26,7 @@ export default function PublicPageClient({ content, webinarId, slug, isPaid, pri
     if (hasTrackedRef.current || !slug) return;
     hasTrackedRef.current = true;
 
-    // Session guard to prevent React StrictMode or multiple re-renders from recording duplicates
-    const sessionKey = `wf_v_${slug}`;
-    if (typeof window !== 'undefined') {
-      if (sessionStorage.getItem(sessionKey)) return;
-      sessionStorage.setItem(sessionKey, '1');
-    }
-
+    // Track visit on landing page load (hasTrackedRef guards against React strict mode double-firing)
     const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const utm_source = urlParams?.get('utm_source') || undefined;
     const utm_medium = urlParams?.get('utm_medium') || undefined;

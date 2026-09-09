@@ -463,6 +463,9 @@ async def record_public_page_visit(
         utm_content=payload.utm_content if payload else None,
         utm_term=payload.utm_term if payload else None,
     )
+    if webinar:
+        webinar.visitor_count = (webinar.visitor_count or 0) + 1
+        db.add(webinar)
     await db.commit()
     return {"status": "ok", "visit_id": str(visit.id)}
 

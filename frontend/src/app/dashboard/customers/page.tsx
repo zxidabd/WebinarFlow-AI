@@ -46,7 +46,13 @@ export default function CustomersPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Customers & Registrants</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Customers & Registrants</h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </span>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage leads, attendees, and active buyers across all your automated webinar funnels in real-time.
           </p>

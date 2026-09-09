@@ -35,18 +35,28 @@ async def list_org_registrants(
     db: AsyncSession = Depends(get_db),
 ):
     """List all registrants/customers for the organizer's active organization."""
+    from app.models import Organization, LandingPage, WebinarActivity
+
     user_memberships = (
         await db.execute(
             select(Membership.organization_id).where(Membership.user_id == current_user.id)
         )
     ).scalars().all()
-    user_org_ids = list(set(list(user_memberships) + ([org_id] if org_id else [])))
+    owned_orgs = (
+        await db.execute(
+            select(Organization.id).where(Organization.owner_user_id == current_user.id)
+        )
+    ).scalars().all()
+    user_org_ids = list(set(list(user_memberships) + list(owned_orgs) + ([org_id] if org_id else [])))
 
     # 1. Fetch completed payments for this user's organizations to accurately compute spent & buyer status
     payments_res = (
         await db.execute(
             select(Payment).where(
-                Payment.organization_id.in_(user_org_ids),
+                or_(
+                    Payment.organization_id.in_(user_org_ids) if user_org_ids else False,
+                    Payment.user_id == current_user.id,
+                ),
                 Payment.status == PaymentStatus.completed,
             )
         )
@@ -54,19 +64,20 @@ async def list_org_registrants(
 
     payments_by_registrant: dict[uuid.UUID, float] = {}
     for p in payments_res:
-        payments_by_registrant[p.registrant_id] = payments_by_registrant.get(p.registrant_id, 0.0) + float(p.amount)
+        if p.registrant_id:
+            payments_by_registrant[p.registrant_id] = payments_by_registrant.get(p.registrant_id, 0.0) + float(p.amount)
 
     # 2. Query registrants joined with webinars & landing pages
-    from app.models import LandingPage
-
     query = (
         select(Registrant, Webinar, LandingPage)
         .outerjoin(Webinar, Registrant.webinar_id == Webinar.id)
         .outerjoin(LandingPage, Registrant.landing_page_id == LandingPage.id)
         .where(
             or_(
-                Webinar.organization_id.in_(user_org_ids),
-                LandingPage.organization_id.in_(user_org_ids),
+                Webinar.organization_id.in_(user_org_ids) if user_org_ids else False,
+                Webinar.created_by == current_user.id,
+                LandingPage.organization_id.in_(user_org_ids) if user_org_ids else False,
+                LandingPage.created_by == current_user.id,
             )
         )
         .order_by(Registrant.created_at.desc())
@@ -123,6 +134,47 @@ async def list_org_registrants(
     total_leads_count = len(unique_contacts_set) if unique_contacts_set else len(items)
     avg_ltv = (total_revenue / active_buyers_count) if active_buyers_count > 0 else 0.0
 
+    recent_activities = []
+    try:
+        act_query = (
+            select(WebinarActivity, Registrant, Webinar)
+            .join(Registrant, WebinarActivity.registrant_id == Registrant.id)
+            .outerjoin(Webinar, WebinarActivity.webinar_id == Webinar.id)
+            .where(
+                or_(
+                    Webinar.organization_id.in_(user_org_ids) if user_org_ids else False,
+                    Webinar.created_by == current_user.id,
+                )
+            )
+            .order_by(WebinarActivity.occurred_at.desc())
+            .limit(10)
+        )
+        act_results = (await db.execute(act_query)).all()
+        for act, reg, web in act_results:
+            recent_activities.append({
+                "id": str(act.id),
+                "type": act.event_type,
+                "userName": reg.full_name or reg.email.split("@")[0],
+                "userEmail": reg.email,
+                "webinarTitle": web.title if web else "Webinar",
+                "time": act.occurred_at.strftime("%Y-%m-%d %H:%M") if act.occurred_at else "",
+                "meta": act.meta or {},
+            })
+    except Exception:
+        pass
+
+    if not recent_activities and items:
+        for it in items[:6]:
+            recent_activities.append({
+                "id": it["id"],
+                "type": "purchased" if it["status"] == "Purchased" else ("attended" if it["status"] == "Attended" else "registered"),
+                "userName": it["name"],
+                "userEmail": it["email"],
+                "webinarTitle": it["webinarTitle"],
+                "time": it["dateJoined"],
+                "meta": {"amount": it["totalSpent"]},
+            })
+
     return {
         "items": paginated_items,
         "total": len(items),
@@ -130,6 +182,7 @@ async def list_org_registrants(
         "activeBuyers": active_buyers_count,
         "totalRevenue": total_revenue,
         "avgLtv": avg_ltv,
+        "recentActivities": recent_activities,
     }
 
 

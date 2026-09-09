@@ -14,12 +14,15 @@ export function AnalyticsOverview() {
   const { data } = useQuery({
     queryKey: ['analytics-overview-cards'],
     queryFn: () => getAnalyticsOverview('30d'),
-    refetchInterval: 10000,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const totalViews = data?.total_views ?? 0;
   const totalRegistrations = data?.total_registrations ?? 0;
   const attendanceRate = data?.attendance_rate ? data.attendance_rate / 100 : 0;
+  const totalSales = data?.total_sales ?? (data?.total_revenue && data.total_revenue > 0 ? 1 : 0);
   const totalRevenue = data?.total_revenue ?? 0;
 
   const metrics = [
@@ -27,14 +30,20 @@ export function AnalyticsOverview() {
     { label: 'Total Leads', value: totalRegistrations, icon: UserPlus, desc: 'Opt-in contacts' },
     { label: 'Total Registrations', value: totalRegistrations, icon: ClipboardCheck, desc: 'Webinar registrants' },
     { label: 'Attendance Rate', value: attendanceRate, icon: UserCheck, desc: 'Live attendee rate', format: formatPercent },
-    { label: 'Total Sales', value: totalRevenue > 0 ? 1 : 0, icon: ShoppingCart, desc: 'Paid conversions' },
+    { label: 'Total Sales', value: totalSales, icon: ShoppingCart, desc: 'Paid conversions' },
     { label: 'Revenue', value: totalRevenue, icon: DollarSign, desc: 'Gross revenue', format: formatUSD },
   ];
 
   return (
     <section aria-label="Analytics">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold tracking-tight text-foreground">Analytics</h2>
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-xl font-bold tracking-tight text-foreground">Analytics</h2>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live
+          </span>
+        </div>
         <Link href="/dashboard/analytics" className="text-xs font-medium text-[#852533] dark:text-[#f8a5b2] hover:underline flex items-center gap-1 transition-colors">
           Overview <ChevronRight className="h-3 w-3" />
         </Link>

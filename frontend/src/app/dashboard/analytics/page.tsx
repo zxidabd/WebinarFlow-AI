@@ -45,7 +45,13 @@ export default function AnalyticsDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Analytics & Funnel Performance</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-foreground">Analytics & Funnel Performance</h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </span>
+          </div>
           <p className="text-muted-foreground mt-1">Track your webinar traffic, conversions, and live revenue.</p>
         </div>
         <div className="flex items-center gap-3">

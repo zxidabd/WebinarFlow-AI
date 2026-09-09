@@ -52,22 +52,49 @@ async def get_analytics_overview(
             select(Membership.organization_id).where(Membership.user_id == current_user.id)
         )
     ).scalars().all()
-    user_org_ids = list(set(list(user_memberships) + ([org_id] if org_id else [])))
+
+    from app.models import Organization
+
+    owned_orgs = (
+        await db.execute(
+            select(Organization.id).where(Organization.owner_user_id == current_user.id)
+        )
+    ).scalars().all()
+
+    user_org_ids = list(set(list(user_memberships) + list(owned_orgs) + ([org_id] if org_id else [])))
 
     # 2. Get Organization Webinars & Landing Pages
     webinars = (
         await db.execute(
-            select(Webinar).where(Webinar.organization_id.in_(user_org_ids)).order_by(Webinar.created_at.desc())
+            select(Webinar).where(
+                or_(
+                    Webinar.organization_id.in_(user_org_ids) if user_org_ids else False,
+                    Webinar.created_by == current_user.id,
+                )
+            ).order_by(Webinar.created_at.desc())
         )
     ).scalars().all()
     webinar_ids = [w.id for w in webinars]
 
+    for w in webinars:
+        if w.organization_id and w.organization_id not in user_org_ids:
+            user_org_ids.append(w.organization_id)
+
     lps = (
         await db.execute(
-            select(LandingPage).where(LandingPage.organization_id.in_(user_org_ids))
+            select(LandingPage).where(
+                or_(
+                    LandingPage.organization_id.in_(user_org_ids) if user_org_ids else False,
+                    LandingPage.created_by == current_user.id,
+                )
+            )
         )
     ).scalars().all()
     lp_ids = [lp.id for lp in lps]
+
+    for lp in lps:
+        if lp.organization_id and lp.organization_id not in user_org_ids:
+            user_org_ids.append(lp.organization_id)
 
     # Map webinar to landing page ids
     webinar_to_lp_ids: dict[uuid.UUID, list[uuid.UUID]] = {}
@@ -88,6 +115,10 @@ async def get_analytics_overview(
         for lp_id, count in v_res:
             lp_visits_count_by_lp[lp_id] = count
             total_views += count
+
+    # Also account for direct webinar visitor_count
+    sum_webinar_visitors = sum((w.visitor_count or 0) for w in webinars)
+    total_views = max(total_views, sum_webinar_visitors)
 
     # 4. Registrants & Attendees
     total_registrations = 0
@@ -224,6 +255,7 @@ async def get_analytics_overview(
         "total_views": total_views,
         "total_registrations": total_registrations,
         "attendance_rate": round(attendance_rate, 1),
+        "total_sales": total_purchased,
         "total_revenue": total_revenue,
         "funnel_steps": funnel_steps,
         "top_webinars": top_webinars[:5],

@@ -200,6 +200,15 @@ export interface RegistrationsResponse {
   activeBuyers: number;
   totalRevenue: number;
   avgLtv: number;
+  recentActivities?: Array<{
+    id: string;
+    type: string;
+    userName: string;
+    userEmail: string;
+    webinarTitle: string;
+    time: string;
+    meta?: Record<string, any>;
+  }>;
 }
 
 export function listRegistrations(
@@ -231,6 +240,7 @@ export interface AnalyticsOverviewResponse {
   total_views: number;
   total_registrations: number;
   attendance_rate: number;
+  total_sales?: number;
   total_revenue: number;
   funnel_steps: Array<{
     name: string;
