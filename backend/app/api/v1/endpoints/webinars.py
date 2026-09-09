@@ -97,12 +97,14 @@ async def create_webinar(
     )
     webinar_count = webinar_count_result.scalar() or 0
     current_user_obj = membership.user
-    limits = get_limits(current_user_obj.plan_tier)
-    if webinar_count >= limits["max_webinars"]:
-        raise HTTPException(
-            status_code=403,
-            detail=f"You've reached your webinar limit ({webinar_count}/{limits['max_webinars']}). Upgrade your plan to create more webinars.",
-        )
+    is_super = getattr(current_user, "is_super_user", False) or getattr(current_user_obj, "is_super_user", False)
+    if not is_super:
+        limits = get_limits(current_user_obj.plan_tier)
+        if webinar_count >= limits["max_webinars"]:
+            raise HTTPException(
+                status_code=403,
+                detail=f"You've reached your webinar limit ({webinar_count}/{limits['max_webinars']}). Upgrade your plan to create more webinars.",
+            )
 
     webinar = await webinar_service.create_webinar(
         db,

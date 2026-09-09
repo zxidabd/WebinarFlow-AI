@@ -24,5 +24,15 @@ PLAN_LIMITS = {
     },
 }
 
-def get_limits(plan_tier: str) -> dict:
+UNLIMITED_LIMITS = {
+    "max_webinars": 999999,
+    "max_funnels_per_webinar": 999999,
+    "max_ai_chats_per_month": 999999,
+    "max_registrants_per_webinar": 999999,
+}
+
+
+def get_limits(plan_tier: str, is_super_user: bool = False) -> dict:
+    if is_super_user or plan_tier in ("admin", "unlimited", "enterprise"):
+        return UNLIMITED_LIMITS
     return PLAN_LIMITS.get(plan_tier, PLAN_LIMITS["free_trial"])

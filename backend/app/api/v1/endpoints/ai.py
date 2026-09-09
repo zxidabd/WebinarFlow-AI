@@ -182,12 +182,13 @@ async def chat_with_agent_endpoint(
         current_user.ai_chat_count = 0
         current_user.ai_chat_count_reset_at = now
 
-    limits = get_limits(current_user.plan_tier)
-    if current_user.ai_chat_count >= limits["max_ai_chats_per_month"]:
-        raise HTTPException(
-            status_code=403,
-            detail=f"You've used all {limits['max_ai_chats_per_month']} AI chats this month. Upgrade your plan for more.",
-        )
+    if not current_user.is_super_user:
+        limits = get_limits(current_user.plan_tier, is_super_user=False)
+        if current_user.ai_chat_count >= limits["max_ai_chats_per_month"]:
+            raise HTTPException(
+                status_code=403,
+                detail=f"You've used all {limits['max_ai_chats_per_month']} AI chats this month. Upgrade your plan for more.",
+            )
 
     result = await ai_service.chat_with_agent(
         messages=payload.messages,

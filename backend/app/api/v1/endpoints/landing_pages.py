@@ -189,13 +189,14 @@ async def create_landing_page(
     lp_count_result = await db.execute(
         select(func.count()).select_from(LandingPage).where(LandingPage.webinar_id == payload.webinar_id)
     )
-    lp_count = lp_count_result.scalar() or 0
-    limits = get_limits(membership.user.plan_tier)
-    if lp_count >= limits["max_funnels_per_webinar"]:
-        raise HTTPException(
-            status_code=403,
-            detail=f"You've reached your funnel limit ({lp_count}/{limits['max_funnels_per_webinar']}) for this webinar. Upgrade your plan for more.",
-        )
+    is_super = getattr(current_user, "is_super_user", False) or getattr(membership.user, "is_super_user", False)
+    if not is_super:
+        limits = get_limits(membership.user.plan_tier)
+        if lp_count >= limits["max_funnels_per_webinar"]:
+            raise HTTPException(
+                status_code=403,
+                detail=f"You've reached your funnel limit ({lp_count}/{limits['max_funnels_per_webinar']}) for this webinar. Upgrade your plan for more.",
+            )
 
     lp = await landing_page_service.create_landing_page(
         db,
@@ -529,12 +530,14 @@ async def register_via_public_page(
 
     org = (await db.execute(select(Organization).where(Organization.id == webinar.organization_id))).scalar_one_or_none()
     if org and getattr(org, "owner", None):
-        limits = get_limits(getattr(org.owner, "plan_tier", "free_trial"))
-        if registrant_count >= limits.get("max_registrants_per_webinar", 300):
-            raise HTTPException(
-                status_code=403,
-                detail="This webinar has reached its registration capacity.",
-            )
+        is_owner_super = getattr(org.owner, "is_super_user", False)
+        if not is_owner_super:
+            limits = get_limits(getattr(org.owner, "plan_tier", "free_trial"))
+            if registrant_count >= limits.get("max_registrants_per_webinar", 300):
+                raise HTTPException(
+                    status_code=403,
+                    detail="This webinar has reached its registration capacity.",
+                )
 
     from app.services import registration_service
 
