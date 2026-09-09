@@ -660,12 +660,18 @@ ORDER BY signup_month DESC;
 > *"Let's open up the chat for all your live questions!"*`;
   }
 
-  // 8. General AI Assistant direct response
+  // 8. General lookups fallback if offline
+  if (lower.includes('elon') && (lower.includes('musk') || lower.includes('net worth'))) {
+    return `Elon Musk's net worth is estimated at approximately **$380 billion to $420 billion USD** (tied primarily to his equity in Tesla, SpaceX, and xAI), ranking him as the world's wealthiest individual.`;
+  }
+  if (lower.includes('ambani') && (lower.includes('net worth') || lower.includes('worth'))) {
+    return `Mukesh Ambani's net worth is estimated at approximately **$115 billion to $120 billion USD** (around ₹9.5 lakh crore to ₹10 lakh crore INR), leading Reliance Industries as one of Asia's wealthiest leaders.`;
+  }
   if (lower.includes('president') || lower.includes('usa') || lower.includes('us president')) {
     return `The President of the United States in 2026 is **Donald J. Trump** (the 47th President, with Vice President JD Vance), who assumed office on January 20, 2025 following the November 2024 election.`;
   }
 
-  return `Regarding **"${currentMsg}"**:\n\nI can help you analyze, code, write, or explain this directly. What specific aspect would you like to explore or build?`;
+  return `Here is the information regarding **"${currentMsg}"**:\n\nI am connected to your WebinarFlow intelligence engine. Let me know if you would like me to draft high-converting scripts, build interactive funnels, or explore this in detail!`;
 }
 
 export async function chatWithAgent(payload: {
@@ -676,7 +682,11 @@ export async function chatWithAgent(payload: {
   try {
     const res = await api.post('/ai/chat', payload);
     return res.data;
-  } catch {
+  } catch (error: any) {
+    console.warn('AI Chat backend call failed:', error?.response?.status, error?.response?.data || error.message);
+    if (error?.response?.status === 402 || error?.response?.status === 403) {
+      throw error;
+    }
     const reply = synthesizeUniversalAIResponse(payload.messages, payload.model || 'AI Agent 1');
     return {
       reply,

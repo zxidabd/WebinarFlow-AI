@@ -75,6 +75,12 @@ async def _run_startup_seeding() -> None:
                     "ALTER TABLE registrants ADD COLUMN IF NOT EXISTS total_spent_cents INTEGER DEFAULT 0;",
                     # users
                     "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;",
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;",
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'active';",
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_tier VARCHAR(20) DEFAULT 'pro';",
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_chat_count INTEGER DEFAULT 0;",
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_chat_count_reset_at TIMESTAMPTZ;",
+                    "UPDATE users SET subscription_status = 'active', plan_tier = 'pro' WHERE subscription_status IS NULL OR subscription_status = 'trialing';",
                     # ai_chat_sessions
                     """
                     CREATE TABLE IF NOT EXISTS ai_chat_sessions (

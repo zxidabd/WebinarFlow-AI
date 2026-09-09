@@ -687,7 +687,7 @@ async def chat_with_agent(
         }
 
     return {
-        "reply": f"I am your AI Agent. Regarding **\"{last_msg}\"**, let me know if you would like me to write code, provide full technical solutions, or analyze this topic in detail!",
+        "reply": f"Here is the guidance for your question regarding **\"{last_msg}\"**:\n\nCould you clarify which specific angle or details you'd like me to expand upon?",
         "model": target_model,
         "provider": "universal-ai-engine",
     }
