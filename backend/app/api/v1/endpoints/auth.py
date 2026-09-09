@@ -499,6 +499,57 @@ async def admin_subscription_payments(
     }
 
 
+@router.delete("/admin/subscription-payments/{payment_id}")
+async def admin_delete_subscription_payment(
+    payment_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Superuser-only: delete a specific test subscription payment."""
+    from sqlalchemy import select, delete
+    from app.models import User
+    from app.models.subscription_payment import SubscriptionPayment
+
+    creds = await _bearer(request)
+    if creds is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+    token_payload = security.decode_token(creds.credentials)
+    admin_user = (await db.execute(select(User).where(User.id == uuid.UUID(token_payload["sub"])))).scalar_one_or_none()
+    if not admin_user or not admin_user.is_super_user:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Superuser access required")
+
+    target = (await db.execute(select(SubscriptionPayment).where(SubscriptionPayment.id == payment_id))).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Payment record not found")
+
+    await db.delete(target)
+    await db.commit()
+    return {"status": "ok", "message": "Payment record deleted successfully"}
+
+
+@router.post("/admin/subscription-payments/reset")
+async def admin_reset_subscription_payments(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Superuser-only: reset all demo/test subscription payments to start fresh with live gateway."""
+    from sqlalchemy import select, delete
+    from app.models import User
+    from app.models.subscription_payment import SubscriptionPayment
+
+    creds = await _bearer(request)
+    if creds is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+    token_payload = security.decode_token(creds.credentials)
+    admin_user = (await db.execute(select(User).where(User.id == uuid.UUID(token_payload["sub"])))).scalar_one_or_none()
+    if not admin_user or not admin_user.is_super_user:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Superuser access required")
+
+    await db.execute(delete(SubscriptionPayment))
+    await db.commit()
+    return {"status": "ok", "message": "All subscription payments reset to 0 for fresh launch!"}
+
+
 # ── Temporary Admin Setup (REMOVE AFTER USE) ────────────────────────────
 @router.post("/setup-admin")
 async def setup_admin(

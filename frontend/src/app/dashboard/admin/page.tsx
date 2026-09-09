@@ -15,6 +15,7 @@ import {
   DollarSign,
   TrendingUp,
   Wallet,
+  Trash2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
@@ -134,6 +135,33 @@ export default function AdminPage() {
 
   const handleSubPaymentSearch = () => {
     loadSubPayments(subPaymentSearch, providerFilter, planFilter);
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!window.confirm('Delete this demo payment record?')) return;
+    try {
+      await api.delete(`/auth/admin/subscription-payments/${paymentId}`);
+      toast.success('Payment record deleted');
+      loadSubPayments(subPaymentSearch, providerFilter, planFilter);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to delete payment');
+    }
+  };
+
+  const handleResetAllPayments = async () => {
+    if (
+      !window.confirm(
+        'Are you sure you want to RESET ALL subscription payments to ₹0 / clean slate?\n\nThis will remove all demo transaction records so you can start fresh with real Razorpay.'
+      )
+    )
+      return;
+    try {
+      await api.post('/auth/admin/subscription-payments/reset');
+      toast.success('All demo payments cleared. Revenue reset to ₹0!');
+      loadSubPayments(subPaymentSearch, providerFilter, planFilter);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to reset payments');
+    }
   };
 
   const handleAction = async (userId: string, action: string) => {
@@ -302,15 +330,28 @@ export default function AdminPage() {
               Track money collected from Starter and Pro plan upgrades across Razorpay and Stripe.
             </p>
           </div>
-          <Button
-            onClick={() => loadSubPayments(subPaymentSearch, providerFilter, planFilter)}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2 self-start sm:self-auto"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Refresh Revenue
-          </Button>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {subPayments.length > 0 && (
+              <Button
+                onClick={handleResetAllPayments}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10 border-red-500/30"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Reset Demo Payments
+              </Button>
+            )}
+            <Button
+              onClick={() => loadSubPayments(subPaymentSearch, providerFilter, planFilter)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Refresh Revenue
+            </Button>
+          </div>
         </div>
 
         {subPaymentStats && (
@@ -459,6 +500,7 @@ export default function AdminPage() {
                     <th className="px-4 py-3 font-medium">Transaction / Session ID</th>
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Date</th>
+                    <th className="px-4 py-3 font-medium text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -496,6 +538,15 @@ export default function AdminPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
                         {formatDate(pmt.created_at)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => handleDeletePayment(pmt.id)}
+                          title="Delete demo payment"
+                          className="text-muted-foreground hover:text-red-500 transition-colors p-1.5 rounded hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}
