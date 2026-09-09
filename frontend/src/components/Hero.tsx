@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, Mail, MessageCircle, Sparkles, ArrowRight, Play,
+  Mail, MessageCircle, Sparkles, ArrowRight, Play,
   Check, Magnet, Users, CreditCard, BarChart3, Globe, Presentation, Send,
 } from 'lucide-react';
 import { fadeIn, slideUp, slideDown, staggerContainer, EASE_OUT } from '@/lib/motion';
@@ -19,9 +19,8 @@ const METAL_RIM =
 
 /* ─────────────────────────── Data ─────────────────────────── */
 const STATS = [
-  { Icon: TrendingUp, label: 'Revenue +248%', sub: 'This month', pos: 'top-[20%] left-[3%]' as const, delay: 0 },
-  { Icon: Mail, label: '12,480 emails sent', sub: 'Campaign live', pos: 'top-[14%] right-[3%]' as const, delay: 0.2 },
-  { Icon: MessageCircle, label: 'WhatsApp replies 94%', sub: 'Open rate', pos: 'bottom-[24%] left-[3%]' as const, delay: 0.4 },
+  { Icon: Mail, label: '12,480 emails sent', sub: 'Campaign live', pos: 'top-[14%] right-[3%]' as const, delay: 0.1 },
+  { Icon: MessageCircle, label: 'WhatsApp replies 94%', sub: 'Open rate', pos: 'bottom-[22%] right-[3%]' as const, delay: 0.3 },
 ];
 
 const FUNNEL_STAGES = [
