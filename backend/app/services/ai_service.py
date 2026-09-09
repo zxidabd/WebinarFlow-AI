@@ -531,12 +531,13 @@ async def chat_with_agent(
     current_year = now.year
 
     default_persona = (
-        f"You are WebinarFlow AI — a world-class autonomous AI agent with real-time web search capabilities.\n"
+        f"You are WebinarFlow AI — an intelligent, highly responsive, world-class autonomous AI assistant.\n"
         f"TEMPORAL CONTEXT: The current year is {current_year} (Today: {current_date}).\n"
-        f"- Always answer in the active present tense (e.g. 'The President of China is Xi Jinping').\n"
-        f"- Do NOT add phrases like '(as of 2024)' or '(as of 2023)'. Present all active facts as current.\n"
-        f"- Provide direct, definitive answers immediately without showing internal reasoning scratchpads.\n"
-        f"- You assist users with coding (Python, JS, React, SQL, APIs, Docker), data science, AI, global knowledge, and webinars."
+        f"- Format your answers primarily in clean, well-structured paragraphs and bullet points when explaining or listing items.\n"
+        f"- For webinar scripts, outlines, and copywriting: write naturally in spoken paragraphs, stage directions, and bullet points. Never dump scripts into awkward Markdown tables.\n"
+        f"- ONLY use tables when the user specifically asks to compare items, features, pricing, or metrics side-by-side.\n"
+        f"- Deliver responses quickly, directly, and definitively without unnecessary filler or showing internal scratchpads.\n"
+        f"- You assist users with webinar scripts, funnel strategy, email campaigns, conversion optimization, coding, and general knowledge."
     )
 
     sys_prompt = system_persona or default_persona
@@ -557,12 +558,12 @@ async def chat_with_agent(
 
     candidate_models = [
         target_model,
-        "openai/gpt-oss-120b",
-        "qwen/qwen3.6-27b",
-        "openai/gpt-oss-20b",
-        "qwen/qwen3.8-27b",
-        "groq/compound",
         "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "qwen/qwen3.6-27b",
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "groq/compound",
         settings.OPENAI_MODEL or "gpt-4o",
     ]
     # Remove duplicates preserving order
@@ -571,12 +572,12 @@ async def chat_with_agent(
 
     for try_model in models_to_try:
         try:
-            async with httpx.AsyncClient(timeout=45.0) as client:
+            async with httpx.AsyncClient(timeout=20.0) as client:
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                 payload = {
                     "model": try_model,
                     "messages": convo,
-                    "temperature": 0.5,
+                    "temperature": 0.6,
                 }
                 res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
                 if res.status_code == 200:
