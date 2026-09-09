@@ -65,6 +65,7 @@ class RegistrantStatus(str, enum.Enum):
     cancelled = "cancelled"
     noshow = "noshow"
     purchased = "purchased"
+    converted = "purchased"
 
 
 class MeetingProvider(str, enum.Enum):

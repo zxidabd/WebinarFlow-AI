@@ -154,14 +154,15 @@ async def list_org_registrants(
         contact_key = (reg.email or "").strip().lower()
         unique_contacts_set.add(contact_key)
 
+        reg_st = getattr(reg.status, "value", str(reg.status or "")).lower()
         actual_spent = payments_by_registrant.get(reg.id, 0.0)
-        is_buyer = actual_spent > 0 or reg.status in (RegistrantStatus.converted, "purchased", "converted")
+        is_buyer = actual_spent > 0 or reg_st in ("purchased", "converted")
         
         if is_buyer:
             active_buyers_set.add(contact_key)
             total_revenue += actual_spent
 
-        st_label = "Purchased" if is_buyer else ("Attended" if reg.status in (RegistrantStatus.attended, "attended") else "Registered")
+        st_label = "Purchased" if is_buyer else ("Attended" if reg_st in ("attended",) else "Registered")
         if status and status.lower() != "all" and st_label.lower() != status.strip().lower():
             continue
 
