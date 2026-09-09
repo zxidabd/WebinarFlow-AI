@@ -95,6 +95,24 @@ async def _run_startup_seeding() -> None:
                     );
                     """,
                     "CREATE INDEX IF NOT EXISTS ix_ai_chat_sessions_user_id ON ai_chat_sessions (user_id);",
+                    # subscription_payments
+                    """
+                    CREATE TABLE IF NOT EXISTS subscription_payments (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        plan_tier VARCHAR(20) NOT NULL,
+                        billing_cycle VARCHAR(20) NOT NULL DEFAULT 'monthly',
+                        amount NUMERIC(12,2) NOT NULL,
+                        currency VARCHAR(10) NOT NULL DEFAULT 'usd',
+                        provider VARCHAR(20) NOT NULL,
+                        provider_txn_id VARCHAR(255),
+                        provider_order_id VARCHAR(255),
+                        status VARCHAR(20) NOT NULL DEFAULT 'completed',
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                    """,
+                    "CREATE INDEX IF NOT EXISTS ix_subscription_payments_user_id ON subscription_payments (user_id);",
                 ]
                 for stmt in migration_statements:
                     try:

@@ -24,7 +24,7 @@ from app.api.deps import (
     get_current_membership_unrestricted,
     get_db,
 )
-from app.models import Membership, Organization, Payment, PaymentStatus, Registrant, User, Webinar
+from app.models import Membership, Organization, Payment, PaymentStatus, Registrant, SubscriptionPayment, User, Webinar
 from app.api.v1.endpoints.organizations import (
     PaymentKeysPayload,
     _format_payment_keys,
@@ -109,13 +109,26 @@ async def stripe_webhook(
         user_id = metadata.get("user_id")
         plan_tier = metadata.get("plan_tier", "starter")
         if user_id:
-            from app.models import User
             user_result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
             sub_user = user_result.scalar_one_or_none()
             if sub_user:
                 sub_user.subscription_status = "active"
                 sub_user.plan_tier = plan_tier
                 sub_user.trial_ends_at = None
+                # Record subscription payment
+                amount_cents = session_obj.get("amount_total", 0)
+                currency = session_obj.get("currency", "usd")
+                db.add(SubscriptionPayment(
+                    user_id=sub_user.id,
+                    plan_tier=plan_tier,
+                    billing_cycle=metadata.get("billing_cycle", "monthly"),
+                    amount=Decimal(str(amount_cents)) / 100,
+                    currency=currency.upper(),
+                    provider="stripe",
+                    provider_txn_id=session_obj.get("payment_intent"),
+                    provider_order_id=session_obj.get("id"),
+                    status="completed",
+                ))
                 await db.commit()
         return {"status": "ok"}
     
@@ -176,13 +189,26 @@ async def razorpay_webhook(
         user_id = notes.get("user_id")
         plan_tier = notes.get("plan_tier", "starter")
         if user_id:
-            from app.models import User
             user_result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
             sub_user = user_result.scalar_one_or_none()
             if sub_user:
                 sub_user.subscription_status = "active"
                 sub_user.plan_tier = plan_tier
                 sub_user.trial_ends_at = None
+                # Record subscription payment
+                amount_paise = payment_entity.get("amount", 0)
+                currency = payment_entity.get("currency", "INR")
+                db.add(SubscriptionPayment(
+                    user_id=sub_user.id,
+                    plan_tier=plan_tier,
+                    billing_cycle=notes.get("billing_cycle", "monthly"),
+                    amount=Decimal(str(amount_paise)) / 100,
+                    currency=currency.upper(),
+                    provider="razorpay",
+                    provider_txn_id=payment_entity.get("id"),
+                    provider_order_id=payment_entity.get("order_id"),
+                    status="completed",
+                ))
                 await db.commit()
         return {"status": "ok"}
         
@@ -674,6 +700,18 @@ async def verify_subscription_razorpay(
     user.subscription_status = "active"
     user.plan_tier = payload.plan_tier
     user.trial_ends_at = None
+    # Record subscription payment
+    db.add(SubscriptionPayment(
+        user_id=user.id,
+        plan_tier=payload.plan_tier,
+        billing_cycle="monthly",
+        amount=Decimal("0"),  # Will be updated by webhook with actual amount
+        currency="INR",
+        provider="razorpay",
+        provider_txn_id=payload.razorpay_payment_id,
+        provider_order_id=payload.razorpay_order_id,
+        status="completed",
+    ))
     await db.commit()
 
     return {"status": "ok", "message": f"Successfully activated {payload.plan_tier} plan!"}
@@ -728,6 +766,20 @@ async def verify_subscription_stripe(
     user.subscription_status = "active"
     user.plan_tier = plan_tier
     user.trial_ends_at = None
+    # Record subscription payment
+    amount_cents = getattr(session, "amount_total", 0) or 0
+    currency = getattr(session, "currency", "usd") or "usd"
+    db.add(SubscriptionPayment(
+        user_id=user.id,
+        plan_tier=plan_tier,
+        billing_cycle=metadata.get("billing_cycle", "monthly"),
+        amount=Decimal(str(amount_cents)) / 100,
+        currency=currency.upper(),
+        provider="stripe",
+        provider_txn_id=getattr(session, "payment_intent", None),
+        provider_order_id=session_id,
+        status="completed",
+    ))
     await db.commit()
 
     return {"status": "ok", "message": f"Successfully activated {plan_tier} plan!", "plan_tier": plan_tier}

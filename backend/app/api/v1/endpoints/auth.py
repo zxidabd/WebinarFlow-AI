@@ -388,6 +388,94 @@ async def admin_list_users(
     }
 
 
+@router.get("/admin/subscription-payments")
+async def admin_subscription_payments(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    search: str = "",
+    provider_filter: str = "",
+    plan_filter: str = "",
+):
+    """Superuser-only: list subscription payments with revenue analytics."""
+    from sqlalchemy import select, func
+    from decimal import Decimal
+    from app.models import User
+    from app.models.subscription_payment import SubscriptionPayment
+
+    creds = await _bearer(request)
+    if creds is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+    token_payload = security.decode_token(creds.credentials)
+    admin_user = (await db.execute(select(User).where(User.id == uuid.UUID(token_payload["sub"])))).scalar_one_or_none()
+    if not admin_user or not admin_user.is_super_user:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Superuser access required")
+
+    # Build query
+    query = (
+        select(SubscriptionPayment)
+        .order_by(SubscriptionPayment.created_at.desc())
+    )
+    if search:
+        # Join with User to filter by email
+        query = query.join(User, SubscriptionPayment.user_id == User.id).where(User.email.ilike(f"%{search}%"))
+    if provider_filter:
+        query = query.where(SubscriptionPayment.provider == provider_filter)
+    if plan_filter:
+        query = query.where(SubscriptionPayment.plan_tier == plan_filter)
+
+    payments = (await db.execute(query)).scalars().all()
+
+    # Revenue stats
+    total_revenue = sum(float(p.amount) for p in payments)
+    stripe_revenue = sum(float(p.amount) for p in payments if p.provider == "stripe")
+    razorpay_revenue = sum(float(p.amount) for p in payments if p.provider == "razorpay")
+    starter_revenue = sum(float(p.amount) for p in payments if p.plan_tier == "starter")
+    pro_revenue = sum(float(p.amount) for p in payments if p.plan_tier == "pro")
+    stripe_count = sum(1 for p in payments if p.provider == "stripe")
+    razorpay_count = sum(1 for p in payments if p.provider == "razorpay")
+
+    # All subscription payments (unfiltered) for total stats
+    all_payments = (await db.execute(select(SubscriptionPayment))).scalars().all()
+    all_total_revenue = sum(float(p.amount) for p in all_payments)
+    all_stripe_revenue = sum(float(p.amount) for p in all_payments if p.provider == "stripe")
+    all_razorpay_revenue = sum(float(p.amount) for p in all_payments if p.provider == "razorpay")
+    all_starter_revenue = sum(float(p.amount) for p in all_payments if p.plan_tier == "starter")
+    all_pro_revenue = sum(float(p.amount) for p in all_payments if p.plan_tier == "pro")
+
+    return {
+        "stats": {
+            "total_revenue": round(all_total_revenue, 2),
+            "total_payments": len(all_payments),
+            "stripe_revenue": round(all_stripe_revenue, 2),
+            "razorpay_revenue": round(all_razorpay_revenue, 2),
+            "starter_revenue": round(all_starter_revenue, 2),
+            "pro_revenue": round(all_pro_revenue, 2),
+            "stripe_count": sum(1 for p in all_payments if p.provider == "stripe"),
+            "razorpay_count": sum(1 for p in all_payments if p.provider == "razorpay"),
+            "starter_count": sum(1 for p in all_payments if p.plan_tier == "starter"),
+            "pro_count": sum(1 for p in all_payments if p.plan_tier == "pro"),
+        },
+        "payments": [
+            {
+                "id": str(p.id),
+                "user_id": str(p.user_id),
+                "user_email": p.user.email if p.user else "Unknown",
+                "user_name": p.user.full_name if p.user else None,
+                "plan_tier": p.plan_tier,
+                "billing_cycle": p.billing_cycle,
+                "amount": float(p.amount),
+                "currency": p.currency,
+                "provider": p.provider,
+                "provider_txn_id": p.provider_txn_id,
+                "provider_order_id": p.provider_order_id,
+                "status": p.status,
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+            }
+            for p in payments
+        ],
+    }
+
+
 # ── Temporary Admin Setup (REMOVE AFTER USE) ────────────────────────────
 @router.post("/setup-admin")
 async def setup_admin(

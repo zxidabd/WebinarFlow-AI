@@ -12,6 +12,9 @@ import {
   Check,
   X,
   ChevronDown,
+  DollarSign,
+  TrendingUp,
+  Wallet,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
@@ -42,6 +45,35 @@ interface AdminStats {
   expired: number;
 }
 
+interface SubPayment {
+  id: string;
+  user_id: string;
+  user_email: string;
+  user_name: string | null;
+  plan_tier: string;
+  billing_cycle: string;
+  amount: number;
+  currency: string;
+  provider: string;
+  provider_txn_id: string | null;
+  provider_order_id: string | null;
+  status: string;
+  created_at: string | null;
+}
+
+interface SubPaymentStats {
+  total_revenue: number;
+  total_payments: number;
+  stripe_revenue: number;
+  razorpay_revenue: number;
+  starter_revenue: number;
+  pro_revenue: number;
+  stripe_count: number;
+  razorpay_count: number;
+  starter_count: number;
+  pro_count: number;
+}
+
 export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -49,6 +81,11 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [subPayments, setSubPayments] = useState<SubPayment[]>([]);
+  const [subPaymentStats, setSubPaymentStats] = useState<SubPaymentStats | null>(null);
+  const [subPaymentSearch, setSubPaymentSearch] = useState('');
+  const [providerFilter, setProviderFilter] = useState('');
+  const [planFilter, setPlanFilter] = useState('');
   const currentUser = useAuthStore((s) => s.user);
 
   const loadData = async (search = '') => {
@@ -65,12 +102,32 @@ export default function AdminPage() {
     }
   };
 
+  const loadSubPayments = async (search = '', provider = '', plan = '') => {
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (provider) params.set('provider_filter', provider);
+      if (plan) params.set('plan_filter', plan);
+      const qs = params.toString();
+      const res = await api.get(`/auth/admin/subscription-payments${qs ? `?${qs}` : ''}`);
+      setSubPayments(res.data.payments);
+      setSubPaymentStats(res.data.stats);
+    } catch {
+      // Silently fail if endpoint not yet deployed
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadSubPayments();
   }, []);
 
   const handleSearch = () => {
     loadData(searchQuery);
+  };
+
+  const handleSubPaymentSearch = () => {
+    loadSubPayments(subPaymentSearch, providerFilter, planFilter);
   };
 
   const handleAction = async (userId: string, action: string) => {
@@ -226,6 +283,222 @@ export default function AdminPage() {
           </Card>
         </div>
       )}
+
+      {/* Subscription Revenue & Gateway Analytics */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-emerald-500" />
+              Subscription Revenue & Gateway Analytics
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Track money collected from Starter and Pro plan upgrades across Razorpay and Stripe.
+            </p>
+          </div>
+          <Button
+            onClick={() => loadSubPayments(subPaymentSearch, providerFilter, planFilter)}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2 self-start sm:self-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Refresh Revenue
+          </Button>
+        </div>
+
+        {subPaymentStats && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-emerald-500/20 bg-emerald-500/[0.02]">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+                <DollarSign className="w-4 h-4 text-emerald-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-emerald-600">
+                  ${subPaymentStats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {subPaymentStats.total_payments} total {subPaymentStats.total_payments === 1 ? 'payment' : 'payments'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-blue-500/20 bg-blue-500/[0.02]">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Stripe Gateway</CardTitle>
+                <CreditCard className="w-4 h-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">
+                  ${subPaymentStats.stripe_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {subPaymentStats.stripe_count} {subPaymentStats.stripe_count === 1 ? 'order' : 'orders'} (USD card/global)
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-amber-500/20 bg-amber-500/[0.02]">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Razorpay Gateway</CardTitle>
+                <TrendingUp className="w-4 h-4 text-amber-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-600">
+                  ₹{subPaymentStats.razorpay_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {subPaymentStats.razorpay_count} {subPaymentStats.razorpay_count === 1 ? 'order' : 'orders'} (INR / UPI / NetBanking)
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-purple-500/20 bg-purple-500/[0.02]">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Plan Distribution</CardTitle>
+                <Shield className="w-4 h-4 text-purple-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm font-semibold flex items-center justify-between">
+                  <span className="text-blue-500">Starter:</span>
+                  <span>{subPaymentStats.starter_count} (${subPaymentStats.starter_revenue})</span>
+                </div>
+                <div className="text-sm font-semibold flex items-center justify-between mt-1">
+                  <span className="text-purple-500">Pro:</span>
+                  <span>{subPaymentStats.pro_count} (${subPaymentStats.pro_revenue})</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Subscription Payment Records Table */}
+        <Card>
+          <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex-1 flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Filter payments by user email..."
+                  value={subPaymentSearch}
+                  onChange={(e) => setSubPaymentSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSubPaymentSearch()}
+                  className="pl-9"
+                />
+              </div>
+
+              <select
+                value={providerFilter}
+                onChange={(e) => {
+                  setProviderFilter(e.target.value);
+                  loadSubPayments(subPaymentSearch, e.target.value, planFilter);
+                }}
+                className="h-9 px-3 rounded-md border border-input bg-background text-xs"
+              >
+                <option value="">All Gateways</option>
+                <option value="stripe">Stripe</option>
+                <option value="razorpay">Razorpay</option>
+              </select>
+
+              <select
+                value={planFilter}
+                onChange={(e) => {
+                  setPlanFilter(e.target.value);
+                  loadSubPayments(subPaymentSearch, providerFilter, e.target.value);
+                }}
+                className="h-9 px-3 rounded-md border border-input bg-background text-xs"
+              >
+                <option value="">All Plans</option>
+                <option value="starter">Starter</option>
+                <option value="pro">Pro</option>
+              </select>
+            </div>
+
+            <Button onClick={handleSubPaymentSearch} variant="outline" size="sm">
+              Filter
+            </Button>
+          </div>
+
+          <div className="overflow-x-auto">
+            {subPayments.length > 0 ? (
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead className="text-xs text-muted-foreground uppercase bg-muted/40 border-b border-border">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">User / Subscriber</th>
+                    <th className="px-4 py-3 font-medium">Plan Tier</th>
+                    <th className="px-4 py-3 font-medium">Amount Paid</th>
+                    <th className="px-4 py-3 font-medium">Gateway</th>
+                    <th className="px-4 py-3 font-medium">Transaction / Session ID</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {subPayments.map((pmt) => (
+                    <tr key={pmt.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-foreground">{pmt.user_name || 'Subscriber'}</p>
+                        <p className="text-xs text-muted-foreground">{pmt.user_email}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          {getPlanBadge(pmt.plan_tier)}
+                          <span className="text-[10px] text-muted-foreground capitalize">({pmt.billing_cycle})</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {pmt.currency === 'INR' ? '₹' : '$'}{pmt.amount.toFixed(2)} {pmt.currency}
+                      </td>
+                      <td className="px-4 py-3">
+                        {pmt.provider === 'stripe' ? (
+                          <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">Stripe</Badge>
+                        ) : (
+                          <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">Razorpay</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs text-muted-foreground max-w-[200px] truncate block" title={pmt.provider_txn_id || pmt.provider_order_id || '—'}>
+                          {pmt.provider_txn_id || pmt.provider_order_id || '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                          {pmt.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {formatDate(pmt.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="py-12 text-center text-muted-foreground">
+                <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p className="font-medium text-sm">No subscription payments recorded yet.</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                  When users purchase Starter or Pro plans after their trial, their transaction records and amounts will show up here.
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* User Management */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <Users className="h-5 w-5 text-[#852533]" />
+            User Management & Access Controls
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Search users, manage subscription tiers, and extend trials.
+          </p>
+        </div>
+      </div>
 
       {/* Search + Table */}
       <Card>

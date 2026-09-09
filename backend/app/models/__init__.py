@@ -37,6 +37,7 @@ from app.models.payment import (
     PaymentStatus,
 )
 from app.models.ai_chat_session import AIChatSession
+from app.models.subscription_payment import SubscriptionPayment
 
 __all__ = [
     "TimestampMixin",
@@ -64,4 +65,5 @@ __all__ = [
     "PaymentProvider",
     "PaymentStatus",
     "AIChatSession",
+    "SubscriptionPayment",
 ]
