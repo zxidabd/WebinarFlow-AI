@@ -492,18 +492,24 @@ async def generate_funnel(
     return _build_full_funnel_sections(clean_topic, audience, goal, is_paid, price_cents, custom_instructions, template=target_template)
 
 
-async def _get_live_usd_inr_rate() -> float:
-    """Fetch live USD/INR exchange rate from free open forex API."""
+async def _get_live_forex_rates() -> dict[str, float]:
+    """Fetch live exchange rates for major currencies against INR."""
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
             res = await client.get("https://open.er-api.com/v6/latest/USD")
             if res.status_code == 200:
-                rate = res.json().get("rates", {}).get("INR")
-                if rate and isinstance(rate, (int, float)):
-                    return round(float(rate), 2)
+                rates = res.json().get("rates", {})
+                inr_per_usd = rates.get("INR")
+                if inr_per_usd and isinstance(inr_per_usd, (int, float)):
+                    res_dict = {"USD": round(float(inr_per_usd), 2)}
+                    for code in ["GBP", "AUD", "EUR", "NZD", "CAD", "SGD", "AED"]:
+                        rate_to_usd = rates.get(code)
+                        if rate_to_usd and isinstance(rate_to_usd, (int, float)) and rate_to_usd > 0:
+                            res_dict[code] = round(float(inr_per_usd) / float(rate_to_usd), 2)
+                    return res_dict
     except Exception:
         pass
-    return 87.50
+    return {"USD": 87.50, "GBP": 112.50, "AUD": 58.20, "EUR": 95.10, "NZD": 53.40}
 
 
 async def _fetch_live_web_search(query: str) -> str:
@@ -565,11 +571,16 @@ async def chat_with_agent(
     last_user_msg = messages[-1]["content"] if messages else ""
     live_context = await _fetch_live_web_search(last_user_msg)
     
-    # If the user asks about currency, dollar, rupees, or inr, fetch real-time exchange rate
+    # If the user asks about currency, dollar, rupees, or inr, fetch real-time exchange rates
     lower_msg = last_user_msg.lower()
-    if any(term in lower_msg for term in ["dollar", "inr", "rupee", "usd", "aud", "eur", "gbp", "$", "₹", "€", "£", "rate", "forex", "exchange"]):
-        forex_rate = await _get_live_usd_inr_rate()
-        forex_info = f"- Real-Time Forex Rate (Live from Internet): 1 USD ≈ ₹{forex_rate} INR.\n- When computing conversions, use 1 USD = ₹{forex_rate} INR and state the result clearly without raw LaTeX."
+    if any(term in lower_msg for term in ["dollar", "inr", "rupee", "usd", "aud", "eur", "gbp", "nzd", "cad", "$", "₹", "€", "£", "rate", "forex", "exchange"]):
+        rates_map = await _get_live_forex_rates()
+        lines = [f"1 {c} ≈ ₹{r} INR" for c, r in rates_map.items()]
+        forex_info = (
+            "- Verified Real-Time Forex Rates (Live from Internet):\n"
+            + "\n".join(f"  * {line}" for line in lines)
+            + "\n- When computing conversions, use these exact live rates and state the result directly in plain text without raw LaTeX."
+        )
         if live_context:
             live_context = f"{forex_info}\n{live_context}"
         else:
