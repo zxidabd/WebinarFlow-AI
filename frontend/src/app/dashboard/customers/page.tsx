@@ -31,9 +31,9 @@ export default function CustomersPage() {
       search: searchQuery || undefined,
       status: statusFilter !== 'All' ? statusFilter : undefined,
     }),
-    refetchInterval: 3000, // Live poll every 3s for immediate updates
+    refetchInterval: 8000,
     refetchOnWindowFocus: true,
-    staleTime: 0,
+    staleTime: 4000,
   });
 
   const customers = data?.items || [];
@@ -156,7 +156,7 @@ export default function CustomersPage() {
         </CardHeader>
 
         <CardContent className="p-0">
-          {isLoading ? (
+          {isLoading && !data ? (
             <div className="flex items-center justify-center py-16 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading contacts…
             </div>

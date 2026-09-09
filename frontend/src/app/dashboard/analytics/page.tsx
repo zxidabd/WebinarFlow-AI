@@ -22,9 +22,9 @@ export default function AnalyticsDashboard() {
   const { data, isLoading } = useQuery({
     queryKey: ['analytics-overview', dateRange],
     queryFn: () => getAnalyticsOverview(dateRange === 'Last 7 Days' ? '7d' : (dateRange === 'All Time' ? 'all' : '30d')),
-    refetchInterval: 3000, // Live poll every 3s
+    refetchInterval: 8000,
     refetchOnWindowFocus: true,
-    staleTime: 0,
+    staleTime: 4000,
   });
 
   const totalViews = data?.total_views ?? 0;
@@ -70,7 +70,7 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading && !data ? (
         <div className="flex items-center justify-center py-24 text-muted-foreground">
           <Loader2 className="h-8 w-8 animate-spin mr-2 text-primary" />
           <span>Loading live funnel analytics…</span>

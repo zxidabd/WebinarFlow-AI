@@ -39,7 +39,7 @@ export function PaymentsSection() {
       }
     }
     loadStats(true);
-    const interval = setInterval(() => loadStats(false), 5000);
+    const interval = setInterval(() => loadStats(false), 10000);
     return () => {
       isMounted = false;
       clearInterval(interval);
@@ -158,11 +158,11 @@ export function PaymentsSection() {
 
 export function RecentActivitySection() {
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard-recent-activity-section'],
+    queryKey: ['dashboard-customers-overview'],
     queryFn: () => listRegistrations({ limit: 10 }),
-    refetchInterval: 3000,
+    refetchInterval: 8000,
     refetchOnWindowFocus: true,
-    staleTime: 0,
+    staleTime: 4000,
   });
 
   const recentActivities = data?.recentActivities || [];

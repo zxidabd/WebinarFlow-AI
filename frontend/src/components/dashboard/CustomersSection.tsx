@@ -18,9 +18,9 @@ export function CustomersSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-customers-overview'],
     queryFn: () => listRegistrations({ limit: 10 }),
-    refetchInterval: 3000,
+    refetchInterval: 8000,
     refetchOnWindowFocus: true,
-    staleTime: 0,
+    staleTime: 4000,
   });
 
   const items = data?.items || [];

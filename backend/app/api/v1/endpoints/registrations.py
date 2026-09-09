@@ -31,10 +31,9 @@ async def list_org_registrants(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     current_user: User = Depends(get_current_active_user),
-    membership = Depends(get_current_membership),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all registrants/customers for the organizer's active organization."""
+    """List all registrants/customers for the organizer's workspace."""
     from app.models import Organization, LandingPage, WebinarActivity
 
     user_memberships = (
@@ -47,16 +46,17 @@ async def list_org_registrants(
             select(Organization.id).where(Organization.owner_user_id == current_user.id)
         )
     ).scalars().all()
-    user_org_ids = list(set(list(user_memberships) + list(owned_orgs) + ([org_id] if org_id else [])))
+    user_org_ids = list(set(list(user_memberships) + list(owned_orgs)))
 
     # 1. Fetch completed payments for this user's organizations to accurately compute spent & buyer status
+    p_conditions = [Payment.user_id == current_user.id]
+    if user_org_ids:
+        p_conditions.append(Payment.organization_id.in_(user_org_ids))
+
     payments_res = (
         await db.execute(
             select(Payment).where(
-                or_(
-                    Payment.organization_id.in_(user_org_ids) if user_org_ids else False,
-                    Payment.user_id == current_user.id,
-                ),
+                or_(*p_conditions),
                 Payment.status == PaymentStatus.completed,
             )
         )
@@ -68,18 +68,19 @@ async def list_org_registrants(
             payments_by_registrant[p.registrant_id] = payments_by_registrant.get(p.registrant_id, 0.0) + float(p.amount)
 
     # 2. Query registrants joined with webinars & landing pages
+    reg_conditions = [
+        Webinar.created_by == current_user.id,
+        LandingPage.created_by == current_user.id,
+    ]
+    if user_org_ids:
+        reg_conditions.append(Webinar.organization_id.in_(user_org_ids))
+        reg_conditions.append(LandingPage.organization_id.in_(user_org_ids))
+
     query = (
         select(Registrant, Webinar, LandingPage)
         .outerjoin(Webinar, Registrant.webinar_id == Webinar.id)
         .outerjoin(LandingPage, Registrant.landing_page_id == LandingPage.id)
-        .where(
-            or_(
-                Webinar.organization_id.in_(user_org_ids) if user_org_ids else False,
-                Webinar.created_by == current_user.id,
-                LandingPage.organization_id.in_(user_org_ids) if user_org_ids else False,
-                LandingPage.created_by == current_user.id,
-            )
-        )
+        .where(or_(*reg_conditions))
         .order_by(Registrant.created_at.desc())
     )
 
@@ -136,16 +137,15 @@ async def list_org_registrants(
 
     recent_activities = []
     try:
+        act_conditions = [Webinar.created_by == current_user.id]
+        if user_org_ids:
+            act_conditions.append(Webinar.organization_id.in_(user_org_ids))
+
         act_query = (
             select(WebinarActivity, Registrant, Webinar)
             .join(Registrant, WebinarActivity.registrant_id == Registrant.id)
             .outerjoin(Webinar, WebinarActivity.webinar_id == Webinar.id)
-            .where(
-                or_(
-                    Webinar.organization_id.in_(user_org_ids) if user_org_ids else False,
-                    Webinar.created_by == current_user.id,
-                )
-            )
+            .where(or_(*act_conditions))
             .order_by(WebinarActivity.occurred_at.desc())
             .limit(10)
         )
