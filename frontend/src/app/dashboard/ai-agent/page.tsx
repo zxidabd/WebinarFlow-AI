@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 import * as aiApi from '@/lib/ai-api';
 
 interface ChatSession {
@@ -36,21 +37,15 @@ interface ChatSession {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
-const INITIAL_SESSIONS: ChatSession[] = [
-  {
-    id: 'session-welcome',
-    title: 'Getting Started with AI Agent',
-    category: 'recent',
-    createdAt: Date.now(),
-    messages: [
-      {
-        role: 'assistant',
-        content:
-          '👋 Hello! I am your **WebinarFlow AI Agent**.\n\nI can build complete 11-section webinar funnels, write high-converting email sequences, answer technical questions, and help optimize your conversion rates.\n\nWhat would you like to create or ask today?',
-      },
-    ],
-  },
-];
+const NEW_SESSION: ChatSession = {
+  id: 'session-new',
+  title: 'New Conversation',
+  category: 'recent',
+  createdAt: Date.now(),
+  messages: [],
+};
+
+const INITIAL_SESSIONS: ChatSession[] = [];
 
 // Formatted Chat Message Renderer with Code Highlight & Copy
 function ChatMessageContent({ content }: { content: string }) {
@@ -295,9 +290,24 @@ export default function AIAgentFullPage() {
   const [isDeploying, setIsDeploying] = useState(false);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
-  // Chat State with Multiple Sessions
-  const [sessions, setSessions] = useState<ChatSession[]>(INITIAL_SESSIONS);
-  const [activeSessionId, setActiveSessionId] = useState<string>('session-welcome');
+  const { user, organization } = useAuth();
+
+  // User's Workspace title for the welcome greeting (e.g. "Judha" or workspace name)
+  const workspaceTitle =
+    organization?.name
+      ? organization.name.replace(/['’]s\s*workspace/i, '').trim()
+      : (user?.full_name || 'Creator');
+
+  const getTimeGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  // Chat State with Multiple Sessions - Starts on brand new chat whenever tab opens
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string>('session-new');
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -312,7 +322,7 @@ export default function AIAgentFullPage() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           localList = parsed;
           setSessions(parsed);
-          setActiveSessionId(parsed[0].id);
+          // Keep activeSessionId as 'session-new' so opening tabs opens a fresh chat like ChatGPT!
         }
       }
     } catch {
@@ -325,14 +335,6 @@ export default function AIAgentFullPage() {
         try {
           localStorage.setItem('webinarflow_ai_chat_sessions', JSON.stringify(synced));
         } catch {}
-
-        // If currently on default welcome session, automatically switch to user's real newest chat
-        setActiveSessionId((prev) => {
-          if (!prev || prev === 'session-welcome' || !synced.some((s) => s.id === prev)) {
-            return synced[0].id;
-          }
-          return prev;
-        });
       }
     };
 
@@ -370,7 +372,10 @@ export default function AIAgentFullPage() {
     }
   };
 
-  const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0] || INITIAL_SESSIONS[0];
+  const activeSession =
+    activeSessionId === 'session-new'
+      ? NEW_SESSION
+      : (sessions.find((s) => s.id === activeSessionId) || NEW_SESSION);
 
   useEffect(() => {
     if (activeTab === 'chat') {
@@ -379,37 +384,18 @@ export default function AIAgentFullPage() {
   }, [activeSession?.messages, activeTab]);
 
   const handleCreateNewChat = () => {
-    const newId = `session-${Date.now()}`;
-    const newChat: ChatSession = {
-      id: newId,
-      title: 'New Conversation',
-      category: 'recent',
-      createdAt: Date.now(),
-      messages: [
-        {
-          role: 'assistant',
-          content: '👋 Hi! What would you like to build, draft, or ask today?',
-        },
-      ],
-    };
-    const updated = [newChat, ...sessions];
-    saveSessions(updated, newChat);
-    setActiveSessionId(newId);
+    setActiveSessionId('session-new');
+    setChatInput('');
     setShowHistoryDrawer(false);
-    toast.success('Started a new chat session');
   };
 
   const handleDeleteChat = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (sessions.length <= 1) {
-      toast.error('Cannot delete the last remaining chat session.');
-      return;
-    }
     const updated = sessions.filter((s) => s.id !== sessionId);
     saveSessions(updated);
     aiApi.deleteChatSession(sessionId).catch(() => {});
     if (activeSessionId === sessionId) {
-      setActiveSessionId(updated[0].id);
+      setActiveSessionId('session-new');
     }
     toast.success('Chat removed from history');
   };
@@ -421,14 +407,15 @@ export default function AIAgentFullPage() {
     const userText = chatInput.trim();
     setChatInput('');
 
-    // If starting from session-welcome, upgrade to a unique timestamped session ID
-    const targetSessionId = activeSession.id === 'session-welcome' ? `session-${Date.now()}` : activeSession.id;
-    if (targetSessionId !== activeSession.id) {
+    // If starting from session-new, upgrade to a unique timestamped session ID
+    const isNew = activeSession.id === 'session-new' || activeSession.id === 'session-welcome';
+    const targetSessionId = isNew ? `session-${Date.now()}` : activeSession.id;
+    if (isNew) {
       setActiveSessionId(targetSessionId);
     }
 
     const currentTitle = activeSession.title;
-    const shouldRename = currentTitle === 'New Conversation' || currentTitle === 'Getting Started with AI Agent';
+    const shouldRename = isNew || currentTitle === 'New Conversation' || currentTitle === 'Getting Started with AI Agent';
     const newTitle = shouldRename ? userText.slice(0, 32) + (userText.length > 32 ? '...' : '') : currentTitle;
 
     let category: 'recent' | 'funnels' | 'copy' = activeSession.category;
@@ -449,12 +436,14 @@ export default function AIAgentFullPage() {
       id: targetSessionId,
       title: newTitle,
       category,
+      createdAt: isNew ? Date.now() : activeSession.createdAt,
       messages: newConvo,
     };
 
-    const updatedSessions = sessions.map((s) =>
-      s.id === activeSession.id ? updatedSessionObj : s
-    );
+    const updatedSessions = isNew
+      ? [updatedSessionObj, ...sessions.filter((s) => s.id !== 'session-new')]
+      : sessions.map((s) => (s.id === targetSessionId ? updatedSessionObj : s));
+
     saveSessions(updatedSessions, updatedSessionObj);
     setIsChatLoading(true);
 
@@ -784,75 +773,131 @@ export default function AIAgentFullPage() {
 
       {/* MODE 1: FULL-PAGE CHATGPT-STYLE AI AGENT (Zero outer scroll, 100% full screen) */}
       {activeTab === 'chat' && (
-        <div className="flex-1 flex flex-col min-h-0 relative bg-muted/20 dark:bg-[#0c0305]">
-          {/* Messages Scroll Area */}
-          <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4 max-w-4xl w-full mx-auto">
-            {activeSession.messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+        <div className="flex-1 flex flex-col min-h-0 relative bg-muted/10 dark:bg-[#0c0305]">
+          {activeSession.messages.length === 0 ? (
+            /* Welcome / New Chat Hero Screen matching user mockup */
+            <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-12 my-auto w-full max-w-3xl mx-auto animate-in fade-in duration-300">
+              {/* 3D Robot Avatar */}
+              <div className="relative mb-6">
+                <img
+                  src="/ai-robot-clean.png"
+                  alt="WebinarFlow AI+"
+                  className="w-32 sm:w-40 md:w-44 h-auto object-contain drop-shadow-xl select-none pointer-events-none"
+                />
+              </div>
+
+              {/* Greeting Heading */}
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1F1F1F] dark:text-white text-center tracking-tight">
+                {getTimeGreeting()}, {workspaceTitle}
+              </h1>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center tracking-tight mt-1.5 text-[#1F1F1F] dark:text-white">
+                How Can I{' '}
+                <span className="text-[#4F46E5] dark:text-[#818CF8]">
+                  Assist You Today?
+                </span>
+              </h2>
+
+              {/* Centered Large Pill Input Bar */}
+              <form
+                onSubmit={handleSendMessage}
+                className="w-full max-w-2xl mt-8 flex items-center gap-3 bg-white dark:bg-[#190609] border border-[#E5E7EB] dark:border-[#5a1a23]/60 rounded-2xl px-4 py-3 shadow-[0_4px_24px_rgba(0,0,0,0.06)] focus-within:shadow-[0_4px_28px_rgba(79,70,229,0.15)] focus-within:border-[#4F46E5] dark:focus-within:border-[#818CF8] transition-all"
               >
-                {msg.role === 'assistant' && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#6E1F32] text-white border border-[#551827] text-xs font-bold shadow-sm">
-                    AI
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black text-white dark:bg-white dark:text-black overflow-hidden shadow-sm">
+                  <img
+                    src="/logo.png"
+                    alt="WF"
+                    className="h-6 w-6 object-contain"
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Initiate a query or send a command to the AI..."
+                  className="flex-1 bg-transparent border-0 text-[#1F1F1F] dark:text-white text-[16px] sm:text-base placeholder:text-[#9CA3AF] focus:outline-none min-w-0"
+                  autoFocus
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isChatLoading || !chatInput.trim()}
+                  className="h-9 w-9 p-0 rounded-xl bg-[#852533] hover:bg-[#6b1e28] text-white shadow-sm shrink-0 flex items-center justify-center transition-all disabled:opacity-40"
+                >
+                  <Send className="h-4 w-4 text-white" />
+                </Button>
+              </form>
+            </div>
+          ) : (
+            <>
+              {/* Messages Scroll Area */}
+              <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4 max-w-4xl w-full mx-auto">
+                {activeSession.messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {msg.role === 'assistant' && (
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#6E1F32] text-white border border-[#551827] text-xs font-bold shadow-sm">
+                        AI
+                      </div>
+                    )}
+                    <div
+                      className={`max-w-[85%] sm:max-w-2xl rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'bg-[#852533] text-white border border-[#a63344]/40 shadow-sm font-medium'
+                          : 'bg-[#F3DDE2] text-[#1F1F1F] border border-[#E8BAC5] shadow-sm'
+                      }`}
+                    >
+                      {msg.role === 'user' ? (
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      ) : (
+                        <div className="text-[#1F1F1F]">
+                          <ChatMessageContent content={msg.content} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {isChatLoading && (
+                  <div className="flex gap-3 justify-start">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#6E1F32] text-white border border-[#551827] text-xs font-bold">
+                      AI
+                    </div>
+                    <div className="rounded-2xl bg-[#F3DDE2] border border-[#E8BAC5] px-4 py-3 text-xs text-[#1F1F1F] flex items-center gap-2 shadow-sm font-medium">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#6E1F32]" />
+                      Thinking and synthesizing response...
+                    </div>
                   </div>
                 )}
-                <div
-                  className={`max-w-[85%] sm:max-w-2xl rounded-2xl px-4 py-3 text-xs leading-relaxed ${
-                    msg.role === 'user'
-                      ? 'bg-[#852533] text-white border border-[#a63344]/40 shadow-sm font-medium'
-                      : 'bg-[#F3DDE2] text-[#1F1F1F] border border-[#E8BAC5] shadow-sm'
-                  }`}
+                <div ref={chatBottomRef} />
+              </div>
+
+              {/* ChatGPT-Style Bottom Input Bar: Pinned & 16px font to NEVER zoom on iOS Safari */}
+              <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-card/95 border-t border-border dark:bg-[#120406]/95 dark:border-[#5a1a23]/40 shrink-0">
+                <form
+                  onSubmit={handleSendMessage}
+                  className="max-w-4xl mx-auto flex items-center gap-2 bg-background border border-border focus-within:border-[#852533] dark:bg-black/70 dark:border-[#5a1a23]/60 dark:focus-within:border-[#a63344] rounded-2xl px-3 py-1.5 shadow-inner transition-all"
                 >
-                  {msg.role === 'user' ? (
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  ) : (
-                    <div className="text-[#1F1F1F]">
-                      <ChatMessageContent content={msg.content} />
-                    </div>
-                  )}
-                </div>
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Ask WebinarFlow AI anything..."
+                    className="flex-1 bg-transparent border-0 text-foreground dark:text-white text-[16px] sm:text-sm placeholder:text-muted-foreground dark:placeholder:text-gray-400 focus:outline-none focus:ring-0 py-1.5 px-1 min-w-0"
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={isChatLoading || !chatInput.trim()}
+                    className="h-9 w-9 p-0 rounded-xl bg-[#852533] hover:bg-[#6b1e28] text-white border border-[#a63344]/40 shadow-sm shrink-0 flex items-center justify-center transition-all disabled:opacity-40"
+                  >
+                    <Send className="h-4 w-4 text-white" />
+                  </Button>
+                </form>
               </div>
-            ))}
-
-            {isChatLoading && (
-              <div className="flex gap-3 justify-start">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#6E1F32] text-white border border-[#551827] text-xs font-bold">
-                  AI
-                </div>
-                <div className="rounded-2xl bg-[#F3DDE2] border border-[#E8BAC5] px-4 py-3 text-xs text-[#1F1F1F] flex items-center gap-2 shadow-sm font-medium">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#6E1F32]" />
-                  Thinking and synthesizing response...
-                </div>
-              </div>
-            )}
-            <div ref={chatBottomRef} />
-          </div>
-
-          {/* ChatGPT-Style Bottom Input Bar: Pinned & 16px font to NEVER zoom on iOS Safari */}
-          <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-card/95 border-t border-border dark:bg-[#120406]/95 dark:border-[#5a1a23]/40 shrink-0">
-            <form
-              onSubmit={handleSendMessage}
-              className="max-w-4xl mx-auto flex items-center gap-2 bg-background border border-border focus-within:border-[#852533] dark:bg-black/70 dark:border-[#5a1a23]/60 dark:focus-within:border-[#a63344] rounded-2xl px-3 py-1.5 shadow-inner transition-all"
-            >
-              {/* Note: text-[16px] is MANDATORY on mobile to completely disable iOS Safari auto-zoom */}
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask WebinarFlow AI anything..."
-                className="flex-1 bg-transparent border-0 text-foreground dark:text-white text-[16px] sm:text-sm placeholder:text-muted-foreground dark:placeholder:text-gray-400 focus:outline-none focus:ring-0 py-1.5 px-1 min-w-0"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={isChatLoading || !chatInput.trim()}
-                className="h-9 w-9 p-0 rounded-xl bg-[#852533] hover:bg-[#6b1e28] text-white border border-[#a63344]/40 shadow-sm shrink-0 flex items-center justify-center transition-all disabled:opacity-40"
-              >
-                <Send className="h-4 w-4 text-white" />
-              </Button>
-            </form>
-          </div>
+            </>
+          )}
         </div>
       )}
 
