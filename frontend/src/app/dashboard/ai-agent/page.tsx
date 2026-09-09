@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import {
   Sparkles,
   Wand2,
@@ -777,14 +778,25 @@ export default function AIAgentFullPage() {
           {activeSession.messages.length === 0 ? (
             /* Welcome / New Chat Hero Screen matching user mockup */
             <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-12 my-auto w-full max-w-3xl mx-auto animate-in fade-in duration-300">
-              {/* 3D Robot Avatar */}
-              <div className="relative mb-6">
+              {/* 3D Robot Avatar with spin entrance on new chat visit */}
+              <motion.div
+                key={activeSessionId}
+                initial={{ rotate: -180, scale: 0.7, opacity: 0 }}
+                animate={{ rotate: 0, scale: 1, opacity: 1 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 180,
+                  damping: 14,
+                  duration: 0.9,
+                }}
+                className="relative mb-5"
+              >
                 <img
-                  src="/ai-robot-clean.png"
-                  alt="WebinarFlow AI+"
-                  className="w-32 sm:w-40 md:w-44 h-auto object-contain drop-shadow-xl select-none pointer-events-none"
+                  src="/ai-robot-standing.png?v=1"
+                  alt="WebinarFlow AI"
+                  className="w-44 sm:w-52 md:w-60 h-auto object-contain drop-shadow-2xl select-none pointer-events-none"
                 />
-              </div>
+              </motion.div>
 
               {/* Greeting Heading */}
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1F1F1F] dark:text-white text-center tracking-tight">
