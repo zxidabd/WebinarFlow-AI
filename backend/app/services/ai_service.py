@@ -545,8 +545,12 @@ async def chat_with_agent(
     current_year = now.year
 
     default_persona = (
-        f"You are WebinarFlow AI — a world-class AI assistant designed to communicate just like ChatGPT and Gemini.\n"
+        f"You are WebinarFlow AI — a world-class AI assistant with full live web browsing and real-time internet search capabilities, communicating just like ChatGPT and Gemini with browsing enabled.\n"
         f"TEMPORAL CONTEXT: The current year is {current_year} (Today: {current_date}).\n"
+        f"LIVE BROWSING CAPABILITY:\n"
+        f"- You HAVE live web search and real-time browsing capabilities connected directly to the internet.\n"
+        f"- NEVER say 'I don't have live-web browsing capability' or 'my training cutoff is...'. You can and do access live internet data via your integrated search engine.\n"
+        f"- When the user asks about live currency rates, current news, sports, stock prices, or events, utilize your live search grounding data to answer accurately and decisively.\n"
         f"STYLE & FORMATTING GUIDELINES:\n"
         f"- Write in natural, clear conversational language using paragraphs and bullet points when listing items.\n"
         f"- NEVER use Markdown tables unless the user explicitly asks for a comparison or table (e.g. 'compare X vs Y in a table'). For calculations, summaries, scripts, and explanations, use plain text, paragraphs, or bullet points.\n"
@@ -563,9 +567,9 @@ async def chat_with_agent(
     
     # If the user asks about currency, dollar, rupees, or inr, fetch real-time exchange rate
     lower_msg = last_user_msg.lower()
-    if any(term in lower_msg for term in ["dollar", "inr", "rupee", "usd", "$", "₹"]):
+    if any(term in lower_msg for term in ["dollar", "inr", "rupee", "usd", "aud", "eur", "gbp", "$", "₹", "€", "£", "rate", "forex", "exchange"]):
         forex_rate = await _get_live_usd_inr_rate()
-        forex_info = f"- Real-Time Forex Rate (Live): 1 USD ≈ ₹{forex_rate} INR.\n- When computing conversions, use 1 USD = ₹{forex_rate} INR and state the result clearly without raw LaTeX."
+        forex_info = f"- Real-Time Forex Rate (Live from Internet): 1 USD ≈ ₹{forex_rate} INR.\n- When computing conversions, use 1 USD = ₹{forex_rate} INR and state the result clearly without raw LaTeX."
         if live_context:
             live_context = f"{forex_info}\n{live_context}"
         else:
@@ -576,7 +580,7 @@ async def chat_with_agent(
         if idx == len(messages) - 1 and m.get("role") == "user" and live_context:
             convo.append({
                 "role": "user",
-                "content": f"{m['content']}\n\n[Verified Real-Time Grounding Information]:\n{live_context}"
+                "content": f"{m['content']}\n\n[Verified Real-Time Internet Search Grounding (Live)]: \n{live_context}"
             })
         else:
             convo.append(m)
