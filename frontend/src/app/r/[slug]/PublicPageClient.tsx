@@ -36,6 +36,18 @@ export default function PublicPageClient({ content, webinarId, slug, isPaid, pri
     const referrer = typeof document !== 'undefined' ? document.referrer || undefined : undefined;
 
     const apiUrl = getApiUrl();
+    const rawApi = apiUrl.replace(/\/api\/v1\/?$/, '');
+
+    // Immediate background keep-warm ping to ensure backend is fully awake for registrations
+    fetch(`${rawApi}/health`, { method: 'GET', keepalive: true }).catch(() => {});
+
+    // Pre-warm on first touch/interaction with any input on the page
+    const prewarm = () => {
+      fetch(`${rawApi}/health`, { method: 'GET', keepalive: true }).catch(() => {});
+    };
+    window.addEventListener('focusin', prewarm, { once: true, passive: true });
+    window.addEventListener('pointerdown', prewarm, { once: true, passive: true });
+
     fetch(`${apiUrl}/landing-pages/public/${encodeURIComponent(slug)}/visit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
