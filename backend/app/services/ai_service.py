@@ -607,38 +607,43 @@ async def chat_with_agent(
     except Exception:
         pass
 
+    # Filter available models to exclude non-chat models (whisper audio, prompt guard, embeddings)
+    non_chat_kw = ["whisper", "guard", "audio", "embed", "orpheus-arabic", "orpheus-v1"]
+    chat_available = [m for m in available_api_models if not any(kw in m.lower() for kw in non_chat_kw)]
+
     candidate_models: list[str] = []
-    # If the caller specifically asked for a model, try it first
-    if model:
+    # If the caller specifically asked for a model and it is conversational, try it first
+    if model and not any(kw in model.lower() for kw in non_chat_kw):
         candidate_models.append(model)
 
-    # Prioritize well-known fast and high-quality active models
+    # Prioritize real conversational models active on this provider
     preferred_models = [
+        "openai/gpt-oss-120b",
+        "qwen/qwen3.6-27b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.8-27b",
+        "allam-2-7b",
         "llama-3.1-8b-instant",
         "llama-3.1-70b-versatile",
         "llama3-8b-8192",
-        "llama3-70b-8192",
         "gemma2-9b-it",
-        "mixtral-8x7b-32768",
-        "llama-3.3-70b-versatile",
     ]
     for pref in preferred_models:
-        if pref in available_api_models:
+        if pref in chat_available:
             candidate_models.append(pref)
 
-    # Add any remaining models discovered from the provider
-    for avail in available_api_models:
+    # Add any remaining conversational models discovered from the provider
+    for avail in chat_available:
         if avail not in candidate_models:
             candidate_models.append(avail)
 
     # Add standard fallback candidates
     candidate_models.extend([
+        "openai/gpt-oss-120b",
+        "qwen/qwen3.6-27b",
+        "openai/gpt-oss-20b",
         "llama-3.1-8b-instant",
-        "llama3-8b-8192",
-        "llama-3.1-70b-versatile",
-        "gemma2-9b-it",
-        "llama-3.3-70b-versatile",
-        settings.OPENAI_MODEL or "gpt-4o",
+        settings.OPENAI_MODEL or "openai/gpt-oss-120b",
     ])
     # Remove duplicates preserving order
     seen = set()
