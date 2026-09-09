@@ -13,9 +13,9 @@ const PLANS = [
   {
     tier: 'starter',
     name: 'Starter',
-    monthlyPrice: 9.99,
-    yearlyPrice: 79.9,
-    monthlyPriceEquivalent: 6.66,
+    monthlyPrice: 4.99,
+    yearlyPrice: 39.99,
+    monthlyPriceEquivalent: 3.33,
     description: 'For creators and hosts starting out with webinar funnels.',
     features: [
       '3 Webinars',
@@ -29,9 +29,9 @@ const PLANS = [
   {
     tier: 'pro',
     name: 'Pro',
-    monthlyPrice: 19.99,
-    yearlyPrice: 179.9,
-    monthlyPriceEquivalent: 15.0,
+    monthlyPrice: 9.99,
+    yearlyPrice: 79.99,
+    monthlyPriceEquivalent: 6.66,
     popular: true,
     description: 'For growing creators scaling webinars and conversions.',
     features: [

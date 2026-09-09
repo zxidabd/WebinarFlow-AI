@@ -18,7 +18,7 @@ interface Plan {
 const PLANS: Plan[] = [
   {
     name: 'Starter',
-    price: { monthly: 9.99, yearly: 6.66 },
+    price: { monthly: 4.99, yearly: 3.33 },
     description: 'For solo creators running their first webinar funnels.',
     features: [
       '3 Webinars',
@@ -32,7 +32,7 @@ const PLANS: Plan[] = [
   },
   {
     name: 'Pro',
-    price: { monthly: 19.99, yearly: 15.00 },
+    price: { monthly: 9.99, yearly: 6.66 },
     description: 'For creators scaling webinars and maximizing conversions.',
     features: [
       '7 Webinars',

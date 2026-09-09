@@ -404,13 +404,13 @@ class SubscribeRequest(BaseModel):
     billing_cycle: str = "monthly"  # "monthly" or "yearly"
 
 PLAN_PRICES = {
-    "starter": {"monthly": 999, "yearly": 7990},   # cents
-    "pro": {"monthly": 1999, "yearly": 17990},      # cents
+    "starter": {"monthly": 499, "yearly": 3999},    # cents ($4.99 / $39.99)
+    "pro": {"monthly": 999, "yearly": 7999},        # cents ($9.99 / $79.99)
 }
 
 PLAN_PRICES_INR = {
-    "starter": {"monthly": 84900, "yearly": 679900},  # paise (approx conversion)
-    "pro": {"monthly": 169900, "yearly": 1529900},     # paise
+    "starter": {"monthly": 39900, "yearly": 319900},   # paise (₹399 / ₹3,199)
+    "pro": {"monthly": 79900, "yearly": 639900},       # paise (₹799 / ₹6,399)
 }
 
 @router.post("/subscribe/stripe")
@@ -715,7 +715,7 @@ async def verify_subscription_razorpay(
 
     if actual_amount <= Decimal("0"):
         prices = PLAN_PRICES_INR.get(payload.plan_tier, {})
-        paise = prices.get(billing_cycle, prices.get("monthly", 169900 if payload.plan_tier == "pro" else 84900))
+        paise = prices.get(billing_cycle, prices.get("monthly", 79900 if payload.plan_tier == "pro" else 39900))
         actual_amount = Decimal(str(paise)) / 100
 
     # Record subscription payment with real amount
