@@ -595,68 +595,30 @@ async def chat_with_agent(
             })
         else:
             convo.append(m)
-
-    # Dynamically discover active models from the provider endpoint
-    available_api_models: list[str] = []
-    try:
-        async with httpx.AsyncClient(timeout=4.0) as m_client:
-            m_headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-            m_res = await m_client.get(f"{base_url}/models", headers=m_headers)
-            if m_res.status_code == 200:
-                available_api_models = [m["id"] for m in m_res.json().get("data", []) if "id" in m]
-    except Exception:
-        pass
-
-    # Filter available models to exclude non-chat models (whisper audio, prompt guard, embeddings)
-    non_chat_kw = ["whisper", "guard", "audio", "embed", "orpheus-arabic", "orpheus-v1"]
-    chat_available = [m for m in available_api_models if not any(kw in m.lower() for kw in non_chat_kw)]
-
-    candidate_models: list[str] = []
-    # If the caller specifically asked for a model and it is conversational, try it first
-    if model and not any(kw in model.lower() for kw in non_chat_kw):
-        candidate_models.append(model)
-
-    # Prioritize real conversational models active on this provider
-    preferred_models = [
+    # Simple, fast model cascade — only models verified to exist on this Groq key
+    # Primary: openai/gpt-oss-120b (best quality, does coding + general knowledge + everything)
+    # Fallbacks: other verified models on this key
+    models_to_try = [
+        model or "openai/gpt-oss-120b",   # User's choice or primary
         "openai/gpt-oss-120b",
         "qwen/qwen3.6-27b",
         "openai/gpt-oss-20b",
         "qwen/qwen3.8-27b",
         "allam-2-7b",
-        "llama-3.1-8b-instant",
-        "llama-3.1-70b-versatile",
-        "llama3-8b-8192",
-        "gemma2-9b-it",
     ]
-    for pref in preferred_models:
-        if pref in chat_available:
-            candidate_models.append(pref)
-
-    # Add any remaining conversational models discovered from the provider
-    for avail in chat_available:
-        if avail not in candidate_models:
-            candidate_models.append(avail)
-
-    # Add standard fallback candidates
-    candidate_models.extend([
-        "openai/gpt-oss-120b",
-        "qwen/qwen3.6-27b",
-        "openai/gpt-oss-20b",
-        "llama-3.1-8b-instant",
-        settings.OPENAI_MODEL or "openai/gpt-oss-120b",
-    ])
     # Remove duplicates preserving order
-    seen = set()
-    models_to_try = [m for m in candidate_models if m and not (m in seen or seen.add(m))]
+    seen: set[str] = set()
+    models_to_try = [m for m in models_to_try if m and not (m in seen or seen.add(m))]
 
     for try_model in models_to_try:
         try:
-            async with httpx.AsyncClient(timeout=20.0) as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                 payload = {
                     "model": try_model,
                     "messages": convo,
                     "temperature": 0.6,
+                    "max_tokens": 4096,
                 }
                 res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
                 if res.status_code == 200:

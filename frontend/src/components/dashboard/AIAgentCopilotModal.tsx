@@ -423,12 +423,18 @@ export function AIAgentCopilotModal({ isOpen, onClose }: AIAgentCopilotModalProp
         model: selectedModel,
       });
       setChatMessages([...newConvo, { role: 'assistant', content: res.reply }]);
-    } catch {
+    } catch (err: any) {
+      console.error('Copilot Chat Error:', err);
+      const errorMsg = err?.response?.status === 402
+        ? 'Your free trial has expired. Please upgrade to continue.'
+        : err?.response?.status === 403
+        ? 'You have reached your AI chat limit this month.'
+        : 'Sorry, there was a temporary issue. Please try again in a moment.';
       setChatMessages([
         ...newConvo,
         {
           role: 'assistant',
-          content: 'I have analyzed your request. Click "1-Click Funnel Generator" or ask any technical question!',
+          content: errorMsg,
         },
       ]);
     } finally {

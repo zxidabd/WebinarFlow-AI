@@ -18,7 +18,7 @@ export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 30000,
+  timeout: 45000,
 });
 
 let bootstrapped = false;

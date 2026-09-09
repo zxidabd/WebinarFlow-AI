@@ -477,12 +477,18 @@ export default function AIAgentFullPage() {
         s.id === targetSessionId ? completedSessionObj : s
       );
       saveSessions(withAssistantReply, completedSessionObj);
-    } catch {
+    } catch (err: any) {
+      console.error('AI Chat Error:', err);
+      const errorMsg = err?.response?.status === 402
+        ? 'Your free trial has expired. Please upgrade your plan to continue using the AI Agent.'
+        : err?.response?.status === 403
+        ? 'You have reached your AI chat limit for this month. Please upgrade your plan.'
+        : 'Sorry, I encountered a temporary issue connecting to the AI engine. Please try again in a moment.';
       const fallbackConvo: Array<{ role: 'user' | 'assistant'; content: string }> = [
         ...newConvo,
         {
           role: 'assistant',
-          content: 'I have analyzed your request. You can configure your campaign in the "Funnel Builder" tab or ask any follow-up question!',
+          content: errorMsg,
         },
       ];
       const fallbackSessionObj: ChatSession = {
