@@ -53,12 +53,40 @@ class SyncSessionsRequest(BaseModel):
 
 @router.get("/status")
 async def get_ai_status():
-    """Check AI integration status."""
+    """Check AI integration status and verify live connection."""
+    import httpx
+    base_url = settings.OPENAI_BASE_URL.rstrip("/") if settings.OPENAI_BASE_URL else "https://api.groq.com/openai/v1"
+    api_key = settings.OPENAI_API_KEY
+    test_result = "not_tested"
+    test_error = None
+    
+    try:
+        async with httpx.AsyncClient(timeout=6.0) as client:
+            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": "hi"}],
+                "max_tokens": 5,
+            }
+            res = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
+            if res.status_code == 200:
+                test_result = "connected_ok"
+            else:
+                test_result = f"http_{res.status_code}"
+                test_error = res.text[:200]
+    except Exception as exc:
+        test_result = "exception"
+        test_error = str(exc)
+
     return {
         "status": "ready",
         "provider": settings.AI_PROVIDER,
         "model": settings.OPENAI_MODEL,
         "base_url": settings.OPENAI_BASE_URL,
+        "has_api_key": bool(api_key and len(api_key) > 5),
+        "key_prefix": api_key[:8] if api_key else "",
+        "live_test": test_result,
+        "live_error": test_error,
     }
 
 
