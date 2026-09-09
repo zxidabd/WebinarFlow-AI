@@ -778,25 +778,27 @@ export default function AIAgentFullPage() {
           {activeSession.messages.length === 0 ? (
             /* Welcome / New Chat Hero Screen matching user mockup */
             <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-12 my-auto w-full max-w-3xl mx-auto animate-in fade-in duration-300">
-              {/* 3D Robot Avatar with spin entrance on new chat visit */}
-              <motion.div
-                key={activeSessionId}
-                initial={{ rotate: -180, scale: 0.7, opacity: 0 }}
-                animate={{ rotate: 0, scale: 1, opacity: 1 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 180,
-                  damping: 14,
-                  duration: 0.9,
-                }}
-                className="relative mb-5"
-              >
-                <img
-                  src="/ai-robot-standing.png?v=1"
-                  alt="WebinarFlow AI"
-                  className="w-44 sm:w-52 md:w-60 h-auto object-contain drop-shadow-2xl select-none pointer-events-none"
-                />
-              </motion.div>
+              {/* 3D Robot Avatar: starts front, smoothly rotates 180° to back, reverses 180° to front, and stops completely */}
+              <div style={{ perspective: 1200 }} className="relative mb-4">
+                <motion.div
+                  key={activeSessionId}
+                  initial={{ rotateY: 0 }}
+                  animate={{ rotateY: [0, 180, 0] }}
+                  transition={{
+                    duration: 1.8,
+                    times: [0, 0.5, 1],
+                    ease: [0.42, 0, 0.58, 1],
+                    repeat: 0,
+                  }}
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
+                  <img
+                    src="/ai-robot-standing.png?v=2"
+                    alt="WebinarFlow AI"
+                    className="w-36 sm:w-44 md:w-48 h-auto object-contain drop-shadow-2xl select-none pointer-events-none"
+                  />
+                </motion.div>
+              </div>
 
               {/* Greeting Heading */}
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1F1F1F] dark:text-white text-center tracking-tight">
