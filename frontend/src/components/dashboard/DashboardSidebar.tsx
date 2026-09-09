@@ -104,9 +104,6 @@ export function DashboardSidebar() {
         })}
       </nav>
 
-      <div className="border-t border-border p-4 text-xs text-muted-foreground">
-        <p className="px-2 font-medium">Phase 2 — AI Funnel Workspace</p>
-      </div>
     </aside>
   );
 }
