@@ -701,4 +701,58 @@ async def list_registrations(
     )
 
 
+@router.delete("/{landing_page_id}/registrations/{registrant_id}")
+async def delete_landing_page_registration(
+    landing_page_id: uuid.UUID,
+    registrant_id: uuid.UUID,
+    current_user: User = Depends(get_current_active_user),
+    membership = Depends(get_current_membership),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete a registration for a landing page."""
+    lp = (
+        await db.execute(
+            select(LandingPage).where(
+                LandingPage.id == landing_page_id,
+                LandingPage.organization_id == membership.organization_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if lp is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Landing page not found")
+
+    from app.models import Registrant, Webinar
+
+    registrant = (
+        await db.execute(
+            select(Registrant).where(
+                Registrant.id == registrant_id,
+                Registrant.landing_page_id == landing_page_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not registrant:
+        registrant = (
+            await db.execute(
+                select(Registrant).where(
+                    Registrant.id == registrant_id,
+                    Registrant.webinar_id == lp.webinar_id,
+                )
+            )
+        ).scalar_one_or_none()
+    if not registrant:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Registrant not found")
+
+    if registrant.webinar_id:
+        webinar = (
+            await db.execute(select(Webinar).where(Webinar.id == registrant.webinar_id))
+        ).scalar_one_or_none()
+        if webinar and getattr(webinar, "registration_count", 0):
+            webinar.registration_count = max(0, (webinar.registration_count or 1) - 1)
+
+    await db.delete(registrant)
+    await db.commit()
+    return {"status": "ok", "message": "Registrant deleted successfully"}
+
+
 __all__ = ["router"]

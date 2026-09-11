@@ -181,8 +181,16 @@ export async function getLandingPageStats(id: string): Promise<LandingPageStats>
   return data;
 }
 
-export async function deleteRegistrant(id: string): Promise<void> {
-  await api.delete(`${REGISTRANT_PREFIX}/${id}`);
+export async function deleteRegistrant(id: string, landingPageId?: string): Promise<void> {
+  try {
+    await api.delete(`${REGISTRANT_PREFIX}/${id}`);
+  } catch (err: any) {
+    if (landingPageId && err?.response?.status === 404) {
+      await api.delete(`${LANDING_PAGE_PREFIX}/${landingPageId}/registrations/${id}`);
+    } else {
+      throw err;
+    }
+  }
 }
 
 export interface RegistrationsResponse {

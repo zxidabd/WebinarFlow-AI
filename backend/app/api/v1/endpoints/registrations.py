@@ -232,6 +232,65 @@ async def list_org_registrants(
     }
 
 
+@router.delete("/{registrant_id}")
+async def delete_registrant(
+    registrant_id: uuid.UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete a registrant / registration record. Org-scoped or superuser."""
+    reg_result = await db.execute(
+        select(Registrant).where(Registrant.id == registrant_id)
+    )
+    registrant = reg_result.scalar_one_or_none()
+    if not registrant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registrant not found")
+
+    is_super = getattr(current_user, "is_super_user", False)
+    if not is_super:
+        user_memberships = (
+            await db.execute(
+                select(Membership.organization_id).where(Membership.user_id == current_user.id)
+            )
+        ).scalars().all()
+        owned_orgs = (
+            await db.execute(
+                select(Organization.id).where(Organization.owner_user_id == current_user.id)
+            )
+        ).scalars().all()
+        user_org_ids = set(list(user_memberships) + list(owned_orgs))
+
+        has_access = False
+        if registrant.webinar_id:
+            webinar = (
+                await db.execute(select(Webinar).where(Webinar.id == registrant.webinar_id))
+            ).scalar_one_or_none()
+            if webinar and (webinar.created_by == current_user.id or webinar.organization_id in user_org_ids):
+                has_access = True
+
+        if not has_access and registrant.landing_page_id:
+            lp = (
+                await db.execute(select(LandingPage).where(LandingPage.id == registrant.landing_page_id))
+            ).scalar_one_or_none()
+            if lp and (lp.created_by == current_user.id or lp.organization_id in user_org_ids):
+                has_access = True
+
+        if not has_access:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    # If linked to webinar, decrement registration counter
+    if registrant.webinar_id:
+        webinar = (
+            await db.execute(select(Webinar).where(Webinar.id == registrant.webinar_id))
+        ).scalar_one_or_none()
+        if webinar and getattr(webinar, "registration_count", 0):
+            webinar.registration_count = max(0, (webinar.registration_count or 1) - 1)
+
+    await db.delete(registrant)
+    await db.commit()
+    return {"status": "ok", "message": "Registrant deleted successfully"}
+
+
 def _get_client_ip(request: Request) -> str | None:
     """Best-effort client IP extraction (respecting common proxy headers)."""
     if not request:

@@ -41,13 +41,14 @@ export default function RegistrationsPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => api.deleteRegistrant(id),
+    mutationFn: (id: string) => api.deleteRegistrant(id, params.lpId),
     onSuccess: () => {
       toast.success('Registration deleted');
       qc.invalidateQueries({ queryKey: ['registrations', params.lpId] });
+      qc.invalidateQueries({ queryKey: ['dashboard-customers'] });
       setSelected(null);
     },
-    onError: (e: any) => toast.error(e?.response?.data?.detail || 'Failed to delete'),
+    onError: (e: any) => toast.error(e?.response?.data?.detail || 'Failed to delete registration'),
   });
 
   const items = data?.items ?? [];

@@ -3,7 +3,8 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   Search,
   Filter,
@@ -17,13 +18,24 @@ import {
   ShoppingBag,
   Loader2,
   Inbox,
+  Trash2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { listRegistrations } from '@/lib/webinar-api';
+import { listRegistrations, deleteRegistrant } from '@/lib/webinar-api';
 
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
+  const qc = useQueryClient();
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteRegistrant(id),
+    onSuccess: () => {
+      toast.success('Registration deleted');
+      qc.invalidateQueries({ queryKey: ['dashboard-customers'] });
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.detail || 'Failed to delete registration'),
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-customers', searchQuery, statusFilter],
@@ -243,13 +255,27 @@ export default function CustomersPage() {
                       <td className="px-6 py-4 font-semibold text-foreground">${c.totalSpent.toFixed(2)}</td>
                       <td className="px-6 py-4 text-xs text-muted-foreground">{c.dateJoined}</td>
                       <td className="px-6 py-4 text-right">
-                        <a
-                          href={`mailto:${c.email}`}
-                          className="p-1.5 inline-block rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                          title={`Email ${c.email}`}
-                        >
-                          <Mail className="h-4 w-4" />
-                        </a>
+                        <div className="flex items-center justify-end gap-1">
+                          <a
+                            href={`mailto:${c.email}`}
+                            className="p-1.5 inline-block rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            title={`Email ${c.email}`}
+                          >
+                            <Mail className="h-4 w-4" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`Delete registration for ${c.name || c.email}?`)) {
+                                deleteMut.mutate(c.id);
+                              }
+                            }}
+                            className="p-1.5 inline-block rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                            title={`Delete ${c.name || c.email}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
