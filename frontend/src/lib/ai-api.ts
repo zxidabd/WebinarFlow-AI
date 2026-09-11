@@ -67,6 +67,91 @@ function slugify(text: string): string {
     .slice(0, 50);
 }
 
+function resolveColorTheme(text: string): {
+  requestedColor: string | null;
+  isDark: boolean;
+  bgMain: string;
+  bgAlt: string;
+  bgNav: string;
+  bgFooter: string;
+  heroGrad: string;
+} {
+  const lower = text.toLowerCase();
+
+  // 1. Check for explicit hex code (e.g. #000, #000000, #0f172a, #1e1b4b, #ffffff)
+  const hexMatch = text.match(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/);
+  if (hexMatch) {
+    const rawHex = hexMatch[0].toLowerCase();
+    const cleanHex =
+      rawHex.length === 4
+        ? `#${rawHex[1]}${rawHex[1]}${rawHex[2]}${rawHex[2]}${rawHex[3]}${rawHex[3]}`
+        : rawHex;
+
+    const r = parseInt(cleanHex.slice(1, 3), 16);
+    const g = parseInt(cleanHex.slice(3, 5), 16);
+    const b = parseInt(cleanHex.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const isDark = luminance < 0.45;
+
+    return {
+      requestedColor: cleanHex,
+      isDark,
+      bgMain: cleanHex,
+      bgAlt: cleanHex === '#000000' ? '#09090b' : cleanHex,
+      bgNav: cleanHex,
+      bgFooter: isDark ? cleanHex : '#0f172a',
+      heroGrad: isDark ? 'from-zinc-950 via-neutral-900 to-black' : 'from-indigo-900 via-purple-900 to-slate-950',
+    };
+  }
+
+  // 2. Named color mapping
+  const namedMap: Record<string, [string, boolean]> = {
+    navy: ['#0a192f', true],
+    midnight: ['#0f172a', true],
+    black: ['#000000', true],
+    dark: ['#09090b', true],
+    purple: ['#1e1b4b', true],
+    violet: ['#2e1065', true],
+    indigo: ['#1e1b4b', true],
+    emerald: ['#064e3b', true],
+    green: ['#064e3b', true],
+    slate: ['#0f172a', true],
+    zinc: ['#18181b', true],
+    charcoal: ['#18181b', true],
+    maroon: ['#450a0a', true],
+    crimson: ['#450a0a', true],
+    blue: ['#1e3a8a', true],
+    white: ['#ffffff', false],
+    cream: ['#fafaf9', false],
+    light: ['#ffffff', false],
+  };
+
+  for (const [name, [hexCode, isDark]] of Object.entries(namedMap)) {
+    const regex = new RegExp(`\\b${name}\\b`, 'i');
+    if (regex.test(lower)) {
+      return {
+        requestedColor: hexCode,
+        isDark,
+        bgMain: hexCode,
+        bgAlt: hexCode === '#000000' ? '#09090b' : isDark ? hexCode : '#f8fafc',
+        bgNav: hexCode,
+        bgFooter: isDark ? hexCode : '#0f172a',
+        heroGrad: isDark ? 'from-zinc-950 via-neutral-900 to-black' : 'from-indigo-900 via-purple-900 to-slate-950',
+      };
+    }
+  }
+
+  return {
+    requestedColor: null,
+    isDark: false,
+    bgMain: '#ffffff',
+    bgAlt: '#f8fafc',
+    bgNav: '#ffffff',
+    bgFooter: '#0f172a',
+    heroGrad: 'from-indigo-900 via-purple-900 to-slate-950',
+  };
+}
+
 export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFunnel {
   const cleanTopic = payload.topic.trim() || 'AI Automation Masterclass';
   const aud = (payload.target_audience || '').trim() || 'Students & Tech Enthusiasts';
@@ -78,16 +163,13 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
   const priceStr = isPaid ? `$${(priceCents / 100).toFixed(2)}` : 'Free';
   const slug = `${slugify(cleanTopic)}-${Math.random().toString(36).substring(2, 7)}`;
 
-  const combinedText = `${cleanTopic} ${aud} ${payload.goal || ''} ${extra}`.toLowerCase();
-  const isBlackOrDark = ['black', 'dark', 'night', '#000', '#000000', '#0a0a0a', '#09090b', 'dark mode', 'dark theme'].some(
-    (k) => combinedText.includes(k)
-  );
-
-  const bgMain = isBlackOrDark ? '#000000' : '#ffffff';
-  const bgAlt = isBlackOrDark ? '#09090b' : '#f8fafc';
-  const bgNav = isBlackOrDark ? '#000000' : '#ffffff';
-  const bgFooter = isBlackOrDark ? '#000000' : '#0f172a';
-  const heroGrad = isBlackOrDark ? 'from-zinc-950 via-neutral-900 to-black' : 'from-indigo-900 via-purple-900 to-slate-950';
+  const colorTheme = resolveColorTheme(`${cleanTopic} ${extra}`);
+  const bgMain = colorTheme.bgMain;
+  const bgAlt = colorTheme.bgAlt;
+  const bgNav = colorTheme.bgNav;
+  const bgFooter = colorTheme.bgFooter;
+  const heroGrad = colorTheme.heroGrad;
+  const isBlackOrDark = colorTheme.isDark;
 
   let speakerName = 'Alex Vance';
   const spMatch = extra.match(/(?:speaker|host|instructor)\s*:\s*([^,\n.]+)/i);

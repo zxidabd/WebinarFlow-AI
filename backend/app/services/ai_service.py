@@ -26,6 +26,84 @@ def _slugify(text: str) -> str:
     return re.sub(r"^-+|-+$", "", s)[:60]
 
 
+def _resolve_color_theme(text: str) -> dict[str, Any]:
+    """
+    Detects any user-specified color (hex code or color name) from input text.
+    Computes luminance to adapt dark/light text contrast automatically.
+    """
+    lower = text.lower()
+    
+    # 1. Check for explicit hex code (e.g. #000, #000000, #0f172a, #1e1b4b, #ffffff)
+    hex_match = re.search(r"#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b", text)
+    if hex_match:
+        raw_hex = hex_match.group(0).lower()
+        if len(raw_hex) == 4:
+            clean_hex = f"#{raw_hex[1]*2}{raw_hex[2]*2}{raw_hex[3]*2}"
+        else:
+            clean_hex = raw_hex
+            
+        r = int(clean_hex[1:3], 16)
+        g = int(clean_hex[3:5], 16)
+        b = int(clean_hex[5:7], 16)
+        luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+        is_dark = luminance < 0.45
+        
+        return {
+            "requested_color": clean_hex,
+            "is_dark": is_dark,
+            "bg_main": clean_hex,
+            "bg_alt": clean_hex if clean_hex != "#000000" else "#09090b",
+            "bg_nav": clean_hex,
+            "bg_footer": clean_hex if is_dark else "#0f172a",
+            "hero_grad": "from-zinc-950 via-neutral-900 to-black" if is_dark else "from-indigo-900 via-purple-900 to-slate-950",
+        }
+
+    # 2. Check for named colors
+    named_map = {
+        "navy": ("#0a192f", True),
+        "midnight": ("#0f172a", True),
+        "black": ("#000000", True),
+        "dark": ("#09090b", True),
+        "purple": ("#1e1b4b", True),
+        "violet": ("#2e1065", True),
+        "indigo": ("#1e1b4b", True),
+        "emerald": ("#064e3b", True),
+        "green": ("#064e3b", True),
+        "slate": ("#0f172a", True),
+        "zinc": ("#18181b", True),
+        "charcoal": ("#18181b", True),
+        "maroon": ("#450a0a", True),
+        "crimson": ("#450a0a", True),
+        "blue": ("#1e3a8a", True),
+        "white": ("#ffffff", False),
+        "cream": ("#fafaf9", False),
+        "light": ("#ffffff", False),
+    }
+
+    for name, (hex_code, is_dark) in named_map.items():
+        if re.search(rf"\b{name}\b", lower):
+            return {
+                "requested_color": hex_code,
+                "is_dark": is_dark,
+                "bg_main": hex_code,
+                "bg_alt": "#09090b" if hex_code == "#000000" else (hex_code if is_dark else "#f8fafc"),
+                "bg_nav": hex_code,
+                "bg_footer": hex_code if is_dark else "#0f172a",
+                "hero_grad": "from-zinc-950 via-neutral-900 to-black" if is_dark else "from-indigo-900 via-purple-900 to-slate-950",
+            }
+
+    # 3. Default fallback (clean light mode)
+    return {
+        "requested_color": None,
+        "is_dark": False,
+        "bg_main": "#ffffff",
+        "bg_alt": "#f8fafc",
+        "bg_nav": "#ffffff",
+        "bg_footer": "#0f172a",
+        "hero_grad": "from-indigo-900 via-purple-900 to-slate-950",
+    }
+
+
 def _build_full_funnel_sections(
     topic: str,
     audience: str | None,
@@ -41,23 +119,12 @@ def _build_full_funnel_sections(
     price_str = f"${(price_cents / 100):.2f}" if is_paid else "Free"
 
     combined_text = f"{clean_topic} {aud} {goal or ''} {extra}".lower()
-    is_black_or_dark = any(
-        k in combined_text
-        for k in ["black", "dark", "night", "#000", "#000000", "#0a0a0a", "#09090b", "dark mode", "dark theme"]
-    )
-
-    if is_black_or_dark:
-        bg_main = "#000000"
-        bg_alt = "#09090b"
-        bg_nav = "#000000"
-        bg_footer = "#000000"
-        hero_grad = "from-zinc-950 via-neutral-900 to-black"
-    else:
-        bg_main = "#ffffff"
-        bg_alt = "#f8fafc"
-        bg_nav = "#ffffff"
-        bg_footer = "#0f172a"
-        hero_grad = "from-indigo-900 via-purple-900 to-slate-950"
+    color_info = _resolve_color_theme(f"{clean_topic} {extra}")
+    bg_main = color_info["bg_main"]
+    bg_alt = color_info["bg_alt"]
+    bg_nav = color_info["bg_nav"]
+    bg_footer = color_info["bg_footer"]
+    hero_grad = color_info["hero_grad"]
 
     title = f"{clean_topic}: The Complete Blueprint"
     slug = f"{_slugify(clean_topic)}-{uuid.uuid4().hex[:6]}"
@@ -467,18 +534,22 @@ async def generate_funnel(
     api_key = settings.OPENAI_API_KEY or "omniroute"
 
     combined_text = f"{clean_topic} {audience} {goal or ''} {custom_instructions or ''}".lower()
-    is_black_or_dark = any(
-        k in combined_text
-        for k in ["black", "dark", "night", "#000", "#000000", "#0a0a0a", "#09090b", "dark mode", "dark theme"]
-    )
+    color_info = _resolve_color_theme(f"{clean_topic} {custom_instructions or ''}")
+    is_custom_color = color_info["requested_color"] is not None
+    is_dark = color_info["is_dark"]
+    bg_primary = color_info["bg_main"]
+    bg_secondary = color_info["bg_alt"]
+    hero_gradient = color_info["hero_grad"]
 
-    color_rule = (
-        "CRITICAL COLOR REQUIREMENT: The user specifically requested a BLACK or DARK background. "
-        "You MUST set 'bg_color': '#000000' (or '#09090b') on EVERY single section inside 'sections'. "
-        "Set 'background_gradient': 'from-zinc-950 via-neutral-900 to-black'. All text and card components will render in dark mode."
-        if is_black_or_dark
-        else "Use clean, professional background colors matching the selected template style."
-    )
+    if is_custom_color:
+        color_rule = (
+            f"CRITICAL COLOR REQUIREMENT: The user specifically requested background color '{bg_primary}' "
+            f"({'DARK THEME' if is_dark else 'LIGHT THEME'}). "
+            f"You MUST set 'bg_color': '{bg_primary}' on EVERY single section inside 'sections'. "
+            f"Set 'background_gradient': '{hero_gradient}'. All text and card components will render in {'dark' if is_dark else 'light'} mode with proper contrast."
+        )
+    else:
+        color_rule = "Use clean, professional background colors matching the selected template style."
 
     system_prompt = (
         "You are an expert Webinar Funnel Strategist inside WebinarFlow AI.\n"
@@ -551,7 +622,7 @@ async def generate_funnel(
         f"- Primary Goal: {goal or 'High Lead Generation & Sales Conversion'}\n"
         f"- Pricing: {'Paid ($' + str(price_cents/100) + ')' if is_paid else 'Free Opt-in'}\n"
         f"- Extra Custom Instructions: {custom_instructions or 'None'}\n"
-        f"{'- Requested Background Theme: BLACK / DARK MODE (#000000)' if is_black_or_dark else ''}"
+        f"{f'- Requested Background Color: {bg_primary} (' + ('Dark Theme' if is_dark else 'Light Theme') + ')' if is_custom_color else ''}"
     )
 
     funnel_models = [
@@ -603,16 +674,16 @@ async def generate_funnel(
                         if "sections" not in lp and "sections" in parsed:
                             lp["sections"] = parsed["sections"]
 
-                        # Enforce black / dark background if requested by user
-                        if is_black_or_dark and "sections" in lp and isinstance(lp["sections"], dict):
+                        # Enforce user's requested color on sections
+                        if is_custom_color and "sections" in lp and isinstance(lp["sections"], dict):
                             for sec_key, sec_val in lp["sections"].items():
                                 if isinstance(sec_val, dict):
-                                    sec_val["bg_color"] = "#000000"
+                                    sec_val["bg_color"] = bg_primary
                                     if sec_key in ("hero", "hero_v2"):
-                                        sec_val["background_color"] = "#000000"
-                                        sec_val["background_gradient"] = "from-zinc-950 via-neutral-900 to-black"
+                                        sec_val["background_color"] = bg_primary
+                                        sec_val["background_gradient"] = hero_gradient
                                     elif sec_key in ("stats", "agenda", "faq", "countdown", "outcomes", "certificate", "schedule", "contact"):
-                                        sec_val["bg_color"] = "#09090b"
+                                        sec_val["bg_color"] = bg_secondary
 
                         if "sections" in lp and len(lp["sections"]) >= 4:
                             return parsed
