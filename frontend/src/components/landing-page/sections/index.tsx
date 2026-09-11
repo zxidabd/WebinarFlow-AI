@@ -811,6 +811,15 @@ export function HeroV2Section({ data, isPaid, priceCents, currency }: { data: an
           {data.time && <span>🕒 {data.time}</span>}
           {data.registrations && <span>👥 {data.registrations}</span>}
         </div>
+        {(data.hero_image || data.course_image || data.image_url || data.image) && (
+          <div className="mt-8 mx-auto max-w-2xl overflow-hidden rounded-2xl border border-white/20 shadow-2xl backdrop-blur-sm bg-black/20">
+            <img
+              src={data.hero_image || data.course_image || data.image_url || data.image}
+              alt={data.headline || 'Hero preview'}
+              className="w-full h-auto object-cover max-h-[440px]"
+            />
+          </div>
+        )}
         <div className="mt-8">
           <a
             href={data.cta_link || '#register'}
