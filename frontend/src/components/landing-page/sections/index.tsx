@@ -36,6 +36,80 @@ export function getBgStyle(data: any, fallbackClass: string = 'bg-white') {
   return { className: bg, style: {} };
 }
 
+export function isDarkBg(data: any, fallbackBg: string = '#ffffff'): boolean {
+  if (!data || typeof data !== 'object') return false;
+  const rawBg = data.bg_color || data.background_color || data.background_gradient || fallbackBg;
+  if (!rawBg || typeof rawBg !== 'string') return false;
+  const bg = rawBg.trim().toLowerCase();
+
+  // Known dark tokens / hex codes
+  if (
+    bg === '#000' ||
+    bg === '#000000' ||
+    bg === '#0a0a0a' ||
+    bg === '#09090b' ||
+    bg === '#111827' ||
+    bg === '#0f172a' ||
+    bg === '#18181b' ||
+    bg === '#1e293b' ||
+    bg === 'black' ||
+    bg === '#121215' ||
+    bg === '#1a1a1a' ||
+    bg === '#1b1b22' ||
+    bg === '#222222' ||
+    bg.includes('slate-950') ||
+    bg.includes('zinc-950') ||
+    bg.includes('neutral-950') ||
+    bg.includes('gray-950') ||
+    bg.includes('black')
+  ) {
+    return true;
+  }
+
+  // Hex luminance calculation
+  if (bg.startsWith('#')) {
+    const hex = bg.slice(1);
+    let r = 255, g = 255, b = 255;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    }
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness < 135;
+  }
+
+  // RGB luminance calculation
+  if (bg.startsWith('rgb')) {
+    const matches = bg.match(/\d+/g);
+    if (matches && matches.length >= 3) {
+      const r = parseInt(matches[0], 10);
+      const g = parseInt(matches[1], 10);
+      const b = parseInt(matches[2], 10);
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      return brightness < 135;
+    }
+  }
+
+  if (
+    bg.includes('gray-900') ||
+    bg.includes('slate-900') ||
+    bg.includes('zinc-900') ||
+    bg.includes('neutral-900') ||
+    bg.includes('indigo-950') ||
+    bg.includes('purple-950') ||
+    bg.includes('blue-950')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function scrollToRegister(e?: React.MouseEvent, ctaLink?: string) {
   if (ctaLink && ctaLink.startsWith('http')) {
     return; // Allow external navigation if explicitly set
@@ -121,18 +195,19 @@ export function HeroSection({ data, isPaid, priceCents, currency }: { data: any;
 export function SpeakersSection({ data }: { data: any }) {
   if (!data.speakers?.length) return null;
   const bg = getBgStyle(data, 'bg-white');
+  const dark = isDarkBg(data, '#ffffff');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl text-center">
-        <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
+        <h2 className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
         <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {data.speakers.map((s: any, i: number) => (
-            <div key={i} className="rounded-2xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition-shadow bg-white">
+            <div key={i} className={`rounded-2xl border p-6 text-center shadow-sm hover:shadow-md transition-shadow ${dark ? 'bg-[#121215] border-white/10 text-white' : 'bg-white border-gray-100 text-gray-900'}`}>
               <img src={s.avatar || '/placeholder-avatar.svg'} alt={s.name} className="mx-auto h-20 w-20 rounded-full object-cover" />
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">{s.name}</h3>
-              <p className="text-sm text-gray-500">{s.title}</p>
-              {s.company && <p className="text-xs text-gray-400">{s.company}</p>}
-              <p className="mt-3 text-sm text-gray-600">{s.bio}</p>
+              <h3 className={`mt-4 text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{s.name}</h3>
+              <p className={`text-sm ${dark ? 'text-indigo-400' : 'text-gray-500'}`}>{s.title}</p>
+              {s.company && <p className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-400'}`}>{s.company}</p>}
+              <p className={`mt-3 text-sm ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{s.bio}</p>
             </div>
           ))}
         </div>
@@ -146,14 +221,15 @@ export function SpeakersSection({ data }: { data: any }) {
 export function StatsSection({ data }: { data: any }) {
   if (!data.stats?.length) return null;
   const bg = getBgStyle(data, 'bg-gray-50');
+  const dark = isDarkBg(data, '#f8fafc');
   return (
     <section className={`px-6 py-12 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {data.stats.map((s: any, i: number) => (
             <div key={i} className="text-center">
-              <div className="text-3xl font-bold text-indigo-600 md:text-4xl">{s.value}</div>
-              <div className="mt-1 text-sm text-gray-500">{s.label}</div>
+              <div className={`text-3xl font-bold md:text-4xl ${dark ? 'text-indigo-400' : 'text-indigo-600'}`}>{s.value}</div>
+              <div className={`mt-1 text-sm ${dark ? 'text-gray-300' : 'text-gray-500'}`}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -167,13 +243,14 @@ export function StatsSection({ data }: { data: any }) {
 export function LogosSection({ data }: { data: any }) {
   if (!data.logos?.length && !data.title) return null;
   const bg = getBgStyle(data, 'bg-white');
+  const dark = isDarkBg(data, '#ffffff');
   return (
     <section className={`px-6 py-12 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl text-center">
-        {data.title && <p className="mb-6 text-sm font-medium uppercase tracking-wider text-gray-400">{data.title}</p>}
-        <div className="flex flex-wrap items-center justify-center gap-8 opacity-50">
+        {data.title && <p className={`mb-6 text-sm font-medium uppercase tracking-wider ${dark ? 'text-gray-400' : 'text-gray-400'}`}>{data.title}</p>}
+        <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
           {data.logos?.map((l: any, i: number) => (
-            <img key={i} src={l.src} alt={l.alt || ''} className="h-8" />
+            <img key={i} src={l.src} alt={l.alt || ''} className={`h-8 ${dark ? 'brightness-0 invert opacity-75' : ''}`} />
           ))}
         </div>
       </div>
@@ -186,19 +263,20 @@ export function LogosSection({ data }: { data: any }) {
 export function BenefitsSection({ data }: { data: any }) {
   if (!data.benefits?.length) return null;
   const bg = getBgStyle(data, 'bg-white');
+  const dark = isDarkBg(data, '#ffffff');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
-          {data.subtitle && <p className="mt-2 text-gray-500">{data.subtitle}</p>}
+          <h2 className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
+          {data.subtitle && <p className={`mt-2 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{data.subtitle}</p>}
         </div>
         <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {data.benefits.map((b: any, i: number) => (
-            <div key={i} className="rounded-xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition-shadow bg-white">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 text-xl">{b.icon?.charAt(0) || '○'}</div>
-              <h3 className="mt-4 font-semibold text-gray-900">{b.title}</h3>
-              <p className="mt-2 text-sm text-gray-500">{b.description}</p>
+            <div key={i} className={`rounded-xl border p-6 text-center shadow-sm hover:shadow-md transition-shadow ${dark ? 'bg-[#121215] border-white/10' : 'bg-white border-gray-100'}`}>
+              <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-lg text-xl ${dark ? 'bg-indigo-950/80 text-indigo-400 border border-indigo-800/40' : 'bg-indigo-100 text-indigo-600'}`}>{b.icon?.charAt(0) || '○'}</div>
+              <h3 className={`mt-4 font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{b.title}</h3>
+              <p className={`mt-2 text-sm ${dark ? 'text-gray-300' : 'text-gray-500'}`}>{b.description}</p>
             </div>
           ))}
         </div>
@@ -212,18 +290,19 @@ export function BenefitsSection({ data }: { data: any }) {
 export function AgendaSection({ data }: { data: any }) {
   if (!data.items?.length) return null;
   const bg = getBgStyle(data, 'bg-gray-50');
+  const dark = isDarkBg(data, '#f8fafc');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-3xl">
-        <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
+        <h2 className={`text-center text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
         <div className="mt-8 space-y-4">
           {data.items.map((item: any, i: number) => (
-            <div key={i} className="flex items-start gap-4 rounded-xl bg-white p-5 shadow-sm">
-              <div className="whitespace-nowrap rounded-lg bg-indigo-100 px-3 py-1 text-sm font-semibold text-indigo-700">{item.time}</div>
+            <div key={i} className={`flex items-start gap-4 rounded-xl p-5 shadow-sm ${dark ? 'bg-[#121215] border border-white/10' : 'bg-white'}`}>
+              <div className={`whitespace-nowrap rounded-lg px-3 py-1 text-sm font-semibold ${dark ? 'bg-indigo-900/60 text-indigo-300 border border-indigo-500/30' : 'bg-indigo-100 text-indigo-700'}`}>{item.time}</div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900">{item.title}</h4>
-                {item.description && <p className="text-sm text-gray-500">{item.description}</p>}
-                {item.speaker && <p className="text-xs text-gray-400">{item.speaker}</p>}
+                <h4 className={`font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{item.title}</h4>
+                {item.description && <p className={`text-sm ${dark ? 'text-gray-300' : 'text-gray-500'}`}>{item.description}</p>}
+                {item.speaker && <p className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-400'}`}>{item.speaker}</p>}
               </div>
             </div>
           ))}
@@ -238,20 +317,21 @@ export function AgendaSection({ data }: { data: any }) {
 export function TestimonialsSection({ data }: { data: any }) {
   if (!data.testimonials?.length) return null;
   const bg = getBgStyle(data, 'bg-white');
+  const dark = isDarkBg(data, '#ffffff');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
-        <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
+        <h2 className={`text-center text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {data.testimonials.map((t: any, i: number) => (
-            <div key={i} className="rounded-xl border border-gray-100 p-6 shadow-sm bg-white">
+            <div key={i} className={`rounded-xl border p-6 shadow-sm ${dark ? 'bg-[#121215] border-white/10' : 'bg-white border-gray-100'}`}>
               <div className="flex text-yellow-400 text-sm">{t.rating && '★'.repeat(Number(t.rating))}</div>
-              <p className="mt-3 text-sm italic text-gray-600">{'“'}{t.quote}{'”'}</p>
+              <p className={`mt-3 text-sm italic ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{'“'}{t.quote}{'”'}</p>
               <div className="mt-4 flex items-center gap-3">
                 {t.avatar && <img src={t.avatar} alt={t.name} className="h-10 w-10 rounded-full object-cover" />}
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{t.name}</p>
-                  {t.title && <p className="text-xs text-gray-400">{t.title}</p>}
+                  <p className={`text-sm font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{t.name}</p>
+                  {t.title && <p className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-400'}`}>{t.title}</p>}
                 </div>
               </div>
             </div>
@@ -268,18 +348,19 @@ export function FAQSection({ data }: { data: any }) {
   const [open, setOpen] = useState<number | null>(null);
   if (!data.items?.length) return null;
   const bg = getBgStyle(data, 'bg-gray-50');
+  const dark = isDarkBg(data, '#f8fafc');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-3xl">
-        <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
+        <h2 className={`text-center text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
         <div className="mt-8 space-y-3">
           {data.items.map((item: any, i: number) => (
-            <div key={i} className="rounded-xl bg-white shadow-sm">
+            <div key={i} className={`rounded-xl shadow-sm ${dark ? 'bg-[#121215] border border-white/10' : 'bg-white'}`}>
               <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between px-6 py-4 text-left">
-                <span className="font-medium text-gray-900">{item.question}</span>
+                <span className={`font-medium ${dark ? 'text-white' : 'text-gray-900'}`}>{item.question}</span>
                 <span className={`text-gray-400 transition-transform ${open === i ? 'rotate-180' : ''}`}>▼</span>
               </button>
-              {open === i && <div className="px-6 pb-4 text-sm text-gray-600">{item.answer}</div>}
+              {open === i && <div className={`px-6 pb-4 text-sm ${dark ? 'text-gray-300 border-t border-white/10 pt-3' : 'text-gray-600'}`}>{item.answer}</div>}
             </div>
           ))}
         </div>
@@ -406,13 +487,14 @@ export function RegisterSection({
   }
 
   const priceFormatted = isPaid && priceCents && priceCents > 0 ? formatPrice(priceCents, currency || 'usd') : null;
+  const dark = isDarkBg(data, '#ffffff');
 
   return (
     <section id="register" className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-md">
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
+        <div className={`rounded-2xl border p-8 shadow-lg ${dark ? 'border-white/10 bg-[#121215] text-white shadow-2xl' : 'border-gray-200 bg-white'}`}>
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-900">{data.title || 'Register Now'}</h3>
+            <h3 className={`text-xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title || 'Register Now'}</h3>
             {priceFormatted && (
               <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-300">
                 🎟️ {priceFormatted}
@@ -433,7 +515,7 @@ export function RegisterSection({
               placeholder="Your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none bg-white text-black"
+              className={`w-full rounded-xl border px-4 py-3 text-sm focus:outline-none ${dark ? 'bg-[#1a1a22] border-white/15 text-white placeholder:text-gray-400 focus:border-indigo-400' : 'bg-white border-gray-200 text-black focus:border-indigo-500'}`}
             />
             {data.collect_name !== 'false' && (
               <input
@@ -441,14 +523,14 @@ export function RegisterSection({
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none bg-white text-black"
+                className={`w-full rounded-xl border px-4 py-3 text-sm focus:outline-none ${dark ? 'bg-[#1a1a22] border-white/15 text-white placeholder:text-gray-400 focus:border-indigo-400' : 'bg-white border-gray-200 text-black focus:border-indigo-500'}`}
               />
             )}
             {data.collect_company === 'true' && (
               <input
                 type="text"
                 placeholder="Company"
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none bg-white text-black"
+                className={`w-full rounded-xl border px-4 py-3 text-sm focus:outline-none ${dark ? 'bg-[#1a1a22] border-white/15 text-white placeholder:text-gray-400 focus:border-indigo-400' : 'bg-white border-gray-200 text-black focus:border-indigo-500'}`}
               />
             )}
 
@@ -481,6 +563,7 @@ export function RegisterSection({
 
 export function FooterSection({ data }: { data: any }) {
   const bg = getBgStyle(data, 'bg-white');
+  const dark = isDarkBg(data, '#0f172a');
   const rawLinks = data?.links;
   const linksList: string[] = Array.isArray(rawLinks)
     ? rawLinks
@@ -489,13 +572,13 @@ export function FooterSection({ data }: { data: any }) {
     : [];
 
   return (
-    <footer className={`border-t border-gray-100 px-6 py-8 text-center text-sm text-gray-400 ${bg.className}`} style={bg.style}>
+    <footer className={`border-t px-6 py-8 text-center text-sm text-gray-400 ${dark ? 'border-white/10' : 'border-gray-100'} ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
         <p>{data?.text || '© 2026 WebinarFlow AI. All rights reserved.'}</p>
         {linksList.length > 0 && (
           <div className="mt-2 flex justify-center gap-4">
             {linksList.map((link: string, i: number) => (
-              <a key={i} href="#" className="hover:text-gray-600 transition-colors">{link}</a>
+              <a key={i} href="#" className={`transition-colors ${dark ? 'hover:text-white text-gray-400' : 'hover:text-gray-600 text-gray-400'}`}>{link}</a>
             ))}
           </div>
         )}
@@ -509,17 +592,18 @@ export function FooterSection({ data }: { data: any }) {
 export function InstructorSection({ data }: { data: any }) {
   if (!data?.name) return null;
   const bg = getBgStyle(data, 'bg-white');
+  const dark = isDarkBg(data, '#ffffff');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-4xl">
-        <h2 className="text-center text-3xl font-bold text-gray-900">{data.title}</h2>
+        <h2 className={`text-center text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
         <div className="mt-10 flex flex-col items-center gap-6 md:flex-row">
           <img src={data.avatar || '/placeholder-avatar.svg'} alt={data.name} className="h-32 w-32 rounded-full object-cover shadow-lg" />
           <div>
-            <h3 className="text-xl font-bold text-gray-900">{data.name}</h3>
-            <p className="text-sm text-indigo-600">{data.title_role}</p>
-            <p className="mt-3 text-sm text-gray-600">{data.bio}</p>
-            {data.credentials && <p className="mt-2 text-xs text-gray-400">{data.credentials}</p>}
+            <h3 className={`text-xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.name}</h3>
+            <p className={`text-sm ${dark ? 'text-indigo-400' : 'text-indigo-600'}`}>{data.title_role}</p>
+            <p className={`mt-3 text-sm ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{data.bio}</p>
+            {data.credentials && <p className={`mt-2 text-xs ${dark ? 'text-gray-400' : 'text-gray-400'}`}>{data.credentials}</p>}
           </div>
         </div>
       </div>
@@ -532,19 +616,20 @@ export function InstructorSection({ data }: { data: any }) {
 export function OutcomesSection({ data }: { data: any }) {
   if (!data?.outcomes?.length) return null;
   const bg = getBgStyle(data, 'bg-gray-50');
+  const dark = isDarkBg(data, '#f8fafc');
   const outcomes = Array.isArray(data.outcomes) ? data.outcomes : [];
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-4xl">
-        <h2 className="text-center text-3xl font-bold text-gray-900">{data.title || 'What You Will Learn'}</h2>
+        <h2 className={`text-center text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title || 'What You Will Learn'}</h2>
         <ul className="mt-8 grid gap-4 md:grid-cols-2">
           {outcomes.map((o: any, i: number) => {
             const text = typeof o === 'string' ? o : o?.text || '';
             if (!text) return null;
             return (
-              <li key={i} className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm">
-                <span className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-xs text-purple-700">✓</span>
-                <span className="text-sm text-gray-700">{text}</span>
+              <li key={i} className={`flex items-start gap-3 rounded-xl p-4 shadow-sm ${dark ? 'bg-[#121215] border border-white/10' : 'bg-white'}`}>
+                <span className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full text-xs ${dark ? 'bg-purple-950/80 text-purple-300 border border-purple-800/40' : 'bg-purple-100 text-purple-700'}`}>✓</span>
+                <span className={`text-sm ${dark ? 'text-gray-200' : 'text-gray-700'}`}>{text}</span>
               </li>
             );
           })}
@@ -559,19 +644,20 @@ export function OutcomesSection({ data }: { data: any }) {
 export function CurriculumSection({ data }: { data: any }) {
   if (!data.modules?.length) return null;
   const bg = getBgStyle(data, 'bg-white');
+  const dark = isDarkBg(data, '#ffffff');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-4xl">
-        <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
-        {data.subtitle && <p className="mt-2 text-gray-500">{data.subtitle}</p>}
+        <h2 className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
+        {data.subtitle && <p className={`mt-2 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{data.subtitle}</p>}
         <div className="mt-8 space-y-3">
           {data.modules.map((m: any, i: number) => (
-            <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow bg-white">
+            <div key={i} className={`flex items-center justify-between rounded-xl border p-5 shadow-sm hover:shadow-md transition-shadow ${dark ? 'bg-[#121215] border-white/10' : 'bg-white border-gray-100'}`}>
               <div>
-                <h4 className="font-semibold text-gray-900">{m.title}</h4>
-                <p className="text-sm text-gray-500">{m.lessons} · {m.duration}</p>
+                <h4 className={`font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{m.title}</h4>
+                <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{m.lessons} · {m.duration}</p>
               </div>
-              <span className="text-gray-300">→</span>
+              <span className={dark ? 'text-gray-500' : 'text-gray-300'}>→</span>
             </div>
           ))}
         </div>
@@ -585,11 +671,12 @@ export function CurriculumSection({ data }: { data: any }) {
 export function CertificateSection({ data }: { data: any }) {
   if (!data.title) return null;
   const bg = getBgStyle(data, 'bg-gray-50');
+  const dark = isDarkBg(data, '#f8fafc');
   return (
     <section className={`px-6 py-16 text-center ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-3xl">
-        <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
-        <p className="mt-2 text-gray-500">{data.description}</p>
+        <h2 className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
+        <p className={`mt-2 ${dark ? 'text-gray-300' : 'text-gray-500'}`}>{data.description}</p>
         {data.image && <img src={data.image} alt="Certificate" className="mx-auto mt-8 max-w-md rounded-xl shadow-lg" />}
       </div>
     </section>
@@ -601,18 +688,19 @@ export function CertificateSection({ data }: { data: any }) {
 export function ScheduleSection({ data }: { data: any }) {
   if (!data.items?.length) return null;
   const bg = getBgStyle(data, 'bg-gray-50');
+  const dark = isDarkBg(data, '#f8fafc');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-4xl">
-        <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
-        {data.date && <p className="mt-1 text-gray-500">{data.date}</p>}
+        <h2 className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
+        {data.date && <p className={`mt-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{data.date}</p>}
         <div className="mt-8 space-y-3">
           {data.items.map((item: any, i: number) => (
-            <div key={i} className="flex items-start gap-4 rounded-xl bg-white p-5 shadow-sm">
-              <div className="whitespace-nowrap rounded-lg bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">{item.time}</div>
+            <div key={i} className={`flex items-start gap-4 rounded-xl p-5 shadow-sm ${dark ? 'bg-[#121215] border border-white/10' : 'bg-white'}`}>
+              <div className={`whitespace-nowrap rounded-lg px-3 py-1 text-sm font-semibold ${dark ? 'bg-blue-950/80 text-blue-300 border border-blue-800/40' : 'bg-blue-100 text-blue-700'}`}>{item.time}</div>
               <div>
-                <h4 className="font-semibold text-gray-900">{item.title}</h4>
-                {item.speaker && <p className="text-xs text-gray-400">By: {item.speaker}</p>}
+                <h4 className={`font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{item.title}</h4>
+                {item.speaker && <p className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-400'}`}>By: {item.speaker}</p>}
               </div>
             </div>
           ))}
@@ -627,17 +715,18 @@ export function ScheduleSection({ data }: { data: any }) {
 export function CaseStudySection({ data }: { data: any }) {
   if (!data.studies?.length) return null;
   const bg = getBgStyle(data, 'bg-white');
+  const dark = isDarkBg(data, '#ffffff');
   return (
     <section className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
-        <h2 className="text-3xl font-bold text-gray-900">{data.title}</h2>
+        <h2 className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title}</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {data.studies.map((s: any, i: number) => (
-            <div key={i} className="rounded-xl border border-gray-100 p-6 shadow-sm bg-white">
-              <div className="text-2xl font-bold text-blue-600">{s.metric}</div>
-              <p className="mt-2 text-sm italic text-gray-600">{'“'}{s.quote}{'”'}</p>
-              <p className="mt-3 text-sm font-semibold text-gray-900">{s.company}</p>
-              {s.industry && <p className="text-xs text-gray-400">{s.industry}</p>}
+            <div key={i} className={`rounded-xl border p-6 shadow-sm ${dark ? 'bg-[#121215] border-white/10' : 'bg-white border-gray-100'}`}>
+              <div className={`text-2xl font-bold ${dark ? 'text-blue-400' : 'text-blue-600'}`}>{s.metric}</div>
+              <p className={`mt-2 text-sm italic ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{'“'}{s.quote}{'”'}</p>
+              <p className={`mt-3 text-sm font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{s.company}</p>
+              {s.industry && <p className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-400'}`}>{s.industry}</p>}
             </div>
           ))}
         </div>
@@ -659,14 +748,15 @@ export function NavbarSection({ data, isPaid, priceCents, currency }: { data: an
   const priceDisplay = isPaid && priceCents && priceCents > 0 ? formatPriceHelper(priceCents, currency) : null;
   const ctaText = priceDisplay ? `Buy Ticket (${priceDisplay})` : (data?.cta_text || 'Register');
   const bg = getBgStyle(data, 'bg-white/95');
+  const dark = isDarkBg(data, '#ffffff');
 
   return (
-    <nav className={`sticky top-0 z-50 border-b border-gray-100 backdrop-blur-sm ${bg.className}`} style={bg.style}>
+    <nav className={`sticky top-0 z-50 border-b backdrop-blur-sm ${dark ? 'border-white/10' : 'border-gray-100'} ${bg.className}`} style={bg.style}>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a href="#" className="text-xl font-bold text-gray-900">{lg}</a>
+        <a href="#" className={`text-xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{lg}</a>
         <div className="hidden md:flex items-center gap-6">
           {items.map((lk: string, i: number) => (
-            <a key={i} href={`#${lk.replace(/\s+/g,'').toLowerCase()}`} className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">{lk}</a>
+            <a key={i} href={`#${lk.replace(/\s+/g,'').toLowerCase()}`} className={`text-sm transition-colors ${dark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-indigo-600'}`}>{lk}</a>
           ))}
           {priceDisplay && (
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
@@ -740,17 +830,18 @@ export function HeroV2Section({ data, isPaid, priceCents, currency }: { data: an
 export function SpeakersV2Section({ data }: { data: any }) {
   if (!data.speakers?.length) return null;
   const bg = getBgStyle(data, 'bg-white');
+  const dark = isDarkBg(data, '#ffffff');
   return (
     <section id="speaker" className={`px-6 py-16 ${bg.className}`} style={bg.style}>
       <div className="mx-auto max-w-6xl">
-        <h2 className="text-center text-3xl font-bold text-gray-900">{data.title || 'Meet the Speaker'}</h2>
+        <h2 className={`text-center text-3xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title || 'Meet the Speaker'}</h2>
         <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {data.speakers.map((s: any, i: number) => (
-            <div key={i} className="rounded-2xl border border-gray-100 p-8 text-center shadow-sm hover:shadow-md transition-shadow bg-white">
-              <img src={s.avatar || '/placeholder-avatar.svg'} alt={s.name} className="mx-auto h-24 w-24 rounded-full object-cover ring-4 ring-gray-50" />
-              <h3 className="mt-4 text-xl font-bold text-gray-900">{s.name}</h3>
-              <p className="text-sm text-indigo-600">{s.title_role || s.title}</p>
-              <p className="mt-3 text-sm text-gray-600">{s.bio}</p>
+            <div key={i} className={`rounded-2xl border p-8 text-center shadow-sm hover:shadow-md transition-shadow ${dark ? 'bg-[#121215] border-white/10 text-white' : 'bg-white border-gray-100'}`}>
+              <img src={s.avatar || '/placeholder-avatar.svg'} alt={s.name} className={`mx-auto h-24 w-24 rounded-full object-cover ring-4 ${dark ? 'ring-white/10' : 'ring-gray-50'}`} />
+              <h3 className={`mt-4 text-xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{s.name}</h3>
+              <p className={`text-sm ${dark ? 'text-indigo-400' : 'text-indigo-600'}`}>{s.title_role || s.title}</p>
+              <p className={`mt-3 text-sm ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{s.bio}</p>
               {(s.twitter || s.linkedin || s.website) && (
                 <div className="mt-4 flex justify-center gap-4">
                   {s.twitter && <a href={s.twitter} className="text-gray-400 hover:text-blue-500 text-lg" target="_blank">𝕏</a>}
@@ -827,28 +918,30 @@ export function StickyRegisterSection({
     }
   };
 
+  const dark = isDarkBg(data, '#ffffff');
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white shadow-2xl md:sticky md:bottom-4 md:ml-auto md:w-80 md:rounded-2xl md:border md:shadow-xl md:float-right md:mr-6">
+    <div className={`fixed bottom-0 left-0 right-0 z-40 border-t shadow-2xl md:sticky md:bottom-4 md:ml-auto md:w-80 md:rounded-2xl md:border md:shadow-xl md:float-right md:mr-6 ${dark ? 'bg-[#121215] border-white/10 text-white' : 'bg-white border-gray-200'}`}>
       <div className="p-4 md:p-5">
         {submitted ? (
-          <div className="text-center p-3 bg-green-50 rounded-xl border border-green-200">
-            <p className="text-green-700 font-semibold text-sm">
+          <div className={`text-center p-3 rounded-xl border ${dark ? 'bg-emerald-950/50 border-emerald-800/50 text-emerald-300' : 'bg-green-50 border-green-200 text-green-700'}`}>
+            <p className="font-semibold text-sm">
               {data.success_message || "✓ You're registered!"}
             </p>
-            <p className="text-[11px] text-green-600 mt-0.5">Check email for details.</p>
+            <p className="text-[11px] opacity-80 mt-0.5">Check email for details.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-900">{data.title || 'Register Now'}</p>
+              <p className={`text-sm font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{data.title || 'Register Now'}</p>
               {isPaid && priceCents && priceCents > 0 && (
                 <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
                   {formatPrice(priceCents, currency || 'usd')}
                 </span>
               )}
             </div>
-            <input type="text" placeholder="Your Name" value={name} onChange={e => setName(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none bg-white text-black" />
-            <input type="email" required placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none bg-white text-black" />
+            <input type="text" placeholder="Your Name" value={name} onChange={e => setName(e.target.value)} className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${dark ? 'bg-[#1a1a22] border-white/15 text-white placeholder:text-gray-400 focus:border-indigo-400' : 'bg-white border-gray-200 text-black focus:border-indigo-500'}`} />
+            <input type="email" required placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${dark ? 'bg-[#1a1a22] border-white/15 text-white placeholder:text-gray-400 focus:border-indigo-400' : 'bg-white border-gray-200 text-black focus:border-indigo-500'}`} />
             {isPaid && priceCents && priceCents > 0 ? (
               <button type="submit" disabled={loading} className="w-full rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 transition-colors disabled:opacity-60">
                 {loading ? 'Processing…' : `Register Now — ${formatPrice(priceCents, currency || 'usd')}`}

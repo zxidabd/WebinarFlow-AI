@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import * as aiApi from '@/lib/ai-api';
+import LandingPageRenderer from '@/components/landing-page/LandingPageRenderer';
 
 interface ChatSession {
   id: string;
@@ -321,6 +322,7 @@ export default function AIAgentFullPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedFunnel, setGeneratedFunnel] = useState<aiApi.GeneratedFunnel | null>(null);
   const [previewSection, setPreviewSection] = useState<'landing' | 'emails' | 'outline'>('landing');
+  const [landingViewMode, setLandingViewMode] = useState<'full' | 'breakdown'>('full');
   const [isDeploying, setIsDeploying] = useState(false);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1171,49 +1173,179 @@ export default function AIAgentFullPage() {
 
                   <div className="flex-1 overflow-y-auto p-5 space-y-4">
                     {previewSection === 'landing' && (
-                      <div className="space-y-4 text-xs">
-                        <div className="p-4 rounded-xl bg-muted/40 border border-border dark:bg-black/50 dark:border-[#5a1a23]/40 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Hero Section</span>
-                            <Badge variant="outline" className="border-border text-foreground dark:border-[#a63344]/40 dark:text-[#f8d7dc] text-[10px]">
-                              {generatedFunnel.landing_page.sections?.navbar?.logo_text || 'WebinarFlow'}
-                            </Badge>
+                      <div className="space-y-4">
+                        {/* View Mode Switcher */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 bg-muted/30 dark:bg-black/40 p-2 rounded-xl border border-border dark:border-[#5a1a23]/30">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-semibold text-muted-foreground dark:text-gray-400">View:</span>
+                            <div className="flex bg-muted/60 dark:bg-black/60 rounded-lg p-0.5 border border-border dark:border-white/10">
+                              <button
+                                type="button"
+                                onClick={() => setLandingViewMode('full')}
+                                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                                  landingViewMode === 'full'
+                                    ? 'bg-[#852533] text-white shadow-xs'
+                                    : 'text-muted-foreground hover:text-foreground dark:text-gray-400'
+                                }`}
+                              >
+                                🖥️ Full Live Page
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setLandingViewMode('breakdown')}
+                                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                                  landingViewMode === 'breakdown'
+                                    ? 'bg-[#852533] text-white shadow-xs'
+                                    : 'text-muted-foreground hover:text-foreground dark:text-gray-400'
+                                }`}
+                              >
+                                📋 All Sections Breakdown
+                              </button>
+                            </div>
                           </div>
-                          <h3 className="text-base font-bold text-foreground dark:text-white leading-snug">
-                            {generatedFunnel.landing_page.hero_headline}
-                          </h3>
-                          <p className="text-muted-foreground dark:text-gray-300 text-xs leading-relaxed">
-                            {generatedFunnel.landing_page.hero_subheadline}
-                          </p>
-                          <div className="pt-2 flex flex-wrap items-center gap-2">
-                            <Badge className="bg-[#852533] hover:bg-[#852533] text-white px-3 py-1 text-xs">
-                              {generatedFunnel.landing_page.cta_text}
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground dark:text-gray-400">
+                            <Badge variant="outline" className="border-border dark:border-white/10 text-[10px] uppercase">
+                              {selectedTemplate}
                             </Badge>
+                            {generatedFunnel.landing_page.sections?.navbar?.bg_color === '#000000' && (
+                              <Badge className="bg-zinc-900 text-zinc-100 border border-zinc-700 text-[10px]">
+                                🌙 Black Background
+                              </Badge>
+                            )}
                           </div>
                         </div>
 
-                        {generatedFunnel.landing_page.sections?.stats?.stats && (
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {generatedFunnel.landing_page.sections.stats.stats.map((st: any, i: number) => (
-                              <div key={i} className="p-2.5 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30 text-center">
-                                <div className="font-bold text-[#852533] dark:text-[#f8a5b2] text-xs">{st.value}</div>
-                                <div className="text-[10px] text-muted-foreground dark:text-gray-400">{st.label}</div>
+                        {landingViewMode === 'full' ? (
+                          <div className="rounded-xl border border-border dark:border-[#5a1a23]/40 overflow-hidden shadow-lg bg-background">
+                            <LandingPageRenderer
+                              content={{
+                                template: selectedTemplate || generatedFunnel.landing_page.template || 'modern-saas',
+                                sections: generatedFunnel.landing_page.sections,
+                              }}
+                              isPaid={generatedFunnel.webinar.is_paid}
+                              priceCents={generatedFunnel.webinar.price_cents}
+                              currency="usd"
+                              preview={false}
+                            />
+                          </div>
+                        ) : (
+                          <div className="space-y-4 text-xs">
+                            {/* Hero Card */}
+                            <div className="p-4 rounded-xl bg-muted/40 border border-border dark:bg-black/50 dark:border-[#5a1a23]/40 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Hero Section</span>
+                                <Badge variant="outline" className="border-border text-foreground dark:border-[#a63344]/40 dark:text-[#f8d7dc] text-[10px]">
+                                  {generatedFunnel.landing_page.sections?.navbar?.logo_text || 'WebinarFlow'}
+                                </Badge>
                               </div>
-                            ))}
+                              <h3 className="text-base font-bold text-foreground dark:text-white leading-snug">
+                                {generatedFunnel.landing_page.hero_headline}
+                              </h3>
+                              <p className="text-muted-foreground dark:text-gray-300 text-xs leading-relaxed">
+                                {generatedFunnel.landing_page.hero_subheadline}
+                              </p>
+                              <div className="pt-2 flex flex-wrap items-center gap-2">
+                                <Badge className="bg-[#852533] hover:bg-[#852533] text-white px-3 py-1 text-xs">
+                                  {generatedFunnel.landing_page.cta_text}
+                                </Badge>
+                              </div>
+                            </div>
+
+                            {/* Stats */}
+                            {generatedFunnel.landing_page.sections?.stats?.stats && (
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                {generatedFunnel.landing_page.sections.stats.stats.map((st: any, i: number) => (
+                                  <div key={i} className="p-2.5 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30 text-center">
+                                    <div className="font-bold text-[#852533] dark:text-[#f8a5b2] text-xs">{st.value}</div>
+                                    <div className="text-[10px] text-muted-foreground dark:text-gray-400">{st.label}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Speakers / Instructor */}
+                            {generatedFunnel.landing_page.sections?.speakers?.speakers && (
+                              <div className="space-y-2">
+                                <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">
+                                  {generatedFunnel.landing_page.sections?.speakers?.title || 'Instructors & Speakers'}
+                                </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {generatedFunnel.landing_page.sections.speakers.speakers.map((sp: any, i: number) => (
+                                    <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30">
+                                      <h5 className="font-bold text-foreground dark:text-white text-xs">{sp.name}</h5>
+                                      <p className="text-[10px] text-[#852533] dark:text-[#f8a5b2] font-semibold">{sp.title}</p>
+                                      <p className="text-[10px] text-muted-foreground dark:text-gray-400 mt-1 leading-relaxed">{sp.bio}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Key Benefits */}
+                            <div className="space-y-2">
+                              <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Key Benefits</span>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {generatedFunnel.landing_page.benefits.map((b, i) => (
+                                  <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30">
+                                    <h5 className="font-bold text-[#852533] dark:text-[#f8a5b2] text-xs">{b.title}</h5>
+                                    <p className="text-[10px] text-muted-foreground dark:text-gray-400 mt-1 leading-relaxed">{b.description}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Agenda / Schedule */}
+                            {generatedFunnel.landing_page.agenda && (
+                              <div className="space-y-2">
+                                <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Agenda & Timeline</span>
+                                <div className="space-y-1.5">
+                                  {generatedFunnel.landing_page.agenda.map((item: any, i: number) => (
+                                    <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30">
+                                      <span className="whitespace-nowrap rounded bg-[#852533]/15 text-[#852533] dark:bg-[#852533]/30 dark:text-[#f8a5b2] px-2 py-0.5 text-[10px] font-mono font-bold">
+                                        {item.time}
+                                      </span>
+                                      <span className="text-xs text-foreground dark:text-white font-medium">
+                                        {item.topic || item.title}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Testimonials */}
+                            {generatedFunnel.landing_page.sections?.testimonials?.testimonials && (
+                              <div className="space-y-2">
+                                <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Testimonials</span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {generatedFunnel.landing_page.sections.testimonials.testimonials.map((t: any, i: number) => (
+                                    <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30 italic text-muted-foreground dark:text-gray-300 text-xs">
+                                      “{t.quote}”
+                                      <div className="not-italic text-[10px] font-bold text-foreground dark:text-white mt-1.5">
+                                        — {t.name}, <span className="text-muted-foreground font-normal">{t.title}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* FAQs */}
+                            {generatedFunnel.landing_page.faqs && (
+                              <div className="space-y-2">
+                                <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Frequently Asked Questions</span>
+                                <div className="space-y-1.5">
+                                  {generatedFunnel.landing_page.faqs.map((faq: any, i: number) => (
+                                    <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30 space-y-1">
+                                      <div className="font-bold text-foreground dark:text-white text-xs">Q: {faq.question}</div>
+                                      <div className="text-muted-foreground dark:text-gray-400 text-xs">A: {faq.answer}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
-
-                        <div className="space-y-2">
-                          <span className="text-[#852533] dark:text-[#f8a5b2] uppercase font-bold text-[10px] tracking-wider">Key Benefits</span>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {generatedFunnel.landing_page.benefits.map((b, i) => (
-                              <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border dark:bg-black/40 dark:border-[#5a1a23]/30">
-                                <h5 className="font-bold text-[#852533] dark:text-[#f8a5b2] text-xs">{b.title}</h5>
-                                <p className="text-[10px] text-muted-foreground dark:text-gray-400 mt-1 leading-relaxed">{b.description}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
                       </div>
                     )}
 

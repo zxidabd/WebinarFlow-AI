@@ -71,57 +71,75 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
   const cleanTopic = payload.topic.trim() || 'AI Automation Masterclass';
   const aud = (payload.target_audience || '').trim() || 'Students & Tech Enthusiasts';
   const extra = (payload.custom_instructions || '').trim();
+  const template = payload.template || 'modern-saas';
   const title = `${cleanTopic}: The Complete Blueprint`;
   const isPaid = !!payload.is_paid;
   const priceCents = payload.price_cents || 0;
   const priceStr = isPaid ? `$${(priceCents / 100).toFixed(2)}` : 'Free';
   const slug = `${slugify(cleanTopic)}-${Math.random().toString(36).substring(2, 7)}`;
 
+  const combinedText = `${cleanTopic} ${aud} ${payload.goal || ''} ${extra}`.toLowerCase();
+  const isBlackOrDark = ['black', 'dark', 'night', '#000', '#000000', '#0a0a0a', '#09090b', 'dark mode', 'dark theme'].some(
+    (k) => combinedText.includes(k)
+  );
+
+  const bgMain = isBlackOrDark ? '#000000' : '#ffffff';
+  const bgAlt = isBlackOrDark ? '#09090b' : '#f8fafc';
+  const bgNav = isBlackOrDark ? '#000000' : '#ffffff';
+  const bgFooter = isBlackOrDark ? '#000000' : '#0f172a';
+  const heroGrad = isBlackOrDark ? 'from-zinc-950 via-neutral-900 to-black' : 'from-indigo-900 via-purple-900 to-slate-950';
+
+  let speakerName = 'Alex Vance';
+  const spMatch = extra.match(/(?:speaker|host|instructor)\s*:\s*([^,\n.]+)/i);
+  if (spMatch && spMatch[1]) {
+    speakerName = spMatch[1].trim();
+  }
+
   const navbar = {
     logo_text: cleanTopic.length <= 20 ? cleanTopic : 'WebinarFlow AI',
     links: 'Curriculum, Speakers, Benefits, Reviews, FAQ',
     cta_text: isPaid ? `Register (${priceStr})` : 'Claim Your Seat',
     cta_link: '#register',
-    bg_color: '#ffffff',
+    bg_color: bgNav,
   };
 
   const hero_v2 = {
     headline: `How ${aud} Master ${cleanTopic}`,
-    subtitle: `A live, high-impact masterclass revealing practical frameworks to build automated AI systems, demonstrate verified skills to universities & employers, and stay ahead as AI tools evolve. ${extra}`.slice(0, 300).trim(),
+    subtitle: `A live, high-impact masterclass revealing practical frameworks to build automated systems, demonstrate verified skills, and achieve rapid growth. ${extra}`.slice(0, 300).trim(),
     cta_text: isPaid ? `Enroll Now · ${priceStr}` : 'Join Free Live Training',
     cta_link: '#register',
-    bg_color: '#4f46e5',
-    background_gradient: 'from-indigo-900 via-purple-900 to-slate-950',
+    bg_color: isBlackOrDark ? bgMain : '#4f46e5',
+    background_gradient: heroGrad,
     hero_image: '/hero-dashboard.png',
   };
 
   const speakers = {
-    title: 'Meet Your Instructor & AI Mentors',
+    title: 'Meet Your Instructor & Mentors',
     speakers: [
       {
-        name: 'Dr. Alex Vance',
-        title: `Lead AI Strategist & ${cleanTopic} Specialist`,
+        name: speakerName,
+        title: `Lead Strategist & ${cleanTopic} Specialist`,
         avatar: '/avatars/alex.jpg',
-        bio: `Over 10+ years deploying automation and machine learning workflows. Mentored 3,000+ ${aud} in real-world project delivery.`,
+        bio: `Over 10+ years deploying industry frameworks. Mentored 3,000+ ${aud} in real-world project delivery.`,
       },
       {
         name: 'Maya Lin',
         title: 'Head of Career & Project Acceleration',
         avatar: '/avatars/sarah.jpg',
-        bio: `Assists ${aud} in showcasing verifiable portfolio projects to universities, recruiters, and enterprise clients.`,
+        bio: `Assists ${aud} in showcasing verifiable portfolio projects to recruiters, institutions, and enterprise clients.`,
       },
     ],
-    bg_color: '#ffffff',
+    bg_color: bgMain,
   };
 
   const stats = {
     stats: [
       { value: '5,000+', label: `${aud} Trained` },
       { value: '98%', label: 'Satisfaction Rating' },
-      { value: '15+', label: 'Practical AI Workflows' },
-      { value: '4.9/5', label: 'Student & Attendee Score' },
+      { value: '15+', label: 'Practical Workflows' },
+      { value: '4.9/5', label: 'Attendee Score' },
     ],
-    bg_color: '#f8fafc',
+    bg_color: bgAlt,
   };
 
   const logos = {
@@ -132,7 +150,7 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
       { src: '/logos/github.svg', alt: 'Portfolio Showcase' },
       { src: '/logos/cloud.svg', alt: 'Cloud Workflows' },
     ],
-    bg_color: '#ffffff',
+    bg_color: bgMain,
   };
 
   const benefits = {
@@ -141,13 +159,13 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     benefits: [
       {
         icon: 'Zap',
-        title: 'Portfolio-Ready AI Projects',
-        description: 'Build practical systems you can demonstrate to universities, employers, and clients immediately.',
+        title: `Production-Ready ${cleanTopic} Systems`,
+        description: 'Build practical systems you can demonstrate immediately with real-world impact.',
       },
       {
         icon: 'RefreshCw',
-        title: 'Continuous Tool Updates',
-        description: 'Stay current with frameworks that adapt as AI models and automation platforms evolve.',
+        title: 'Continuous Framework Updates',
+        description: 'Stay current with frameworks that adapt as tools and platforms evolve.',
       },
       {
         icon: 'BarChart3',
@@ -160,7 +178,7 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
         description: `Connect with fellow ${aud}, mentors, and industry practitioners for ongoing support.`,
       },
     ],
-    bg_color: '#ffffff',
+    bg_color: bgMain,
   };
 
   const agenda = {
@@ -169,16 +187,16 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
       {
         time: '00:00 - 00:15',
         title: `The State of ${cleanTopic} in 2026`,
-        description: `Why traditional learning is obsolete and what ${aud} need to focus on today.`,
+        description: `Why traditional approaches are obsolete and what ${aud} need to focus on today.`,
       },
       {
         time: '00:15 - 00:40',
-        title: 'Live Build: End-to-End Automation System',
+        title: `Live Build: End-to-End ${cleanTopic} System`,
         description: 'Step-by-step live demonstration constructing a production-grade workflow from scratch.',
       },
       {
         time: '00:40 - 00:55',
-        title: 'Demonstrating AI Mastery to Employers & Universities',
+        title: 'Packaging & Scaling Your Results',
         description: 'How to package your automation projects into verified proof-of-work portfolios.',
       },
       {
@@ -187,26 +205,26 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
         description: 'Get all your specific questions answered and receive the complete toolkit templates.',
       },
     ],
-    bg_color: '#f8fafc',
+    bg_color: bgAlt,
   };
 
   const testimonials = {
     title: `What Past ${aud} Are Saying`,
     testimonials: [
       {
-        quote: 'This masterclass completely transformed how I build projects. The portfolio framework helped me showcase real AI automation to top universities!',
+        quote: `This masterclass completely transformed how I build projects. The framework helped me showcase real ${cleanTopic} proficiency and achieve verifiable outcomes!`,
         name: 'Rohan Patel',
-        title: 'Computer Science Student & AI Developer',
+        title: `${cleanTopic} Practitioner`,
         avatar: '/avatars/john.jpg',
       },
       {
-        quote: 'Zero theory, 100% actionable. I automated our team workflow the very next day and received an employer internship offer.',
+        quote: 'Zero theory, 100% actionable. I automated our team workflow the very next day with outstanding measurable results.',
         name: 'Jessica Taylor',
-        title: 'Junior Automation Engineer',
+        title: 'Operations & Strategy Lead',
         avatar: '/avatars/emily.jpg',
       },
     ],
-    bg_color: '#ffffff',
+    bg_color: bgMain,
   };
 
   const faq = {
@@ -217,11 +235,11 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
         answer: `This session is crafted specifically for ${aud} who want practical, real-world execution rather than passive theory.`,
       },
       {
-        question: 'Will course materials be updated as AI tools evolve?',
-        answer: 'Yes! All participants get access to updated resources and frameworks as new AI models and tools are released.',
+        question: 'Will course materials be updated as tools evolve?',
+        answer: 'Yes! All participants get access to updated resources and frameworks as new tools are released.',
       },
       {
-        question: 'Can I showcase these projects to universities or employers?',
+        question: 'Can I showcase these projects to employers or universities?',
         answer: 'Absolutely. The projects built during this workshop are structured specifically to be demonstrated as verified proof of skills.',
       },
       {
@@ -229,14 +247,14 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
         answer: 'Yes, registered attendees receive 48-hour access to the full recording, slide decks, and code/template resources.',
       },
     ],
-    bg_color: '#f8fafc',
+    bg_color: bgAlt,
   };
 
   const countdown = {
     enabled: 'true',
     end_date: new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0] + 'T23:59:00Z',
     message: `Live cohort filling fast — reserve your seat for ${cleanTopic}`,
-    bg_color: '#4f46e5',
+    bg_color: isBlackOrDark ? bgAlt : '#4f46e5',
   };
 
   const register = {
@@ -244,17 +262,103 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     cta_text: isPaid ? `Register Now · ${priceStr}` : "Register Now — It's Free",
     collect_name: 'true',
     success_message: "You're registered! Check your email for room access and preparatory worksheets.",
-    bg_color: '#ffffff',
+    bg_color: bgMain,
   };
 
   const footer = {
     text: `© ${new Date().getFullYear()} ${cleanTopic}. All rights reserved.`,
     links: 'Privacy Policy, Terms of Service, Contact Support',
-    bg_color: '#0f172a',
+    bg_color: bgFooter,
+  };
+
+  const hero = {
+    headline: hero_v2.headline,
+    subtitle: hero_v2.subtitle,
+    cta_text: hero_v2.cta_text,
+    cta_link: '#register',
+    price: priceStr,
+    bg_color: isBlackOrDark ? bgMain : (template === 'education' ? '#0f172a' : '#1e293b'),
+    background_color: isBlackOrDark ? bgMain : '#1e293b',
+    hero_image: '/hero-dashboard.png',
+    course_image: '/hero-dashboard.png',
+    logo_url: '/logo.png',
+  };
+
+  const instructor = {
+    title: 'Meet Your Lead Instructor',
+    name: speakerName,
+    title_role: `Lead Strategist & ${cleanTopic} Specialist`,
+    avatar: speakers.speakers[0].avatar,
+    bio: speakers.speakers[0].bio,
+    credentials: `10+ Years Experience, Mentored 3,000+ ${aud}`,
+    bg_color: bgMain,
+  };
+
+  const outcomes = {
+    title: 'What You Will Learn & Master',
+    outcomes: benefits.benefits.map((b) => ({ text: `${b.title} — ${b.description}` })),
+    bg_color: bgAlt,
+  };
+
+  const curriculum = {
+    title: 'Course Curriculum & Modules',
+    modules: agenda.items.map((item) => ({
+      title: item.title,
+      duration: item.time,
+      description: item.description,
+      lessons: '1 In-Depth Module',
+    })),
+    bg_color: bgMain,
+  };
+
+  const certificate = {
+    title: 'Official Certificate of Completion',
+    description: `Earn a verifiable credential in ${cleanTopic} to showcase on your LinkedIn, resume, and portfolio.`,
+    bullet_points: [
+      'Verifiable digital certificate for employers and clients',
+      `Demonstrates hands-on proficiency in ${cleanTopic}`,
+      'Included free with live attendance',
+    ],
+    badge_text: 'VERIFIED CREDENTIAL',
+    bg_color: bgAlt,
+  };
+
+  const schedule = {
+    title: 'Event Schedule & Session Breakdown',
+    date: 'Live This Week',
+    items: agenda.items.map((item) => ({
+      time: item.time,
+      title: item.title,
+      speaker: speakerName,
+    })),
+    bg_color: bgMain,
+  };
+
+  const case_study = {
+    title: 'Real-World Impact & Case Study',
+    headline: `How Modern Teams Scaled ${cleanTopic} by 10x`,
+    metrics: [
+      { value: '10x', label: 'Faster Execution' },
+      { value: '95%', label: 'Cost Efficiency' },
+      { value: '5,000+', label: 'Projects Delivered' },
+    ],
+    quote: 'Implementing this exact blueprint accelerated our delivery and gave our team a decisive competitive edge.',
+    quote_author: 'David Chen',
+    quote_role: 'VP of Technology & Operations',
+    bg_color: bgMain,
+  };
+
+  const contact = {
+    title: 'Questions? Contact Our Team',
+    email: 'support@webinarflow.in',
+    phone: '+1 (800) 555-0199',
+    address: 'San Francisco, CA',
+    bg_color: bgAlt,
   };
 
   const sections = {
     navbar,
+    hero,
     hero_v2,
     speakers,
     stats,
@@ -266,6 +370,16 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     countdown,
     register,
     footer,
+    // Education template
+    instructor,
+    outcomes,
+    curriculum,
+    certificate,
+    // Corporate template
+    schedule,
+    case_study,
+    case_studies: case_study,
+    contact,
   };
 
   return {
@@ -277,14 +391,14 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
       is_paid: isPaid,
       price_cents: priceCents,
       learning_points: benefits.benefits.map((b) => b.title),
-      host_name: speakers.speakers[0].name,
+      host_name: speakerName,
       host_bio: speakers.speakers[0].bio,
     },
     landing_page: {
       title,
       slug,
       meta_description: `Register now for '${title}'. Free live training for ${aud}.`,
-      template: payload.template || 'modern-saas',
+      template,
       hero_headline: hero_v2.headline,
       hero_subheadline: hero_v2.subtitle,
       cta_text: hero_v2.cta_text,
@@ -323,7 +437,7 @@ export function buildFallbackFunnel(payload: GenerateFunnelPayload): GeneratedFu
     outline: {
       hook: `Why traditional approaches to ${cleanTopic} fail in 2026 and what actually works for ${aud}.`,
       story: `Case study of how ${aud} shifted from uncertainty to streamlined execution.`,
-      core_content: 'Pillar 1: Modern AI Foundation\nPillar 2: Live Workflow Build\nPillar 3: University & Employer Demonstration',
+      core_content: `Pillar 1: Modern ${cleanTopic} Foundation\nPillar 2: Live Workflow Build\nPillar 3: Proof-of-Work Demonstration`,
       offer_pitch: 'Presenting the complete toolkit, templates, and ongoing mentorship to accelerate results.',
       qa_points: 'Addressing student questions, tool evolution, and employer portfolio presentation.',
     },

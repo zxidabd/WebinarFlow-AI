@@ -40,8 +40,38 @@ def _build_full_funnel_sections(
     extra = (custom_instructions or "").strip()
     price_str = f"${(price_cents / 100):.2f}" if is_paid else "Free"
 
-    title = f"{clean_topic}: The Complete Career & Growth Blueprint"
+    combined_text = f"{clean_topic} {aud} {goal or ''} {extra}".lower()
+    is_black_or_dark = any(
+        k in combined_text
+        for k in ["black", "dark", "night", "#000", "#000000", "#0a0a0a", "#09090b", "dark mode", "dark theme"]
+    )
+
+    if is_black_or_dark:
+        bg_main = "#000000"
+        bg_alt = "#09090b"
+        bg_nav = "#000000"
+        bg_footer = "#000000"
+        hero_grad = "from-zinc-950 via-neutral-900 to-black"
+    else:
+        bg_main = "#ffffff"
+        bg_alt = "#f8fafc"
+        bg_nav = "#ffffff"
+        bg_footer = "#0f172a"
+        hero_grad = "from-indigo-900 via-purple-900 to-slate-950"
+
+    title = f"{clean_topic}: The Complete Blueprint"
     slug = f"{_slugify(clean_topic)}-{uuid.uuid4().hex[:6]}"
+
+    # Parse custom instructor / speaker if provided in extra instructions
+    speaker_name = None
+    sp_match = re.search(r"(?:speaker|host|instructor)\s*:\s*([^,\n.]+)", extra, re.IGNORECASE)
+    if sp_match:
+        speaker_name = sp_match.group(1).strip()
+    if not speaker_name:
+        speaker_name = "Alex Vance" if "ai" in clean_topic.lower() else "David Carter"
+
+    speaker_title = f"Lead Strategist & {clean_topic} Specialist"
+    speaker_bio = f"Over 10+ years deploying industry frameworks. Mentored 3,000+ {aud} in real-world project delivery."
 
     # 1. Navbar
     navbar = {
@@ -49,38 +79,38 @@ def _build_full_funnel_sections(
         "links": "Curriculum, Speakers, Benefits, Reviews, FAQ",
         "cta_text": "Claim Your Seat" if not is_paid else f"Register ({price_str})",
         "cta_link": "#register",
-        "bg_color": "#ffffff",
+        "bg_color": bg_nav,
     }
 
     # 2. Hero
     hero_v2 = {
         "headline": f"How {aud} Master {clean_topic}",
-        "subtitle": f"A live, high-impact masterclass revealing practical frameworks to build automated AI systems, demonstrate verified skills to universities & employers, and stay ahead as AI tools evolve. {extra}"[:300].strip(),
+        "subtitle": f"A live, high-impact masterclass revealing practical frameworks to build automated systems, demonstrate verified skills, and achieve rapid growth. {extra}"[:300].strip(),
         "cta_text": "Join Free Live Training" if not is_paid else f"Enroll Now · {price_str}",
         "cta_link": "#register",
-        "bg_color": "#4f46e5",
-        "background_gradient": "from-indigo-900 via-purple-900 to-slate-950",
+        "bg_color": bg_main if is_black_or_dark else "#4f46e5",
+        "background_gradient": hero_grad,
         "hero_image": "/hero-dashboard.png",
     }
 
     # 3. Speakers
     speakers = {
-        "title": "Meet Your Instructor & AI Mentors",
+        "title": "Meet Your Instructor & Mentors",
         "speakers": [
             {
-                "name": "Dr. Alex Vance",
-                "title": f"Lead AI Strategist & {clean_topic} Specialist",
+                "name": speaker_name,
+                "title": speaker_title,
                 "avatar": "/avatars/alex.jpg",
-                "bio": f"Over 10+ years deploying automation and machine learning workflows. Mentored 3,000+ {aud} in real-world project delivery.",
+                "bio": speaker_bio,
             },
             {
                 "name": "Maya Lin",
-                "title": "Head of Career & Project Acceleration",
+                "title": "Head of Career & Acceleration",
                 "avatar": "/avatars/sarah.jpg",
-                "bio": f"Assists {aud} in showcasing verifiable portfolio projects to universities, recruiters, and enterprise clients.",
+                "bio": f"Assists {aud} in showcasing verifiable portfolio projects to recruiters, clients, and institutions.",
             },
         ],
-        "bg_color": "#ffffff",
+        "bg_color": bg_main,
     }
 
     # 4. Stats
@@ -88,38 +118,38 @@ def _build_full_funnel_sections(
         "stats": [
             {"value": "5,000+", "label": f"{aud} Trained"},
             {"value": "98%", "label": "Satisfaction Rating"},
-            {"value": "15+", "label": "Practical AI Workflows"},
-            {"value": "4.9/5", "label": "Student & Attendee Score"},
+            {"value": "15+", "label": "Practical Workflows"},
+            {"value": "4.9/5", "label": "Attendee Score"},
         ],
-        "bg_color": "#f8fafc",
+        "bg_color": bg_alt,
     }
 
     # 5. Logos
     logos = {
         "title": f"Tools & Platforms Covered in This {clean_topic} Workshop",
         "logos": [
-            {"src": "/logos/openai.svg", "alt": "OpenAI & LLMs"},
-            {"src": "/logos/python.svg", "alt": "Automation Scripts"},
+            {"src": "/logos/openai.svg", "alt": "Automation Tools"},
+            {"src": "/logos/python.svg", "alt": "Execution Scripts"},
             {"src": "/logos/github.svg", "alt": "Portfolio Showcase"},
-            {"src": "/logos/cloud.svg", "alt": "Cloud Workflows"},
+            {"src": "/logos/cloud.svg", "alt": "Cloud Systems"},
         ],
-        "bg_color": "#ffffff",
+        "bg_color": bg_main,
     }
 
     # 6. Benefits Grid
     benefits = {
         "title": f"Everything You Will Master in {clean_topic}",
-        "subtitle": f"Structured specifically for {aud} to deliver real outcomes and verified knowledge.",
+        "subtitle": f"Structured specifically for {aud} to deliver tangible outcomes and verified knowledge.",
         "benefits": [
             {
                 "icon": "Zap",
-                "title": "Portfolio-Ready AI Projects",
-                "description": f"Build practical systems you can demonstrate to universities, employers, and clients immediately.",
+                "title": f"Production-Ready {clean_topic} Skills",
+                "description": f"Build practical systems you can demonstrate immediately with real-world impact.",
             },
             {
                 "icon": "RefreshCw",
-                "title": "Continuous Tool Updates",
-                "description": "Stay current with frameworks that adapt as AI models and automation platforms evolve.",
+                "title": "Continuous Tool & Framework Updates",
+                "description": "Stay ahead with workflows that adapt as technologies and platforms evolve.",
             },
             {
                 "icon": "BarChart3",
@@ -128,11 +158,11 @@ def _build_full_funnel_sections(
             },
             {
                 "icon": "Users",
-                "title": "Exclusive Community Access",
+                "title": "Exclusive Community & Mentorship",
                 "description": f"Connect with fellow {aud}, mentors, and industry practitioners for ongoing support.",
             },
         ],
-        "bg_color": "#ffffff",
+        "bg_color": bg_main,
     }
 
     # 7. Agenda Timeline
@@ -142,25 +172,25 @@ def _build_full_funnel_sections(
             {
                 "time": "00:00 - 00:15",
                 "title": f"The State of {clean_topic} in 2026",
-                "description": f"Why traditional learning is obsolete and what {aud} need to focus on today.",
+                "description": f"Why traditional approaches are obsolete and what {aud} must focus on today.",
             },
             {
                 "time": "00:15 - 00:40",
-                "title": "Live Build: End-to-End Automation System",
+                "title": f"Live Build: End-to-End {clean_topic} System",
                 "description": "Step-by-step live demonstration constructing a production-grade workflow from scratch.",
             },
             {
                 "time": "00:40 - 00:55",
-                "title": "Demonstrating AI Mastery to Employers & Universities",
-                "description": "How to package your automation projects into verified proof-of-work portfolios.",
+                "title": "Packaging & Scaling Your Results",
+                "description": "How to showcase your proof-of-work, avoid common mistakes, and maximize conversion.",
             },
             {
                 "time": "00:55 - 01:00",
-                "title": "Interactive Live Q&A & Resource Drop",
+                "title": "Interactive Live Q&A & Resource Toolkit Drop",
                 "description": "Get all your specific questions answered and receive the complete toolkit templates.",
             },
         ],
-        "bg_color": "#f8fafc",
+        "bg_color": bg_alt,
     }
 
     # 8. Testimonials
@@ -168,19 +198,19 @@ def _build_full_funnel_sections(
         "title": f"What Past {aud} Are Saying",
         "testimonials": [
             {
-                "quote": f"This masterclass completely transformed how I build projects. The portfolio framework helped me showcase real AI automation to top universities!",
+                "quote": f"This masterclass completely transformed how I build projects. The framework helped me showcase real proficiency and win high-value opportunities!",
                 "name": "Rohan Patel",
-                "title": f"Computer Science Student & AI Developer",
+                "title": f"{clean_topic} Practitioner",
                 "avatar": "/avatars/john.jpg",
             },
             {
-                "quote": f"Zero theory, 100% actionable. I automated our team workflow the very next day and received an employer internship offer.",
+                "quote": f"Zero theory, 100% actionable. I automated our workflows the very next day with outstanding measurable results.",
                 "name": "Jessica Taylor",
-                "title": "Junior Automation Engineer",
+                "title": "Operations & Strategy Lead",
                 "avatar": "/avatars/emily.jpg",
             },
         ],
-        "bg_color": "#ffffff",
+        "bg_color": bg_main,
     }
 
     # 9. FAQ
@@ -192,11 +222,11 @@ def _build_full_funnel_sections(
                 "answer": f"This session is crafted specifically for {aud} who want practical, real-world execution rather than passive theory.",
             },
             {
-                "question": "Will course materials be updated as AI tools evolve?",
-                "answer": "Yes! All participants get access to updated resources and frameworks as new AI models and tools are released.",
+                "question": "Will course materials and templates be updated?",
+                "answer": "Yes! All participants get access to updated resources and templates as new tools are released.",
             },
             {
-                "question": "Can I showcase these projects to universities or employers?",
+                "question": "Can I showcase these projects in my portfolio or career?",
                 "answer": "Absolutely. The projects built during this workshop are structured specifically to be demonstrated as verified proof of skills.",
             },
             {
@@ -204,7 +234,7 @@ def _build_full_funnel_sections(
                 "answer": "Yes, registered attendees receive 48-hour access to the full recording, slide decks, and code/template resources.",
             },
         ],
-        "bg_color": "#f8fafc",
+        "bg_color": bg_alt,
     }
 
     # 10. Countdown
@@ -212,7 +242,7 @@ def _build_full_funnel_sections(
         "enabled": "true",
         "end_date": (datetime.now(timezone.utc) + timedelta(days=3)).strftime("%Y-%m-%dT23:59:00Z"),
         "message": f"Live cohort filling fast — reserve your seat for {clean_topic}",
-        "bg_color": "#4f46e5",
+        "bg_color": bg_alt if is_black_or_dark else "#4f46e5",
     }
 
     # 11. Registration Form
@@ -221,14 +251,14 @@ def _build_full_funnel_sections(
         "cta_text": "Register Now — It's Free" if not is_paid else f"Register Now · {price_str}",
         "collect_name": "true",
         "success_message": "You're registered! Check your email for room access and preparatory worksheets.",
-        "bg_color": "#ffffff",
+        "bg_color": bg_main,
     }
 
     # 12. Footer
     footer = {
         "text": f"© {datetime.now().year} {clean_topic}. All rights reserved.",
         "links": "Privacy Policy, Terms of Service, Contact Support",
-        "bg_color": "#0f172a",
+        "bg_color": bg_footer,
     }
 
     # Standard Hero for Corporate / Education
@@ -238,8 +268,8 @@ def _build_full_funnel_sections(
         "cta_text": hero_v2["cta_text"],
         "cta_link": "#register",
         "price": price_str,
-        "bg_color": "#0f172a" if template == "education" else "#1e293b",
-        "background_color": "#1e293b",
+        "bg_color": bg_main if is_black_or_dark else ("#0f172a" if template == "education" else "#1e293b"),
+        "background_color": bg_main if is_black_or_dark else "#1e293b",
         "hero_image": "/hero-dashboard.png",
         "course_image": "/hero-dashboard.png",
         "logo_url": "/logo.png",
@@ -248,19 +278,19 @@ def _build_full_funnel_sections(
     # Education: Instructor Profile
     instructor = {
         "title": "Meet Your Lead Instructor",
-        "name": speakers["speakers"][0]["name"],
-        "title_role": speakers["speakers"][0]["title"],
+        "name": speaker_name,
+        "title_role": speaker_title,
         "avatar": speakers["speakers"][0]["avatar"],
-        "bio": speakers["speakers"][0]["bio"],
+        "bio": speaker_bio,
         "credentials": f"10+ Years Experience, Mentored 3,000+ {aud}",
-        "bg_color": "#ffffff",
+        "bg_color": bg_main,
     }
 
     # Education: Learning Outcomes
     outcomes = {
         "title": "What You'll Master & Take Away",
         "outcomes": [{"text": f"{b['title']} — {b['description']}"} for b in benefits["benefits"]],
-        "bg_color": "#f8fafc",
+        "bg_color": bg_alt,
     }
 
     # Education: Complete Curriculum
@@ -271,11 +301,11 @@ def _build_full_funnel_sections(
                 "title": item["title"],
                 "duration": item["time"],
                 "description": item["description"],
-                "topics": ["Practical hands-on implementation", "Real-world project build", "Verifiable portfolio packaging"],
+                "lessons": "1 In-Depth Module",
             }
             for item in agenda["items"]
         ],
-        "bg_color": "#ffffff",
+        "bg_color": bg_main,
     }
 
     # Education: Certificate
@@ -288,7 +318,7 @@ def _build_full_funnel_sections(
             "Included free with live attendance",
         ],
         "badge_text": "VERIFIED CREDENTIAL",
-        "bg_color": "#f8fafc",
+        "bg_color": bg_alt,
     }
 
     # Corporate: Schedule
@@ -299,11 +329,11 @@ def _build_full_funnel_sections(
             {
                 "time": item["time"],
                 "title": item["title"],
-                "speaker": speakers["speakers"][0]["name"],
+                "speaker": speaker_name,
             }
             for item in agenda["items"]
         ],
-        "bg_color": "#ffffff",
+        "bg_color": bg_main,
     }
 
     # Corporate: Case Study
@@ -315,10 +345,10 @@ def _build_full_funnel_sections(
             {"value": "95%", "label": "Cost Efficiency"},
             {"value": "5,000+", "label": "Projects Delivered"},
         ],
-        "quote": f"Implementing this exact blueprint accelerated our delivery and gave our team a competitive edge.",
+        "quote": f"Implementing this exact blueprint accelerated our delivery and gave our team a decisive competitive edge.",
         "quote_author": "David Chen",
         "quote_role": "VP of Technology & Operations",
-        "bg_color": "#ffffff",
+        "bg_color": bg_main,
     }
 
     # Corporate: Contact
@@ -327,7 +357,7 @@ def _build_full_funnel_sections(
         "email": "support@webinarflow.in",
         "phone": "+1 (800) 555-0199",
         "address": "San Francisco, CA",
-        "bg_color": "#f8fafc",
+        "bg_color": bg_alt,
     }
 
     all_sections = {
@@ -365,8 +395,8 @@ def _build_full_funnel_sections(
             "is_paid": is_paid,
             "price_cents": price_cents if is_paid else 0,
             "learning_points": [b["title"] for b in benefits["benefits"]],
-            "host_name": speakers["speakers"][0]["name"],
-            "host_bio": speakers["speakers"][0]["bio"],
+            "host_name": speaker_name,
+            "host_bio": speaker_bio,
         },
         "landing_page": {
             "title": title,
@@ -385,7 +415,7 @@ def _build_full_funnel_sections(
             {
                 "type": "invitation",
                 "subject": f"🔥 You're invited: {title}",
-                "body": f"Hi {{first_name}},\n\nAre you looking to master {clean_topic} and stand out to top universities and employers?\n\nJoin us for an exclusive masterclass designed for {aud}.\n\n📅 Date: Live this week\n⏰ Duration: 60 Minutes\n\n👉 Reserve your spot here: {{registration_link}}\n\nBest,\nThe Team",
+                "body": f"Hi {{first_name}},\n\nAre you looking to master {clean_topic} and stand out in 2026?\n\nJoin us for an exclusive masterclass designed for {aud}.\n\n📅 Date: Live this week\n⏰ Duration: 60 Minutes\n\n👉 Reserve your spot here: {{registration_link}}\n\nBest,\nThe Team",
             },
             {
                 "type": "reminder_24h",
@@ -410,10 +440,10 @@ def _build_full_funnel_sections(
         ],
         "outline": {
             "hook": f"Why traditional approaches to {clean_topic} fail in 2026 and what actually works for {aud}.",
-            "story": f"Case study of how {aud} shifted from theory to portfolio-ready automation.",
-            "core_content": "Pillar 1: Modern AI Foundation\nPillar 2: Live Workflow Build\nPillar 3: University & Employer Demonstration",
+            "story": f"Case study of how {aud} shifted from theory to portfolio-ready execution.",
+            "core_content": f"Pillar 1: Modern {clean_topic} Foundation\nPillar 2: Live Workflow Build\nPillar 3: Proof-of-Work Demonstration",
             "offer_pitch": "Presenting the complete toolkit, templates, and ongoing mentorship to accelerate results.",
-            "qa_points": "Addressing student questions, tool evolution, and employer portfolio presentation.",
+            "qa_points": "Addressing attendee questions, tool evolution, and implementation roadblocks.",
         },
     }
 
@@ -436,10 +466,81 @@ async def generate_funnel(
     base_url = settings.OPENAI_BASE_URL.rstrip("/") if settings.OPENAI_BASE_URL else "http://localhost:20128/v1"
     api_key = settings.OPENAI_API_KEY or "omniroute"
 
+    combined_text = f"{clean_topic} {audience} {goal or ''} {custom_instructions or ''}".lower()
+    is_black_or_dark = any(
+        k in combined_text
+        for k in ["black", "dark", "night", "#000", "#000000", "#0a0a0a", "#09090b", "dark mode", "dark theme"]
+    )
+
+    color_rule = (
+        "CRITICAL COLOR REQUIREMENT: The user specifically requested a BLACK or DARK background. "
+        "You MUST set 'bg_color': '#000000' (or '#09090b') on EVERY single section inside 'sections'. "
+        "Set 'background_gradient': 'from-zinc-950 via-neutral-900 to-black'. All text and card components will render in dark mode."
+        if is_black_or_dark
+        else "Use clean, professional background colors matching the selected template style."
+    )
+
     system_prompt = (
-        "You are an expert Webinar Funnel Strategist inside WebinarFlow AI. "
-        f"Generate a complete webinar funnel for template '{target_template}' with all 11 landing page sections populated matching the user's specific description. "
-        "Return ONLY a valid JSON object matching the full funnel schema."
+        "You are an expert Webinar Funnel Strategist inside WebinarFlow AI.\n"
+        f"Generate a complete, high-converting webinar funnel for template style '{target_template}'.\n"
+        f"{color_rule}\n"
+        "Return ONLY a valid JSON object matching the full funnel schema with all 11+ landing page sections populated:\n"
+        "{\n"
+        '  "webinar": {\n'
+        '    "title": "...",\n'
+        '    "subtitle": "...",\n'
+        '    "description": "...",\n'
+        '    "duration_minutes": 60,\n'
+        '    "is_paid": false,\n'
+        '    "price_cents": 0,\n'
+        '    "learning_points": ["..."],\n'
+        '    "host_name": "...",\n'
+        '    "host_bio": "..."\n'
+        "  },\n"
+        '  "landing_page": {\n'
+        '    "title": "...",\n'
+        '    "slug": "...",\n'
+        '    "meta_description": "...",\n'
+        f'    "template": "{target_template}",\n'
+        '    "hero_headline": "...",\n'
+        '    "hero_subheadline": "...",\n'
+        '    "cta_text": "...",\n'
+        '    "benefits": [{"title": "...", "description": "..."}],\n'
+        '    "agenda": [{"time": "...", "topic": "..."}],\n'
+        '    "faqs": [{"question": "...", "answer": "..."}],\n'
+        '    "sections": {\n'
+        '      "navbar": {"logo_text": "...", "links": "...", "cta_text": "...", "cta_link": "#register", "bg_color": "#000000"},\n'
+        '      "hero_v2": {"headline": "...", "subtitle": "...", "cta_text": "...", "cta_link": "#register", "bg_color": "#000000", "background_gradient": "from-zinc-950 via-neutral-900 to-black"},\n'
+        '      "hero": {"headline": "...", "subtitle": "...", "cta_text": "...", "bg_color": "#000000"},\n'
+        '      "speakers": {"title": "...", "speakers": [{"name": "...", "title": "...", "bio": "..."}], "bg_color": "#000000"},\n'
+        '      "stats": {"stats": [{"value": "...", "label": "..."}], "bg_color": "#09090b"},\n'
+        '      "logos": {"title": "...", "logos": [{"src": "/logos/openai.svg", "alt": "..."}], "bg_color": "#000000"},\n'
+        '      "benefits": {"title": "...", "subtitle": "...", "benefits": [{"title": "...", "description": "..."}], "bg_color": "#000000"},\n'
+        '      "agenda": {"title": "...", "items": [{"time": "...", "title": "...", "description": "..."}], "bg_color": "#09090b"},\n'
+        '      "testimonials": {"title": "...", "testimonials": [{"name": "...", "title": "...", "quote": "..."}], "bg_color": "#000000"},\n'
+        '      "faq": {"title": "...", "items": [{"question": "...", "answer": "..."}], "bg_color": "#09090b"},\n'
+        '      "countdown": {"enabled": "true", "message": "...", "bg_color": "#09090b"},\n'
+        '      "register": {"title": "...", "cta_text": "...", "bg_color": "#000000"},\n'
+        '      "footer": {"text": "...", "links": "...", "bg_color": "#000000"},\n'
+        '      "instructor": {"title": "...", "name": "...", "title_role": "...", "bio": "...", "credentials": "...", "bg_color": "#000000"},\n'
+        '      "outcomes": {"title": "...", "outcomes": [{"text": "..."}], "bg_color": "#09090b"},\n'
+        '      "curriculum": {"title": "...", "modules": [{"title": "...", "lessons": "...", "duration": "..."}], "bg_color": "#000000"},\n'
+        '      "certificate": {"title": "...", "description": "...", "bg_color": "#09090b"},\n'
+        '      "schedule": {"title": "...", "date": "...", "items": [{"time": "...", "title": "...", "speaker": "..."}], "bg_color": "#000000"},\n'
+        '      "case_study": {"title": "...", "headline": "...", "metrics": [{"value": "...", "label": "..."}], "quote": "...", "quote_author": "...", "bg_color": "#000000"},\n'
+        '      "contact": {"title": "...", "email": "support@webinarflow.in", "bg_color": "#09090b"}\n'
+        '    }\n'
+        "  },\n"
+        '  "email_sequence": [\n'
+        '    {"type": "invitation", "subject": "...", "body": "..."},\n'
+        '    {"type": "reminder_24h", "subject": "...", "body": "..."},\n'
+        '    {"type": "reminder_1h", "subject": "...", "body": "..."},\n'
+        '    {"type": "reminder_15m", "subject": "...", "body": "..."},\n'
+        '    {"type": "replay_and_offer", "subject": "...", "body": "..."}\n'
+        "  ],\n"
+        '  "outline": {"hook": "...", "story": "...", "core_content": "...", "offer_pitch": "...", "qa_points": "..."}\n'
+        "}\n\n"
+        "Ensure ALL sections reflect the user's specific topic and instructions in rich detail. Return ONLY JSON."
     )
 
     user_prompt = (
@@ -449,7 +550,8 @@ async def generate_funnel(
         f"- Template Style: {target_template} ('modern-saas', 'corporate', or 'education')\n"
         f"- Primary Goal: {goal or 'High Lead Generation & Sales Conversion'}\n"
         f"- Pricing: {'Paid ($' + str(price_cents/100) + ')' if is_paid else 'Free Opt-in'}\n"
-        f"- Extra Custom Instructions: {custom_instructions or 'None'}"
+        f"- Extra Custom Instructions: {custom_instructions or 'None'}\n"
+        f"{'- Requested Background Theme: BLACK / DARK MODE (#000000)' if is_black_or_dark else ''}"
     )
 
     funnel_models = [
@@ -483,9 +585,37 @@ async def generate_funnel(
                     clean_json = re.sub(r"^```(?:json)?\s*", "", content.strip())
                     clean_json = re.sub(r"\s*```$", "", clean_json)
                     parsed = json.loads(clean_json)
-                    if "landing_page" in parsed and "sections" in parsed["landing_page"]:
-                        parsed["landing_page"]["template"] = target_template
-                        return parsed
+
+                    # Handle case where LLM returned root level sections or missing landing_page wrapper
+                    if "landing_page" not in parsed and "sections" in parsed:
+                        parsed = {
+                            "webinar": parsed.get("webinar", {}),
+                            "landing_page": parsed,
+                            "email_sequence": parsed.get("email_sequence", []),
+                            "outline": parsed.get("outline", {}),
+                        }
+
+                    if "landing_page" in parsed:
+                        lp = parsed["landing_page"]
+                        lp["template"] = target_template
+
+                        # If sections was at root level
+                        if "sections" not in lp and "sections" in parsed:
+                            lp["sections"] = parsed["sections"]
+
+                        # Enforce black / dark background if requested by user
+                        if is_black_or_dark and "sections" in lp and isinstance(lp["sections"], dict):
+                            for sec_key, sec_val in lp["sections"].items():
+                                if isinstance(sec_val, dict):
+                                    sec_val["bg_color"] = "#000000"
+                                    if sec_key in ("hero", "hero_v2"):
+                                        sec_val["background_color"] = "#000000"
+                                        sec_val["background_gradient"] = "from-zinc-950 via-neutral-900 to-black"
+                                    elif sec_key in ("stats", "agenda", "faq", "countdown", "outcomes", "certificate", "schedule", "contact"):
+                                        sec_val["bg_color"] = "#09090b"
+
+                        if "sections" in lp and len(lp["sections"]) >= 4:
+                            return parsed
         except Exception as exc:
             logger.warning(f"LLM API call with model '{try_model}' failed: {exc}")
 
