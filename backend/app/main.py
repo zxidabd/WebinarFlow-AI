@@ -184,6 +184,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Mount versioned API.
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
+# Direct fallback mount for contact
+from app.api.v1.endpoints.contact import router as contact_router
+app.include_router(contact_router, prefix="/api/v1/contact", tags=["contact"])
+app.include_router(contact_router, prefix="/contact", tags=["contact"])
+
 
 @app.get("/", tags=["system"])
 @app.get("/health", tags=["system"])

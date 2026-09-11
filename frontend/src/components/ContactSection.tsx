@@ -51,26 +51,45 @@ export default function ContactSection() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
-          subject: topic,
-          message: message.trim(),
-        }),
-      });
+      let res: Response;
+      try {
+        res = await fetch(`${API_BASE_URL}/contact`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            email: email.trim(),
+            subject: topic,
+            message: message.trim(),
+          }),
+        });
+      } catch {
+        // If cold start or network glitch, wait 1.5s and retry once
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await fetch(`${API_BASE_URL}/contact`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            email: email.trim(),
+            subject: topic,
+            message: message.trim(),
+          }),
+        });
+      }
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
+        if (res.status === 404) {
+          throw new Error('Backend is currently updating. Please try again in 30 seconds or email support@webinarflow.in.');
+        }
         throw new Error(errData?.detail || 'Failed to send message. Please try again.');
       }
 
       setSubmitted(true);
       toast.success('Message sent! Check your inbox for confirmation.');
     } catch (err: any) {
-      toast.error(err?.message || 'Could not send message. Please try again or email us directly.');
+      toast.error(err?.message || 'Could not send message. Please email support@webinarflow.in directly.');
     } finally {
       setSubmitting(false);
     }
