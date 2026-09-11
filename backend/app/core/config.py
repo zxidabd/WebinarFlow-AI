@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str | None = None
     SMTP_FROM_NAME: str = "WebinarFlow-AI"
+    SUPPORT_EMAIL: str = "support@webinarflow.in"
 
     # --- Google OAuth ---
     GOOGLE_OAUTH_CLIENT_ID: str = ""

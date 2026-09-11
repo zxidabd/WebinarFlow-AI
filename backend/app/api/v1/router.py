@@ -44,3 +44,4 @@ _try_include("app.api.v1.endpoints.registrations", "/registrations", tags=["regi
 _try_include("app.api.v1.endpoints.payments", "/payments", tags=["payments"])
 _try_include("app.api.v1.endpoints.analytics", "/analytics", tags=["analytics"])
 _try_include("app.api.v1.endpoints.ai", "/ai", tags=["ai"])
+_try_include("app.api.v1.endpoints.contact", "/contact", tags=["contact"])
