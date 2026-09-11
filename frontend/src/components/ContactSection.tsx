@@ -139,7 +139,7 @@ export default function ContactSection() {
               </p>
 
               <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3.5">
-                <span className="font-mono text-xs sm:text-sm font-semibold text-white truncate">
+                <span className="text-xs sm:text-sm font-medium tracking-normal text-white truncate">
                   support@webinarflow.in
                 </span>
                 <button

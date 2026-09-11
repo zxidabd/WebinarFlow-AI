@@ -124,7 +124,7 @@ export default function SupportPage() {
             className="group mb-7 inline-flex items-center gap-2 rounded-full border border-[#7a222f]/60 bg-[#250a0f]/90 px-4 py-1.5 text-xs font-medium text-[#f8d7dc] transition-all hover:border-[#a63344] hover:bg-[#340e15] hover:text-white hover:shadow-[0_0_15px_rgba(244,63,94,0.2)]"
           >
             <Mail className="h-3.5 w-3.5 text-[#f8a5b2] group-hover:scale-110 transition-transform" />
-            <span className="font-mono text-[13px]">support@webinarflow.in</span>
+            <span className="text-xs sm:text-sm font-medium tracking-normal text-white">support@webinarflow.in</span>
             {copiedEmail ? (
               <Check className="h-3.5 w-3.5 text-emerald-400 ml-1" />
             ) : (
