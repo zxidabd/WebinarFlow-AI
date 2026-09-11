@@ -7,7 +7,6 @@ import { Menu, X, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
   { label: 'Solutions', href: '#agents' },
   { label: 'Resources', href: '#dashboard' },
   { label: 'Pricing', href: '#pricing' },

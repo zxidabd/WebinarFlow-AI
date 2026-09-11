@@ -1,7 +1,6 @@
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import LogoCloud from '@/components/LogoCloud';
-import Features from '@/components/Features';
 import AgentWorkflow from '@/components/AgentWorkflow';
 import DashboardPreview from '@/components/DashboardPreview';
 import Pricing from '@/components/Pricing';
@@ -23,7 +22,6 @@ export default function Home() {
       <main>
         <Hero />
         <LogoCloud />
-        <Features />
         <AgentWorkflow />
         <DashboardPreview />
         <Pricing />
