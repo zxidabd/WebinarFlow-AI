@@ -79,6 +79,9 @@ export default function Footer() {
                 </a>
               ))}
             </div>
+            <p className="mt-4 text-xs text-[#B8B8B8]/70">
+              Contact us : <span className="text-white/80">support@webinarflow.in</span>
+            </p>
           </motion.div>
 
           {/* Link columns */}
