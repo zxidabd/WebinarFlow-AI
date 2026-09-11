@@ -6,6 +6,7 @@ import AgentWorkflow from '@/components/AgentWorkflow';
 import DashboardPreview from '@/components/DashboardPreview';
 import Pricing from '@/components/Pricing';
 import Testimonials from '@/components/Testimonials';
+import AboutUsSection from '@/components/AboutUsSection';
 import ContactSection from '@/components/ContactSection';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
@@ -27,6 +28,7 @@ export default function Home() {
         <DashboardPreview />
         <Pricing />
         <Testimonials />
+        <AboutUsSection />
         <ContactSection />
         <CTA />
       </main>
