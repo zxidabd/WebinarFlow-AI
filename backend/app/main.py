@@ -190,9 +190,20 @@ app.include_router(contact_router, prefix="/api/v1/contact", tags=["contact"])
 app.include_router(contact_router, prefix="/contact", tags=["contact"])
 
 
-@app.get("/", tags=["system"])
-@app.get("/health", tags=["system"])
-@app.get("/api/v1/health", tags=["system"])
+@app.api_route("/", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/health/", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/healthz", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/healthz/", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/api/health", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/api/health/", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/api/v1/health", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/api/v1/health/", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/ping", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/ping/", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/live", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/ready", methods=["GET", "HEAD"], tags=["system"])
+@app.api_route("/status", methods=["GET", "HEAD"], tags=["system"])
 async def health() -> dict[str, str]:
     """Lightweight liveness probe — does not touch the DB."""
     return {"status": "ok", "app": settings.APP_NAME, "version": __version__}
