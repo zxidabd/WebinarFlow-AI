@@ -189,6 +189,7 @@ async def create_landing_page(
     lp_count_result = await db.execute(
         select(func.count()).select_from(LandingPage).where(LandingPage.webinar_id == payload.webinar_id)
     )
+    lp_count = lp_count_result.scalar() or 0
     is_super = getattr(current_user, "is_super_user", False) or getattr(membership.user, "is_super_user", False)
     if not is_super:
         limits = get_limits(membership.user.plan_tier)
