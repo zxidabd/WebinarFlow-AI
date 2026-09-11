@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   ) : null;
 
-  if (isTrialExpired && pathname !== '/dashboard/billing') {
+  if (isTrialExpired && pathname !== '/dashboard/billing' && pathname !== '/dashboard/support') {
     return (
       <RequireAuth>
         <TrialExpiredPaywall />

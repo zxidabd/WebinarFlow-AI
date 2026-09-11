@@ -12,6 +12,7 @@
  */
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -24,6 +25,7 @@ import {
   Settings,
   Shield,
   Zap,
+  Headphones,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -51,6 +53,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Billing & Plans', href: '/dashboard/billing', icon: Zap, matchPrefix: '/dashboard/billing' },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings, matchPrefix: '/dashboard/settings' },
   { label: 'Admin', href: '/dashboard/admin', icon: Shield, matchPrefix: '/dashboard/admin', superuserOnly: true },
+  { label: 'Contact Support', href: '/dashboard/support', icon: Headphones, matchPrefix: '/dashboard/support' },
 ];
 
 export function DashboardSidebar() {
@@ -83,23 +86,27 @@ export function DashboardSidebar() {
           const Icon = item.icon;
           const active = isActive(item);
           return (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={cn(
-                'group relative flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-150',
-                active
-                  ? 'bg-[#852533] text-white font-semibold shadow-sm shadow-[#852533]/25'
-                  : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-                item.isHeroAnchor && !active && 'text-[#852533] dark:text-[#f8a5b2] font-semibold hover:bg-[#852533]/10',
+            <React.Fragment key={item.label}>
+              {item.label === 'Contact Support' && (
+                <div className="my-2 border-t border-border/60" />
               )}
-            >
-              <Icon className={cn('h-4 w-4 shrink-0 transition-colors duration-150', active ? 'text-white' : 'text-muted-foreground group-hover:text-foreground')} />
-              <span>{item.label}</span>
-              {active && (
-                <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white" />
-              )}
-            </Link>
+              <Link
+                href={item.href}
+                className={cn(
+                  'group relative flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-150',
+                  active
+                    ? 'bg-[#852533] text-white font-semibold shadow-sm shadow-[#852533]/25'
+                    : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                  item.isHeroAnchor && !active && 'text-[#852533] dark:text-[#f8a5b2] font-semibold hover:bg-[#852533]/10',
+                )}
+              >
+                <Icon className={cn('h-4 w-4 shrink-0 transition-colors duration-150', active ? 'text-white' : 'text-muted-foreground group-hover:text-foreground')} />
+                <span>{item.label}</span>
+                {active && (
+                  <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white" />
+                )}
+              </Link>
+            </React.Fragment>
           );
         })}
       </nav>
