@@ -189,6 +189,11 @@ from app.api.v1.endpoints.contact import router as contact_router
 app.include_router(contact_router, prefix="/api/v1/contact", tags=["contact"])
 app.include_router(contact_router, prefix="/contact", tags=["contact"])
 
+# Direct mount for standard Razorpay checkout (/api/create-order, /api/verify-payment)
+from app.api.v1.endpoints.razorpay_checkout import router as razorpay_checkout_router
+app.include_router(razorpay_checkout_router, prefix="/api", tags=["razorpay-checkout"])
+app.include_router(razorpay_checkout_router, prefix="/api/v1", tags=["razorpay-checkout"])
+
 
 @app.api_route("/", methods=["GET", "HEAD"], tags=["system"])
 @app.api_route("/health", methods=["GET", "HEAD"], tags=["system"])
